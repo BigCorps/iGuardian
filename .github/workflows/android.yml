@@ -4,12 +4,14 @@ on:
   workflow_dispatch:
   push:
     branches: [ "main" ]
+
 permissions:
   contents: read
 
 jobs:
   build:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout
         uses: actions/checkout@v6
@@ -50,7 +52,6 @@ jobs:
           for name in KEYSTORE_B64 STORE_PASSWORD KEY_ALIAS KEY_PASSWORD; do
             if [ -z "${!name}" ]; then
               echo "::error::Missing Guardian DEV signing secret: $name"
-              echo "See SIGNING_DEV.md and the separate KEEP-PRIVATE signing bundle."
               exit 1
             fi
           done
@@ -75,11 +76,32 @@ jobs:
         shell: bash
         run: |
           APK="app/build/outputs/apk/debug/app-debug.apk"
+          SDK_ROOT="${ANDROID_SDK_ROOT:-$ANDROID_HOME}"
+
+          APKSIGNER="$(
+            find "$SDK_ROOT/build-tools" -maxdepth 2 -type f -name apksigner -print             | sort -V             | tail -n 1
+          )"
+
+          if [ -z "$APKSIGNER" ] || [ ! -x "$APKSIGNER" ]; then
+            echo "::error::apksigner was not found in Android build-tools."
+            echo "SDK root: $SDK_ROOT"
+            find "$SDK_ROOT/build-tools" -maxdepth 2 -type f -name 'apksigner*' -print || true
+            exit 1
+          fi
+
+          echo "Using apksigner: $APKSIGNER"
+
           ACTUAL="$(
-            apksigner verify --print-certs "$APK"             | sed -n 's/^Signer #1 certificate SHA-256 digest: //p'             | head -n 1             | tr '[:upper:]' '[:lower:]'             | tr -d '\r'
+            "$APKSIGNER" verify --print-certs "$APK"             | sed -n 's/^Signer #1 certificate SHA-256 digest: //p'             | head -n 1             | tr '[:upper:]' '[:lower:]'             | tr -d '\r'
           )"
 
           EXPECTED="4a40d0075db9691b16814e40d7db589fdfea59a046a006c1a4db07c8901b8986"
+
+          if [ -z "$ACTUAL" ]; then
+            echo "::error::Could not read APK signing certificate SHA-256."
+            "$APKSIGNER" verify --verbose --print-certs "$APK" || true
+            exit 1
+          fi
 
           if [ "$ACTUAL" != "$EXPECTED" ]; then
             echo "::error::Unexpected DEV signing certificate."
