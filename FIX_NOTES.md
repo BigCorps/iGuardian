@@ -1,22 +1,24 @@
-# Build Fix 02
+# Runtime Fix 0.1.1
 
-O segundo GitHub Actions avançou além do setup do SDK e falhou em `Unit tests` durante `:app:compileDebugKotlin`.
+This package replaces only the files listed below.
 
-Erro exato:
-`GuardianDatabase.kt:57:62 Unsupported escape sequence.`
-
-Correção:
-`Regex("[^A-Z0-9_\\-]")`
-foi substituído por:
-`Regex("[^A-Z0-9_-]")`
-
-Em uma classe de caracteres de regex, o hífen colocado no final não precisa de escape.
-O escape `\-` dentro de uma string Kotlin comum era inválido.
-
-Arquivos deste pacote:
-- `app/src/main/java/com/bigcorps/guardian/core/GuardianDatabase.kt`
+## Files
+- `app/src/main/java/com/bigcorps/guardian/MainActivity.kt`
+- `app/src/main/java/com/bigcorps/guardian/ui/PrivateAppsActivity.kt`
+- `app/src/main/res/values/themes.xml`
+- `app/build.gradle.kts`
+- `.github/workflows/android.yml`
 - `README.md`
 - `CHANGELOG.md`
 - `PROJECT_STATE.json`
 
-Substitua esses arquivos mantendo os mesmos caminhos e faça commit na `main`.
+## Fixes
+1. Android sideload/restricted-settings onboarding.
+2. Main screen visual redesign.
+3. Private-app screen visual redesign.
+4. Android edge-to-edge safe areas.
+5. 0 KB JSON export fix using app-private cache + validated output.
+6. Version bump to 0.1.1 / versionCode 2.
+7. Actions artifact renamed to `guardian-android-0.1.1-debug`.
+
+Upload these files preserving their paths. A push to `main` will start GitHub Actions automatically.

@@ -1,12 +1,20 @@
 package com.bigcorps.guardian
 
 import android.app.Activity
+import android.app.AlertDialog
 import android.content.Intent
+import android.content.res.ColorStateList
+import android.graphics.Color
 import android.graphics.Typeface
+import android.graphics.drawable.GradientDrawable
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
+import android.view.Gravity
 import android.view.View
+import android.view.WindowInsets
+import android.view.ViewGroup
 import android.widget.Button
 import android.widget.EditText
 import android.widget.LinearLayout
@@ -14,23 +22,29 @@ import android.widget.ScrollView
 import android.widget.TextView
 import android.widget.Toast
 import com.bigcorps.guardian.core.DiagnosticsGenerator
+import com.bigcorps.guardian.core.GuardianDatabase
 import com.bigcorps.guardian.core.GuardianPrivacyOverride
 import com.bigcorps.guardian.core.PrivatePreferences
 import com.bigcorps.guardian.core.ReportGenerator
 import com.bigcorps.guardian.core.UsageAccess
 import com.bigcorps.guardian.core.UsageCollector
 import com.bigcorps.guardian.ui.PrivateAppsActivity
-import org.json.JSONObject
+import java.io.File
+import java.io.IOException
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
 class MainActivity : Activity() {
     private lateinit var statusText: TextView
-    private lateinit var summaryText: TextView
-    private lateinit var capabilityText: TextView
+    private lateinit var permissionHelpCard: LinearLayout
     private lateinit var deviceName: EditText
-    private var pendingExport: String? = null
+    private lateinit var appsValue: TextView
+    private lateinit var privateValue: TextView
+    private lateinit var screenValue: TextView
+    private lateinit var unlockValue: TextView
+    private lateinit var topAppsText: TextView
+    private lateinit var capabilityText: TextView
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -45,90 +59,195 @@ class MainActivity : Activity() {
     }
 
     private fun buildUi() {
+        window.statusBarColor = BACKGROUND
+        window.navigationBarColor = BACKGROUND
+
         val root = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            setPadding(dp(20), dp(24), dp(20), dp(32))
+            setPadding(dp(18), dp(18), dp(18), dp(36))
         }
-        val scroll = ScrollView(this).apply { addView(root) }
 
-        root.addView(text("Guardian DEV", 28f, true))
-        root.addView(text("Android 0.1.0 • local-only", 14f, false).apply { setPadding(0, dp(4), 0, dp(18)) })
+        val scroll = ScrollView(this).apply {
+            isFillViewport = true
+            setBackgroundColor(BACKGROUND)
+            clipToPadding = false
+            addView(root)
+        }
+        applySystemBarInsets(scroll)
 
-        root.addView(text("Privacidade", 19f, true))
-        root.addView(text(
-            "Este build não declara permissão de Internet. Configurações, apps protegidos e troca de usuário viram apenas PRIVATE antes de chegar ao SQLite. Navegação anônima tem tipo próprio, mas a detecção automática ainda não é confiável no Android v0.1.0.",
-            15f,
-            false
-        ).apply { setPadding(0, dp(6), 0, dp(18)) })
+        val eyebrow = text("GUARDIAN • BUILD DE TESTE", 11f, true, PRIMARY)
+        root.addView(eyebrow)
 
-        statusText = text("", 16f, true)
-        root.addView(statusText)
-        root.addView(button("Conceder acesso de uso") { openUsageSettings() })
-        root.addView(button("Atualizar agora") { refresh(true) })
-        root.addView(button("Escolher apps privados") {
+        root.addView(text("Seu aparelho, explicado.", 28f, true, TEXT_PRIMARY).apply {
+            setPadding(0, dp(4), 0, 0)
+        })
+        root.addView(text("Android 0.1.1 • 100% local", 14f, false, TEXT_MUTED).apply {
+            setPadding(0, dp(4), 0, dp(16))
+        })
+
+        root.addView(card().apply {
+            addView(text("Privacidade por padrão", 18f, true, TEXT_PRIMARY))
+            addView(text(
+                "O Guardian registra metadados de uso, não conteúdo. Configurações, apps protegidos e outros usuários viram apenas PRIVATE antes do armazenamento.",
+                14f, false, TEXT_MUTED
+            ).apply { setPadding(0, dp(6), 0, 0) })
+            addView(text("Sem Internet • Sem captura de tela • Sem teclado", 12f, true, PRIMARY).apply {
+                setPadding(0, dp(12), 0, 0)
+            })
+        })
+
+        root.addView(sectionTitle("Configuração"))
+
+        val statusCard = card()
+        statusText = text("", 15f, true, TEXT_PRIMARY)
+        statusCard.addView(statusText)
+        statusCard.addView(outlineButton("Revisar apps privados") {
             startActivity(Intent(this, PrivateAppsActivity::class.java))
-        })
+        }.apply { topMargin(12) })
+        root.addView(statusCard)
 
-        root.addView(text("Nome local do aparelho", 16f, true).apply { setPadding(0, dp(18), 0, dp(4)) })
-        deviceName = EditText(this).apply {
-            hint = "Ex.: Meu celular"
-            setText(getSharedPreferences("guardian_user", MODE_PRIVATE).getString("device_name", ""))
+        permissionHelpCard = card(WARNING_BG).apply {
+            addView(text("Acesso de uso necessário", 17f, true, WARNING_TEXT))
+            addView(text(
+                if (Build.VERSION.SDK_INT >= 33 && packageName.endsWith(".dev")) {
+                    "Como este APK de teste foi instalado fora da Play Store, o Android pode bloquear o Acesso de uso como uma configuração restrita. Se aparecer “Acesso negado ao app”, faça o passo 1 e depois o passo 2. É normal a tela “Permissões do app” mostrar nenhuma permissão: Acesso de uso fica em Acesso especial."
+                } else {
+                    "O Guardian precisa do Acesso de uso do Android para calcular tempo por aplicativo. Esse acesso é separado das permissões comuns do app."
+                },
+                13f, false, WARNING_TEXT
+            ).apply { setPadding(0, dp(7), 0, 0) })
+
+            if (Build.VERSION.SDK_INT >= 33 && packageName.endsWith(".dev")) {
+                addView(outlineButton("1. Liberar configuração restrita") {
+                    showRestrictedSettingsHelp()
+                }.apply { topMargin(12) })
+            }
+
+            addView(primaryButton(
+                if (Build.VERSION.SDK_INT >= 33 && packageName.endsWith(".dev")) {
+                    "2. Conceder acesso de uso"
+                } else {
+                    "Conceder acesso de uso"
+                }
+            ) { openUsageSettings() }.apply { topMargin(10) })
         }
-        root.addView(deviceName)
-        root.addView(button("Salvar nome") {
-            getSharedPreferences("guardian_user", MODE_PRIVATE).edit()
-                .putString("device_name", deviceName.text.toString().trim())
-                .apply()
-            Toast.makeText(this, "Nome salvo somente neste aparelho.", Toast.LENGTH_SHORT).show()
-            refresh(false)
+        root.addView(permissionHelpCard)
+
+        root.addView(card().apply {
+            addView(text("Nome local do aparelho", 16f, true, TEXT_PRIMARY))
+            addView(text(
+                "Ajuda a identificar este aparelho nos relatórios exportados. Fica somente aqui.",
+                12f, false, TEXT_MUTED
+            ).apply { setPadding(0, dp(4), 0, dp(6)) })
+
+            deviceName = EditText(this@MainActivity).apply {
+                hint = "Ex.: Meu celular"
+                setSingleLine(true)
+                textSize = 16f
+                backgroundTintList = ColorStateList.valueOf(PRIMARY)
+                setText(getSharedPreferences("guardian_user", MODE_PRIVATE).getString("device_name", ""))
+            }
+            addView(deviceName, matchWidth())
+
+            addView(outlineButton("Salvar nome") {
+                getSharedPreferences("guardian_user", MODE_PRIVATE).edit()
+                    .putString("device_name", deviceName.text.toString().trim())
+                    .apply()
+                Toast.makeText(this@MainActivity, "Nome salvo somente neste aparelho.", Toast.LENGTH_SHORT).show()
+            }.apply { topMargin(10) })
         })
 
-        root.addView(text("Hoje", 19f, true).apply { setPadding(0, dp(22), 0, dp(6)) })
-        summaryText = text("", 15f, false)
-        root.addView(summaryText)
+        root.addView(sectionTitle("Hoje"))
 
-        root.addView(button("Exportar JSON do dia") {
-            exportFresh(false)
+        val statsCard = card()
+        val statsRow = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER
+        }
+        appsValue = statBlock(statsRow, "Apps")
+        privateValue = statBlock(statsRow, "PRIVATE")
+        screenValue = statBlock(statsRow, "Tela off")
+        statsCard.addView(statsRow, matchWidth())
+
+        val divider = View(this).apply { setBackgroundColor(DIVIDER) }
+        statsCard.addView(divider, LinearLayout.LayoutParams(
+            ViewGroup.LayoutParams.MATCH_PARENT, dp(1)
+        ).apply { topMargin = dp(14); bottomMargin = dp(14) })
+
+        unlockValue = text("0 desbloqueios", 14f, true, TEXT_PRIMARY)
+        statsCard.addView(unlockValue)
+        topAppsText = text("Ainda sem dados de uso.", 13f, false, TEXT_MUTED).apply {
+            setPadding(0, dp(8), 0, 0)
+        }
+        statsCard.addView(topAppsText)
+        root.addView(statsCard)
+
+        root.addView(primaryButton("Atualizar dados locais") { refresh(true) }.apply {
+            topMargin(10)
         })
 
-        root.addView(button("Exportar JSON de diagnóstico") {
-            exportFresh(true)
+        root.addView(sectionTitle("Exportar"))
+
+        root.addView(card().apply {
+            addView(text(
+                "Os arquivos são criados somente quando você escolher onde salvar. Nada é enviado automaticamente.",
+                13f, false, TEXT_MUTED
+            ))
+            addView(outlineButton("Exportar JSON do dia") {
+                exportFresh(false)
+            }.apply { topMargin(12) })
+            addView(outlineButton("Exportar JSON de diagnóstico") {
+                exportFresh(true)
+            }.apply { topMargin(10) })
         })
 
-        root.addView(text("Capacidades deste build", 19f, true).apply { setPadding(0, dp(22), 0, dp(6)) })
-        capabilityText = text("", 14f, false)
-        root.addView(capabilityText)
+        root.addView(sectionTitle("Capacidades deste build"))
+        capabilityText = text("", 13f, false, TEXT_MUTED)
+        root.addView(card().apply { addView(capabilityText) })
 
         setContentView(scroll)
     }
 
     private fun refresh(runCollector: Boolean) {
         val privacyReady = PrivatePreferences(this).setupComplete()
+        val usageAllowed = UsageAccess.hasPermission(this)
+
         statusText.text = buildString {
-            append(if (privacyReady) "Revisão de apps privados: OK" else "Revisão de apps privados: NECESSÁRIA")
+            append(if (privacyReady) "✓ Revisão de apps privados concluída" else "• Revisão de apps privados pendente")
             append("\n")
-            append(if (UsageAccess.hasPermission(this@MainActivity)) "Acesso de uso: AUTORIZADO" else "Acesso de uso: NECESSÁRIO")
+            append(if (usageAllowed) "✓ Acesso de uso autorizado" else "• Acesso de uso pendente")
         }
+
+        permissionHelpCard.visibility = if (usageAllowed) View.GONE else View.VISIBLE
 
         capabilityText.text = buildString {
             appendLine("✓ Uso por aplicativo")
-            appendLine("✓ Tela não interativa / desbloqueios")
+            appendLine("✓ Tela não interativa e desbloqueios")
             appendLine("✓ SQLite + JSON local")
             appendLine("✓ PRIVATE antes do armazenamento")
             appendLine("✓ Diagnóstico para suporte BigCorps")
             appendLine("— Domínios: ainda não")
-            appendLine("— Detecção automática de guia anônima: ainda não")
+            appendLine("— Guia anônima: schema pronto; detecção automática ainda não")
             append("— Nuvem/API externa: não existe neste build")
         }
 
-        if (runCollector) {
-            statusText.text = "Coletando eventos locais…"
+        if (runCollector && usageAllowed) {
+            statusText.text = "Atualizando eventos locais…"
             Thread {
                 val result = UsageCollector(applicationContext).collect()
                 runOnUiThread {
-                    Toast.makeText(this, "Coleta: ${result.note} • ${result.eventsRead} eventos lidos", Toast.LENGTH_SHORT).show()
+                    statusText.text = buildString {
+                        append(if (privacyReady) "✓ Revisão de apps privados concluída" else "• Revisão de apps privados pendente")
+                        append("\n")
+                        append(if (result.permission) "✓ Acesso de uso autorizado" else "• Acesso de uso pendente")
+                    }
+                    permissionHelpCard.visibility = if (result.permission) View.GONE else View.VISIBLE
                     updateSummary()
-                    statusText.text = if (result.permission) "Acesso de uso: AUTORIZADO" else "Acesso de uso: NECESSÁRIO"
+                    Toast.makeText(
+                        this,
+                        "Coleta local: ${result.eventsRead} eventos • ${result.note}",
+                        Toast.LENGTH_SHORT
+                    ).show()
                 }
             }.start()
         } else {
@@ -138,104 +257,371 @@ class MainActivity : Activity() {
 
     private fun updateSummary() {
         val summary = ReportGenerator(this).todaySummary()
-        summaryText.text = buildString {
-            appendLine("Apps: ${summary.appSeconds / 60} min")
-            appendLine("PRIVATE: ${summary.privateSeconds / 60} min")
-            appendLine("Tela desligada/não interativa: ${summary.screenOffSeconds / 60} min")
-            appendLine("Navegação anônima: detecção automática indisponível neste build")
-            appendLine("Desbloqueios detectados: ${summary.unlockCount}")
-            if (summary.topApps.isNotEmpty()) {
-                appendLine()
+        appsValue.text = minutesLabel(summary.appSeconds)
+        privateValue.text = minutesLabel(summary.privateSeconds)
+        screenValue.text = minutesLabel(summary.screenOffSeconds)
+        unlockValue.text = "${summary.unlockCount} desbloqueios detectados"
+
+        topAppsText.text = if (summary.topApps.isEmpty()) {
+            if (UsageAccess.hasPermission(this)) {
+                "Ainda sem uso suficiente para mostrar os aplicativos mais usados."
+            } else {
+                "Autorize o Acesso de uso para começar a formar o histórico local."
+            }
+        } else {
+            buildString {
                 appendLine("Mais usados:")
                 summary.topApps.take(5).forEach { app ->
-                    appendLine("• ${app.name}: ${app.seconds / 60} min")
+                    appendLine("• ${app.name}: ${minutesLabel(app.seconds)}")
                 }
-            }
-        }.trim()
+            }.trim()
+        }
+    }
+
+    private fun minutesLabel(seconds: Long): String {
+        val minutes = seconds / 60L
+        return if (minutes < 60) "${minutes}m" else {
+            val hours = minutes / 60
+            val rest = minutes % 60
+            if (rest == 0L) "${hours}h" else "${hours}h ${rest}m"
+        }
+    }
+
+    private fun showRestrictedSettingsHelp() {
+        AlertDialog.Builder(this)
+            .setTitle("Liberar configuração restrita")
+            .setMessage(
+                "No Android 13 ou superior, APKs instalados manualmente podem ter acessos especiais bloqueados.\n\n" +
+                    "1. Abra as informações do Guardian.\n" +
+                    "2. Toque nos três pontos (⋮) no canto superior.\n" +
+                    "3. Escolha “Permitir configurações restritas”.\n" +
+                    "4. Volte ao Guardian e toque em “Conceder acesso de uso”.\n\n" +
+                    "Se a tela de permissões mostrar “Nenhuma permissão autorizada”, isso é normal: Acesso de uso é um acesso especial."
+            )
+            .setNegativeButton("Cancelar", null)
+            .setPositiveButton("Abrir informações do app") { _, _ -> openAppDetails() }
+            .show()
+    }
+
+    private fun openAppDetails() {
+        val intent = Intent(
+            Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+            Uri.parse("package:$packageName")
+        )
+        startActivity(intent)
     }
 
     private fun openUsageSettings() {
         if (!PrivatePreferences(this).setupComplete()) {
-            Toast.makeText(this, "Revise primeiro quais apps devem ficar sempre PRIVATE.", Toast.LENGTH_LONG).show()
+            Toast.makeText(
+                this,
+                "Revise primeiro quais apps devem ficar sempre PRIVATE.",
+                Toast.LENGTH_LONG
+            ).show()
             startActivity(Intent(this, PrivateAppsActivity::class.java))
             return
         }
+
         val primary = Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS).apply {
             data = Uri.parse("package:$packageName")
         }
         try {
             startActivity(primary)
         } catch (_: Exception) {
-            startActivity(Intent(Settings.ACTION_SETTINGS))
+            startActivity(Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS))
         }
     }
 
     private fun exportFresh(diagnostic: Boolean) {
         statusText.text = "Preparando exportação local…"
+
         Thread {
-            UsageCollector(applicationContext).collect()
-            val contents: String
-            val filename: String
-            if (diagnostic) {
-                contents = DiagnosticsGenerator(applicationContext).generate().toString(2)
-                filename = "guardian-diagnostico-${SimpleDateFormat("yyyyMMdd-HHmm", Locale.US).format(Date())}.json"
-            } else {
-                contents = ReportGenerator(applicationContext).todayJson().toString(2)
-                filename = "guardian-dia-${SimpleDateFormat("yyyy-MM-dd", Locale.US).format(Date())}.json"
-            }
-            runOnUiThread {
-                statusText.text = if (UsageAccess.hasPermission(this)) "Acesso de uso: AUTORIZADO" else "Acesso de uso: NECESSÁRIO"
-                updateSummary()
-                requestSave(contents, filename)
+            try {
+                UsageCollector(applicationContext).collect()
+
+                val contents: String
+                val filename: String
+                if (diagnostic) {
+                    contents = DiagnosticsGenerator(applicationContext).generate().toString(2)
+                    filename = "guardian-diagnostico-${
+                        SimpleDateFormat("yyyyMMdd-HHmm", Locale.US).format(Date())
+                    }.json"
+                } else {
+                    contents = ReportGenerator(applicationContext).todayJson().toString(2)
+                    filename = "guardian-dia-${
+                        SimpleDateFormat("yyyy-MM-dd", Locale.US).format(Date())
+                    }.json"
+                }
+
+                if (contents.isBlank()) throw IOException("generated_payload_empty")
+
+                runOnUiThread {
+                    updateSummary()
+                    requestSave(contents, filename)
+                }
+            } catch (t: Throwable) {
+                runCatching {
+                    GuardianDatabase(applicationContext).logTechnical(
+                        "EXPORT_PREPARE_ERROR",
+                        t::class.java.simpleName
+                    )
+                }
+                runOnUiThread {
+                    refresh(false)
+                    Toast.makeText(
+                        this,
+                        "Não foi possível preparar o JSON: ${t::class.java.simpleName}",
+                        Toast.LENGTH_LONG
+                    ).show()
+                }
             }
         }.start()
     }
 
     private fun requestSave(contents: String, filename: String) {
-        pendingExport = contents
-        val intent = Intent(Intent.ACTION_CREATE_DOCUMENT).apply {
-            addCategory(Intent.CATEGORY_OPENABLE)
-            type = "application/json"
-            putExtra(Intent.EXTRA_TITLE, filename)
+        try {
+            val pending = pendingExportFile()
+            pending.writeText(contents, Charsets.UTF_8)
+            if (!pending.exists() || pending.length() <= 0L) {
+                throw IOException("pending_export_empty")
+            }
+
+            getSharedPreferences(EXPORT_PREFS, MODE_PRIVATE).edit()
+                .putString(EXPORT_FILENAME, filename)
+                .apply()
+
+            val intent = Intent(Intent.ACTION_CREATE_DOCUMENT).apply {
+                addCategory(Intent.CATEGORY_OPENABLE)
+                type = "application/json"
+                putExtra(Intent.EXTRA_TITLE, filename)
+            }
+
+            @Suppress("DEPRECATION")
+            startActivityForResult(intent, REQUEST_EXPORT)
+        } catch (t: Throwable) {
+            clearPendingExport()
+            Toast.makeText(
+                this,
+                "Não foi possível iniciar a exportação: ${t::class.java.simpleName}",
+                Toast.LENGTH_LONG
+            ).show()
         }
-        @Suppress("DEPRECATION")
-        startActivityForResult(intent, REQUEST_EXPORT)
     }
 
     @Deprecated("Legacy Activity result API kept to avoid AndroidX dependency in the foundation build")
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
-        if (requestCode != REQUEST_EXPORT || resultCode != RESULT_OK) return
-        val uri = data?.data ?: return
-        val payload = pendingExport ?: return
+        if (requestCode != REQUEST_EXPORT) return
+
+        if (resultCode != RESULT_OK) {
+            clearPendingExport()
+            return
+        }
+
+        val uri = data?.data
+        val pending = pendingExportFile()
+        if (uri == null || !pending.exists() || pending.length() <= 0L) {
+            clearPendingExport()
+            Toast.makeText(
+                this,
+                "A exportação perdeu o arquivo temporário. Tente novamente.",
+                Toast.LENGTH_LONG
+            ).show()
+            return
+        }
+
         try {
-            contentResolver.openOutputStream(uri)?.bufferedWriter(Charsets.UTF_8).use { writer ->
-                writer?.write(payload)
+            val expectedBytes = pending.length()
+            val output = contentResolver.openOutputStream(uri, "wt")
+                ?: throw IOException("output_stream_unavailable")
+
+            pending.inputStream().use { input ->
+                output.use { out ->
+                    input.copyTo(out)
+                    out.flush()
+                }
             }
-            Toast.makeText(this, "JSON exportado.", Toast.LENGTH_SHORT).show()
-        } catch (_: Exception) {
-            Toast.makeText(this, "Não foi possível salvar o JSON.", Toast.LENGTH_LONG).show()
-        } finally {
-            pendingExport = null
+
+            val writtenBytes = runCatching {
+                contentResolver.openFileDescriptor(uri, "r")?.use { descriptor ->
+                    descriptor.statSize
+                } ?: -1L
+            }.getOrDefault(-1L)
+
+            if (writtenBytes == 0L) {
+                throw IOException("exported_file_zero_bytes")
+            }
+
+            val shownBytes = if (writtenBytes > 0L) writtenBytes else expectedBytes
+            Toast.makeText(
+                this,
+                "JSON exportado • $shownBytes bytes",
+                Toast.LENGTH_LONG
+            ).show()
+
+            runCatching {
+                GuardianDatabase(applicationContext).logTechnical(
+                    "EXPORT_OK",
+                    "bytes=$shownBytes"
+                )
+            }
+            clearPendingExport()
+        } catch (t: Throwable) {
+            runCatching {
+                GuardianDatabase(applicationContext).logTechnical(
+                    "EXPORT_WRITE_ERROR",
+                    t::class.java.simpleName
+                )
+            }
+            Toast.makeText(
+                this,
+                "Não foi possível gravar o JSON: ${t::class.java.simpleName}",
+                Toast.LENGTH_LONG
+            ).show()
         }
     }
 
-    private fun text(value: String, sizeSp: Float, bold: Boolean): TextView = TextView(this).apply {
+    private fun pendingExportFile(): File = File(cacheDir, "guardian-pending-export.json")
+
+    private fun clearPendingExport() {
+        runCatching { pendingExportFile().delete() }
+        getSharedPreferences(EXPORT_PREFS, MODE_PRIVATE).edit()
+            .remove(EXPORT_FILENAME)
+            .apply()
+    }
+
+    private fun applySystemBarInsets(view: View) {
+        view.setOnApplyWindowInsetsListener { target, insets ->
+            if (Build.VERSION.SDK_INT >= 30) {
+                val bars = insets.getInsets(WindowInsets.Type.systemBars())
+                target.setPadding(0, bars.top, 0, bars.bottom)
+            } else {
+                @Suppress("DEPRECATION")
+                target.setPadding(
+                    0,
+                    insets.systemWindowInsetTop,
+                    0,
+                    insets.systemWindowInsetBottom
+                )
+            }
+            insets
+        }
+        view.requestApplyInsets()
+    }
+
+    private fun sectionTitle(value: String): TextView =
+        text(value, 18f, true, TEXT_PRIMARY).apply {
+            setPadding(0, dp(22), 0, dp(8))
+        }
+
+    private fun card(backgroundColor: Int = CARD): LinearLayout =
+        LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(dp(16), dp(16), dp(16), dp(16))
+            background = rounded(backgroundColor, 18f)
+            layoutParams = LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT
+            ).apply { bottomMargin = dp(10) }
+        }
+
+    private fun statBlock(parent: LinearLayout, label: String): TextView {
+        val box = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            gravity = Gravity.CENTER
+            setPadding(dp(4), dp(4), dp(4), dp(4))
+        }
+        val value = text("0m", 21f, true, TEXT_PRIMARY).apply {
+            gravity = Gravity.CENTER
+        }
+        box.addView(value, matchWidth())
+        box.addView(text(label, 11f, false, TEXT_MUTED).apply {
+            gravity = Gravity.CENTER
+        }, matchWidth())
+        parent.addView(box, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
+        return value
+    }
+
+    private fun text(
+        value: String,
+        sizeSp: Float,
+        bold: Boolean,
+        color: Int
+    ): TextView = TextView(this).apply {
         text = value
         textSize = sizeSp
+        setTextColor(color)
         if (bold) setTypeface(typeface, Typeface.BOLD)
-        setTextIsSelectable(true)
     }
 
-    private fun button(label: String, action: (View) -> Unit): Button = Button(this).apply {
-        text = label
-        isAllCaps = false
-        setOnClickListener { view -> action(view) }
+    private fun primaryButton(label: String, action: (View) -> Unit): Button =
+        Button(this).apply {
+            text = label
+            isAllCaps = false
+            textSize = 14f
+            setTextColor(Color.WHITE)
+            minHeight = dp(52)
+            stateListAnimator = null
+            background = rounded(PRIMARY, 14f)
+            setOnClickListener { view -> action(view) }
+            layoutParams = matchWidth()
+        }
+
+    private fun outlineButton(label: String, action: (View) -> Unit): Button =
+        Button(this).apply {
+            text = label
+            isAllCaps = false
+            textSize = 14f
+            setTextColor(PRIMARY)
+            minHeight = dp(50)
+            stateListAnimator = null
+            background = rounded(CARD, 14f, PRIMARY, 1)
+            setOnClickListener { view -> action(view) }
+            layoutParams = matchWidth()
+        }
+
+    private fun rounded(
+        fillColor: Int,
+        radiusDp: Float,
+        strokeColor: Int? = null,
+        strokeDp: Int = 0
+    ): GradientDrawable =
+        GradientDrawable().apply {
+            shape = GradientDrawable.RECTANGLE
+            setColor(fillColor)
+            cornerRadius = dp(radiusDp.toInt()).toFloat()
+            if (strokeColor != null && strokeDp > 0) {
+                setStroke(dp(strokeDp), strokeColor)
+            }
+        }
+
+    private fun matchWidth(): LinearLayout.LayoutParams =
+        LinearLayout.LayoutParams(
+            ViewGroup.LayoutParams.MATCH_PARENT,
+            ViewGroup.LayoutParams.WRAP_CONTENT
+        )
+
+    private fun View.topMargin(valueDp: Int) {
+        val lp = (layoutParams as? LinearLayout.LayoutParams) ?: matchWidth()
+        lp.topMargin = dp(valueDp)
+        layoutParams = lp
     }
 
-    private fun dp(value: Int): Int = (value * resources.displayMetrics.density).toInt()
+    private fun dp(value: Int): Int =
+        (value * resources.displayMetrics.density).toInt()
 
     companion object {
         private const val REQUEST_EXPORT = 9001
+        private const val EXPORT_PREFS = "guardian_export"
+        private const val EXPORT_FILENAME = "pending_filename"
+
+        private val BACKGROUND = Color.rgb(245, 248, 251)
+        private val CARD = Color.WHITE
+        private val TEXT_PRIMARY = Color.rgb(24, 33, 43)
+        private val TEXT_MUTED = Color.rgb(99, 115, 129)
+        private val PRIMARY = Color.rgb(18, 111, 137)
+        private val DIVIDER = Color.rgb(229, 234, 239)
+        private val WARNING_BG = Color.rgb(255, 247, 232)
+        private val WARNING_TEXT = Color.rgb(112, 75, 16)
     }
 }

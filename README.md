@@ -1,11 +1,11 @@
-# Guardian DEV — Android 0.1.0
+# Guardian DEV — Android 0.1.1
 
-Codinome temporário do futuro produto BigCorps hoje chamado de **iGuardian.me / Guardian**. Nome, logo e domínio definitivos ainda não estão congelados.
+Codinome temporário do futuro produto BigCorps hoje chamado de **iGuardian / Guardian**. Nome, logo e domínio definitivos ainda não estão congelados.
 
 ## PROJECT STATUS
 
-- **Current version:** Android 0.1.0
-- **Current phase:** Phase 1 — Android Foundation
+- **Current version:** Android 0.1.1
+- **Current phase:** Phase 1 — Android Foundation / first real-device runtime fixes
 - **Build model:** GitHub + GitHub Actions
 - **Backend:** none
 - **Cloud:** none
@@ -13,137 +13,107 @@ Codinome temporário do futuro produto BigCorps hoje chamado de **iGuardian.me /
 - **External AI API:** none
 - **Internet permission:** intentionally absent
 - **Primary package (DEV):** `com.bigcorps.guardian.dev`
-- **CI status:** first SDK setup issue fixed; second run reached Kotlin compilation. Build Fix 02 corrects the Kotlin escape error in `GuardianDatabase.kt`.
+- **CI:** run #3 compiled and generated the first installable APK successfully.
 
-### Implemented in 0.1.0
+## Implemented
 
-- Android native project in Kotlin using Android framework APIs only.
-- Usage Access onboarding and permission check.
-- Tracking baseline starts from the user's authorization flow; no silent pre-consent 24-hour backfill.
-- Local UsageStats event collector.
-- Local SQLite timeline database.
-- Periodic best-effort collection with JobScheduler.
+- Native Kotlin Android app using framework APIs only.
+- UsageStats-based usage collector.
+- SQLite local timeline.
+- Daily local JSON reports.
 - Privacy Engine before storage.
-- `PRIVATE` intervals for protected contexts.
-- User-switch signal support through `ACTION_USER_BACKGROUND` / `ACTION_USER_FOREGROUND` while the process is alive.
-- Screen non-interactive intervals as `SCREEN_OFF` (UsageStats on API 28+, runtime best-effort fallback on API 26–27).
-- Automatic local daily JSON reports under the app's private `reports/YYYY/MM/YYYY-MM-DD.json` storage.
-- Manual daily JSON export through Android's document picker.
+- Generic `PRIVATE` for protected apps, Android Settings and other-user context.
+- `SCREEN_OFF` intervals.
+- Reserved distinct `ANONYMOUS_BROWSER` schema type without fake detection.
+- Manual private-app review.
 - Local support diagnostic JSON.
-- Manual selection of additional private apps from launchable apps.
-- Device/runtime diagnostics.
-- GitHub Actions workflow producing a debug APK artifact.
-- Automated privacy invariant check in CI.
+- GitHub Actions APK generation.
+- Privacy invariant checks in CI.
+- OEM/support diagnostic fields.
+- Android 15/16 edge-to-edge safe-area handling.
+- Redesigned responsive local-first UI.
+- Explicit sideload/restricted-settings onboarding for Android 13+ DEV APKs.
+- Robust JSON export through a cache-backed pending file so Activity recreation/document picker cannot produce an empty 0 KB file.
+- Export write validation and technical export error logging.
 
-### Explicitly NOT implemented yet
+## Runtime findings from first physical-device test
 
-- Supabase, Vercel or any server.
-- Accounts/login.
-- Payments.
-- Remote monitoring.
-- Automatic device-to-device sharing.
-- OpenAI or other external AI APIs.
-- On-device LLM.
-- Accessibility Service.
-- VPN traffic inspection.
-- Screen capture, screenshots or video recording.
-- Keyboard/input capture.
-- Notification/message contents.
-- Full browser URLs.
-- Browser domains on Android.
-- Reliable Android incognito/private-tab detection.
-- `QUERY_ALL_PACKAGES`.
+### 1. Restricted settings block
+The test APK was sideloaded. Android 13+ can block sensitive/special settings for manually installed apps.
+
+Guardian 0.1.1 now explains this in-app and provides a direct button to App Info. The test flow is:
+
+1. Tap **Liberar configuração restrita**.
+2. In App Info, tap **⋮**.
+3. Tap **Permitir configurações restritas**.
+4. Return to Guardian.
+5. Tap **Conceder acesso de uso**.
+
+The ordinary **Permissões do app** screen may still show no granted permissions. That is expected: Usage Access is a special access, not a normal runtime permission.
+
+### 2. 0 KB diagnostic JSON
+The original exporter stored the JSON only in an Activity field while Android's document picker was open. That state can be lost if the Activity is recreated, leaving the already-created destination document empty.
+
+0.1.1 writes the generated payload to an app-private cache file before opening the picker. On return it copies that file to the selected destination, flushes it, validates that the result is not zero bytes, and logs export failures locally.
+
+### 3. Visual layout
+The first functional build intentionally used raw framework widgets. 0.1.1 adds:
+- cards and visual hierarchy;
+- compact status area;
+- clear two-step permission flow;
+- compact daily statistics;
+- safe-area handling for modern edge-to-edge Android;
+- consistent private-app selector;
+- non-default primary and outline buttons.
 
 ## Locked product principles
 
 1. **Local first.** User history stays on the device unless the user manually exports it.
-2. **Privacy Engine precedes storage.** Protected data must be discarded/sanitized before SQLite/JSON, never cleaned afterward.
-3. **No content capture.** The app records metadata/time, not screen content, typed text, passwords, messages or notification contents.
-4. **One generic `PRIVATE` state.** Banks, system Settings and another Android user/profile are not differentiated in stored data.
-5. **`ANONYMOUS_BROWSER` is distinct from `PRIVATE`.** It has its own schema type, but Android 0.1.0 does not claim to detect it automatically because UsageStats does not provide a reliable incognito signal.
-6. **Browser data, when added later, stores only the registrable/main domain**, never full URLs, paths, queries or tokens.
-7. **No fake telemetry.** If Android cannot prove an event, Guardian does not infer it as fact.
-8. **Support diagnostics remain privacy-safe.** Diagnostics expose health/capability/error information, not private app names or private reasons.
+2. **Privacy Engine precedes storage.**
+3. **No content capture.**
+4. **One generic `PRIVATE` state** for protected contexts.
+5. **`ANONYMOUS_BROWSER` remains distinct from `PRIVATE`**, but is not fabricated when Android cannot prove it.
+6. **Future browser data stores main/registrable domain only**, never full URL.
+7. **No fake telemetry.**
+8. **Support diagnostics remain privacy-safe.**
 
-## How data flows
+## Explicitly NOT implemented yet
 
-```text
-Android UsageStats / system signals
-            |
-            v
-       Privacy Engine
-            |
-       +----+------------------+
-       |                       |
-    PRIVATE?                 NORMAL
-       |                       |
-strip identifying          app metadata
-fields BEFORE DB              |
-       +-----------+-----------+
-                   v
-               SQLite
-                   |
-          daily aggregation
-                   |
-          local JSON report
-```
+- Supabase/Vercel/server.
+- Login/accounts.
+- Payments.
+- Device-to-device sharing.
+- External AI API.
+- On-device LLM.
+- Accessibility Service.
+- VPN inspection.
+- Screen/video capture.
+- Keyboard capture.
+- Notification/message contents.
+- Browser domains.
+- Reliable Android incognito detection.
+- `QUERY_ALL_PACKAGES`.
 
-## Build using GitHub Actions
+## Next test
 
-1. Upload this folder to a GitHub repository.
-2. Use `main` as the branch.
-3. Open **Actions > Android APK > Run workflow** (or push to `main`).
-4. The workflow installs Java 17, Android API 36 and Gradle 9.6, runs tests, verifies privacy invariants and builds the APK.
-5. Download the `guardian-android-0.1.0-debug` artifact.
+Install the 0.1.1 APK generated by Actions and verify:
 
-The workflow uses Android Gradle Plugin 9.4.0, Gradle 9.6.0 and JDK 17.
+1. Restricted-settings guidance opens App Info correctly.
+2. After **Permitir configurações restritas**, Usage Access can be enabled.
+3. Guardian shows **Acesso de uso autorizado**.
+4. Use normal apps, Settings, screen lock/unlock and another user/profile if available.
+5. Tap **Atualizar dados locais**.
+6. Export the daily JSON and diagnostic JSON.
+7. Confirm both exported files are larger than 0 bytes.
+8. Send the diagnostic JSON back for analysis if any data is missing or incorrect.
 
-### CI fixes already applied
+## Next planned milestone
 
-- Build Fix 01: stopped requesting the obsolete Android SDK package `tools`; the SDK setup now completes successfully.
-- Build Fix 02: corrected an invalid Kotlin string escape in `GuardianDatabase.kt` (`\-` inside a regular Kotlin string). The regex now uses a literal hyphen at the end of the character class.
-
-## First real-device test
-
-1. Install the debug APK.
-2. Open Guardian.
-3. Open **Escolher apps privados**, review the installed launchable apps and tap **Concluir revisão de privacidade**.
-4. Tap **Conceder acesso de uso** and authorize Guardian in Android's Usage Access screen.
-5. Use a few normal apps.
-6. Open Android Settings for a while.
-7. Lock/unlock the screen.
-8. If the device supports multiple users, switch away and return.
-9. Return to Guardian and tap **Atualizar agora**.
-10. Export **JSON do dia** and **JSON de diagnóstico**.
-
-Expected behavior:
-
-- normal apps may appear by app/package and duration;
-- Settings must become only `PRIVATE` time and must not be stored by name;
-- a detected user-switch interval must also become only `PRIVATE`;
-- screen-off time must be separate;
-- diagnostic JSON must not disclose why a `PRIVATE` interval happened;
-- incognito browser time is **not automatically detectable in this release** and therefore must never be fabricated.
-
-## Support JSON
-
-The support export is intentionally separate from the user's daily activity report. It contains build/device/API/permission/collector/database/capability information, sanitized technical events, and a 24-hour processed activity snapshot so BigCorps can diagnose timing/OEM issues. Normal APP names/packages may therefore appear when the user explicitly exports this support file; PRIVATE intervals still contain no app, reason or content. Nothing is sent automatically.
-
-## Compatibility strategy
-
-Physical testing on every Android model is not a release gate. Guardian targets broad compatibility through official Android APIs, API-level guards, graceful fallbacks and sanitized support diagnostics. Available real devices are tested before release; device-specific problems discovered later are handled through BigCorps support and subsequent compatibility fixes.
-
-## Next planned milestone — 0.2.0
-
-- Improve first-run onboarding and explanations.
-- Improve app-name resolution and private-app picker UX.
-- Daily/weekly local summaries.
-- More robust interval merging and reboot/day-boundary handling.
-- Local question engine for deterministic questions such as top app, screen time, app comparison and trends.
-- Expand diagnostics for OEM background restrictions without collecting private data.
+After the permission/export path is proven on the available physical device(s):
+- validate timeline accuracy;
+- improve interval merging and reboot/day boundaries;
+- expand OEM compatibility diagnostics;
+- add daily/weekly local summaries;
+- begin deterministic local question engine.
 
 See `PROJECT_STATE.json`, `ROADMAP.md`, `PRIVACY_MODEL.md` and `DATA_SCHEMA.md` before changing architecture.
-
-### Password/login limitation in 0.1.0
-
-Guardian deliberately does not inspect UI fields, Accessibility trees or keyboard input, so it cannot reliably detect that an arbitrary normal app has just opened a password/login form. The safe MVP rule is to protect the entire app through the private-app list. Browser login pages are likewise not detectable until a separate future browser-domain design is validated.

@@ -1,19 +1,23 @@
 {
   "project_codename": "Guardian",
   "product_name_final": false,
-  "version": "0.1.0",
+  "version": "0.1.1",
   "platform": "android",
   "phase": 1,
-  "phase_name": "Android Foundation",
+  "phase_name": "Android Foundation - first physical device runtime fixes",
   "schema_version": 1,
-  "repository_expected": "separate Guardian repository",
+  "repository": "BigCorps/iGuardian",
   "backend": "none",
   "internet_permission": false,
-  "ci_status": "Build Fix 02 prepared after run #2 reached Kotlin compilation and failed on an invalid escape sequence in GuardianDatabase.kt.",
+  "ci_status": "GitHub Actions run #3 succeeded and generated the first installable APK.",
+  "physical_test_findings": [
+    "Android 13+ sideload restricted-settings block prevented Usage Access on the first test device",
+    "support diagnostic export produced a zero-byte destination file",
+    "foundation UI needed visual hierarchy and Android edge-to-edge safe-area handling"
+  ],
   "completed": [
     "native Kotlin Android project",
-    "GitHub Actions APK build workflow",
-    "Android SDK setup validated in GitHub Actions",
+    "successful GitHub Actions APK build",
     "UsageStats collector",
     "SQLite local timeline",
     "privacy-before-storage sanitizer",
@@ -26,16 +30,26 @@
     "support diagnostic JSON export",
     "periodic JobScheduler collection",
     "best-effort Android user-switch private interval signal",
-    "privacy CI verification"
+    "privacy CI verification",
+    "restricted-settings DEV onboarding",
+    "cache-backed robust document export",
+    "zero-byte export validation",
+    "modern system-bar safe-area handling",
+    "main screen visual redesign",
+    "private-app screen visual redesign"
   ],
   "known_platform_limits": [
     "Android UsageStats cannot reliably identify incognito/private browser tabs",
-    "Android v0.1.0 cannot provide visited domains without adding a separate browser/network integration",
+    "Android v0.1.1 cannot provide visited domains without separate browser/network integration",
     "user-switch broadcasts are runtime registered and exact capture is best-effort if the process is killed",
-    "OEM background scheduling behavior varies"
+    "OEM background scheduling behavior varies",
+    "sideloaded Android 13+ test APKs can require the user to manually allow restricted settings"
   ],
   "pending": [
-    "confirm full APK compile after Build Fix 02",
+    "confirm Usage Access works after restricted-settings flow on physical device",
+    "confirm both exported JSON files are non-empty",
+    "inspect first real diagnostic JSON",
+    "validate timeline accuracy",
     "expanded OEM compatibility handling",
     "local deterministic question engine",
     "local trend analysis",
@@ -45,7 +59,7 @@
     "landing/privacy/support web pages before store submission",
     "future premium login/payments/device sharing/external AI after initial approvals"
   ],
-  "next_task": "Replace GuardianDatabase.kt with Build Fix 02, update README/CHANGELOG/PROJECT_STATE, commit to main, then inspect the next GitHub Actions run.",
+  "next_task": "Build Android 0.1.1 in GitHub Actions, install it, allow restricted settings if required, grant Usage Access, exercise normal/private/screen-off scenarios, then export and inspect both JSON files.",
   "do_not_implement_without_explicit_decision": [
     "cloud history",
     "remote monitoring",
