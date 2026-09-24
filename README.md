@@ -1,109 +1,104 @@
-# Guardian DEV — Android 0.1.3
+# Guardian DEV — Android 0.1.4
+
+Codinome temporário do futuro produto BigCorps atualmente chamado de **iGuardian / Guardian**.
 
 ## PROJECT STATUS
 
-- **Current version:** Android 0.1.3
-- **Current phase:** Android Foundation / privacy correction from first real diagnostic
+- **Current version:** Android 0.1.4
+- **Current phase:** Android Foundation / stability + fixed DEV signing
 - **Repository:** `BigCorps/iGuardian`
 - **Backend / cloud / login / external AI:** none
 - **Internet permission:** intentionally absent
 - **DEV package:** `com.bigcorps.guardian.dev`
+- **Daily JSON schema:** v2
+- **Diagnostic schema:** v2
 
-## What the first real diagnostic proved
+## O que o teste prolongado do 0.1.3 comprovou
 
-The 0.1.2 export path is working: real JSON files were successfully exported and shared.
+O teste real no Xiaomi/Redmi Android 16 manteve coleta consistente por mais de duas horas após o início do tracking.
 
-It also revealed a critical classifier problem:
-- Nubank package `com.nu.production` was stored as APP.
-- InfinitePay package `io.cloudwalk.infinitepaydash` was stored as APP.
-- `PRIVATE` count was zero.
+Comprovado:
+- Usage Access;
+- uso por app;
+- PRIVATE sanitizado;
+- SCREEN_OFF;
+- desbloqueios;
+- SQLite;
+- JSON diário;
+- exportação verificada;
+- ausência de Internet.
 
-This violated the intended privacy model even though no content, password or screen data was captured.
+Foram encontrados dois pontos a melhorar:
+1. Launcher/IntentResolver estavam poluindo o ranking de apps.
+2. O JobScheduler foi aceito inicialmente, mas mais tarde deixou de aparecer como pendente.
 
-## 0.1.3 privacy correction
+## 0.1.4
 
-The automatic privacy classifier now evaluates:
-1. exact known sensitive packages;
-2. package-name tokens;
-3. the app's visible label, resolved only in memory.
+### Assinatura DEV fixa
 
-For a PRIVATE app, label and package are not written to SQLite.
+GitHub Actions passa a assinar todos os APKs DEV com a mesma chave privada guardada apenas em Actions Secrets.
 
-The first confirmed false negatives are explicitly covered:
-- `com.nu.production`
-- `io.cloudwalk.infinitepaydash`
+**0.1.4 exige uma última desinstalação**, porque 0.1.3 foi assinado com chave de debug efêmera do runner. Depois que 0.1.4 estiver instalado, 0.1.5+ deve atualizar por cima preservando SQLite, preferências e histórico.
 
-The visible labels `Nubank` and `InfinitePay` are also recognized, which makes the classifier more robust when package names do not reveal that an app is financial.
+A chave privada NÃO fica neste repositório. Veja `SIGNING_DEV.md` e o pacote separado KEEP-PRIVATE.
 
-### Existing local history repair
+### Segundos exatos
 
-On first launch of classifier v2:
-- Guardian scans existing APP rows locally;
-- rows now recognized as sensitive are converted to `PRIVATE`;
-- package and label are erased from those rows;
-- generated local report JSON files are deleted and today's report is regenerated from the repaired SQLite data;
-- the migration version is stored so it runs only once.
+JSON v2 mantém segundos como valor autoritativo. A UI mostra `6s`, e não `0m`, quando o período tem menos de um minuto.
 
-This is necessary because privacy must be corrected at rest, not only for future events.
+### SYSTEM separado
 
-## Scheduler finding
+Launcher, IntentResolver, System UI e permission controller viram `SYSTEM`, sem package/label armazenado.
 
-The first diagnostic also reported `periodic_job_scheduled = false`.
+O launcher HOME é detectado dinamicamente para não depender de Xiaomi/Samsung/etc.
 
-0.1.3 changes scheduling to:
-- retry each time the Guardian process starts;
-- capture JobScheduler result and whether the job actually became pending;
-- write a sanitized `JOB_SCHEDULE` technical event for the next diagnostic.
+### Cobertura do tracking
 
-This will tell us whether the Xiaomi/Android 16 device accepts the periodic job or whether an OEM-specific fallback is needed.
+JSON v2 adiciona:
+- tracking start;
+- effective period start;
+- recorded seconds;
+- unclassified seconds;
+- coverage percent.
 
-## Still to validate
+Assim uma IA não interpreta o período anterior à ativação como “tempo sem uso”.
 
-The first data sample was only a few minutes long and did not produce:
-- SCREEN_OFF intervals;
-- unlock events;
-- user-switch PRIVATE intervals.
+### Background instrumentado
 
-Do not conclude yet that those features are broken. They need a deliberate test after 0.1.3 is installed.
+O DEV usa cadência de 30 minutos para validar rapidamente:
+- schedule attempts;
+- recovery count;
+- job starts;
+- job finishes;
+- job stops;
+- last scheduler check.
 
-## Locked principles
+O job é rechecado no início do processo, resume da Activity, boot, package replacement e user unlock.
 
-- Privacy Engine before storage.
-- Protected app identity never stored.
-- One generic `PRIVATE` state for protected contexts.
-- No screenshots/video.
-- No keyboard/input capture.
-- No notification/message content.
-- No INTERNET permission in the local-only MVP.
-- `ANONYMOUS_BROWSER` is distinct but never fabricated.
-- Future browser data stores only main/registrable domain, never full URL.
+## Antes de subir 0.1.4
 
-## 0.1.3 test sequence
+Cadastre os quatro GitHub Actions Secrets do pacote KEEP-PRIVATE:
 
-1. Install/update to 0.1.3.
-2. Open **Revisar apps privados**.
-3. Confirm Nubank and InfinitePay show **Protegido automaticamente**.
-4. Open a normal app for ~30 seconds.
-5. Open Nubank for ~15 seconds.
-6. Open InfinitePay for ~15 seconds.
-7. Open Android Settings for ~15 seconds.
-8. Lock the screen for ~20 seconds.
-9. Unlock and use another normal app.
-10. Return to Guardian and tap **Atualizar dados locais**.
-11. Export both JSONs and share them back.
+- `GUARDIAN_DEV_KEYSTORE_BASE64`
+- `GUARDIAN_DEV_STORE_PASSWORD`
+- `GUARDIAN_DEV_KEY_ALIAS`
+- `GUARDIAN_DEV_KEY_PASSWORD`
 
-Expected:
-- Nubank and InfinitePay must NOT appear by package/name anywhere in the new report.
-- Their intervals must contribute only to PRIVATE.
-- Settings must contribute only to PRIVATE.
-- exported diagnostic should show privacy classifier version 2 and repair version 2.
-- scheduler status/technical event should tell us whether periodic background collection is accepted.
-- screen-off/unlock should now be evaluable from the deliberate test.
+Se faltar qualquer secret, o Actions falha de propósito em vez de gerar outro APK incompatível.
 
-## Next milestone
+## Teste 0.1.4
 
-Only after this privacy test passes:
-- refine transient system surfaces;
-- improve screen/off and reboot/day-boundary handling if needed;
-- daily/weekly local summaries;
-- deterministic local question engine.
+1. Guarde os JSONs do 0.1.3 que quiser.
+2. Desinstale 0.1.3 uma última vez.
+3. Instale o APK fixed-signed 0.1.4.
+4. Reative restricted settings/Usage Access se necessário.
+5. Use normalmente por 1–2 horas.
+6. Nos primeiros ~40 min, evite abrir o Guardian repetidamente para dar chance ao job de fundo.
+7. Depois abra e exporte JSON diário + diagnóstico.
+
+Esperado:
+- Launcher e IntentResolver não aparecem como APP.
+- `SYSTEM` aparece no lugar.
+- PRIVATE curto aparece em segundos.
+- `scheduler.job_run_count` informa se o background realmente executou.
+- a próxima 0.1.5 deverá instalar por cima sem desinstalar.

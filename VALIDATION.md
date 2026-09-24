@@ -1,22 +1,22 @@
-# Validation — Android 0.1.0
+# Validation — Android 0.1.4
 
-Validation performed before packaging on 2026-09-24.
+## Evidence from longer 0.1.3 real-device run
 
-## Passed locally
+Xiaomi/Redmi Android 16 showed:
+- Usage Access active;
+- 130 APP intervals by diagnostic time;
+- 14 SCREEN_OFF intervals;
+- 13 unlocks;
+- verified JSON export;
+- privacy classifier v2;
+- scheduler accepted initially but later not pending.
 
-- XML parsing: AndroidManifest + resources.
-- YAML parsing: GitHub Actions workflow.
-- `PROJECT_STATE.json` parsing.
-- Pure Kotlin compilation for privacy model / storage sanitizer sources.
-- CI privacy-invariant script.
-- Confirmed Manifest does not declare `android.permission.INTERNET`.
-- Confirmed Manifest does not declare `android.permission.QUERY_ALL_PACKAGES`.
-- Confirmed no AccessibilityService declaration.
-- Confirmed handoff docs are present.
-- Confirmed `PRIVATE`, `SCREEN_OFF` and `ANONYMOUS_BROWSER` storage sanitizer removes package/app identity for non-APP intervals.
+The run covered about 98% of the period after tracking actually began.
 
-## Build validation path
+## 0.1.4 acceptance
 
-The packaging environment used to create this ZIP does not include an Android SDK, so the full Android Gradle compile cannot be truthfully claimed here. The repository includes a GitHub Actions workflow that installs Android API 36 + Build Tools 36.0.0 + Gradle 9.6.0, runs unit tests and builds `app-debug.apk`. That workflow is the first definitive Android compiler/build validation after upload to GitHub.
+GitHub Actions must compile/test and verify DEV certificate SHA-256:
 
-If GitHub Actions reports a compiler/OEM issue, keep the log and update this document, `CHANGELOG.md` and `PROJECT_STATE.json` in the next ZIP.
+`4a40d0075db9691b16814e40d7db589fdfea59a046a006c1a4db07c8901b8986`
+
+If the APK is signed by any other certificate, CI fails.

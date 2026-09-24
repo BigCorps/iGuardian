@@ -1,11 +1,6 @@
 package com.bigcorps.guardian.core
 
-enum class IntervalType {
-    APP,
-    PRIVATE,
-    SCREEN_OFF,
-    ANONYMOUS_BROWSER
-}
+enum class IntervalType { APP, PRIVATE, SCREEN_OFF, SYSTEM, ANONYMOUS_BROWSER }
 
 data class TimelineInterval(
     val id: Long = 0,
@@ -23,17 +18,13 @@ data class OpenState(
     val appLabel: String? = null
 )
 
-data class SanitizedIdentity(
-    val packageName: String?,
-    val appLabel: String?
-)
+data class SanitizedIdentity(val packageName: String?, val appLabel: String?)
 
 object StorageSanitizer {
-    fun identityFor(type: IntervalType, packageName: String?, appLabel: String?): SanitizedIdentity {
-        return if (type == IntervalType.APP) {
+    fun identityFor(type: IntervalType, packageName: String?, appLabel: String?): SanitizedIdentity =
+        if (type == IntervalType.APP) {
             SanitizedIdentity(packageName?.takeIf { it.isNotBlank() }, appLabel?.takeIf { it.isNotBlank() })
         } else {
             SanitizedIdentity(null, null)
         }
-    }
 }

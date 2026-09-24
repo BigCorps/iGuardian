@@ -4,7 +4,6 @@ import re
 import sys
 
 root = Path(__file__).resolve().parents[1]
-
 manifest_path = root / "app/src/main/AndroidManifest.xml"
 state_path = root / "PROJECT_STATE.json"
 app_gradle_path = root / "app/build.gradle.kts"
@@ -22,11 +21,11 @@ required_docs = [
     "CHANGELOG.md",
     "VALIDATION.md",
     "PROJECT_STATE.json",
+    "SIGNING_DEV.md",
 ]
 
 errors = []
 
-# Privacy invariants: these remain intentionally strict.
 if "android.permission.INTERNET" in manifest:
     errors.append("MVP must not declare INTERNET permission")
 if "android.permission.QUERY_ALL_PACKAGES" in manifest:
@@ -49,8 +48,6 @@ for forbidden in [
     if forbidden in source:
         errors.append(f"Forbidden MVP API found in source: {forbidden}")
 
-# Do not hard-code a single release number here.
-# The handoff state must simply agree with the Android build configuration.
 version_match = re.search(r'versionName\s*=\s*"([^"]+)"', app_gradle)
 code_match = re.search(r'versionCode\s*=\s*(\d+)', app_gradle)
 
@@ -72,6 +69,11 @@ for name in required_docs:
     if not (root / name).exists():
         errors.append(f"Missing required project handoff file: {name}")
 
+secret_suffixes = {".jks", ".keystore", ".p12", ".pfx"}
+for path in root.rglob("*"):
+    if path.is_file() and path.suffix.lower() in secret_suffixes:
+        errors.append(f"Signing key material must not be committed: {path.relative_to(root)}")
+
 if errors:
     print("Privacy/project verification FAILED:")
     for error in errors:
@@ -82,6 +84,7 @@ print("Privacy/project verification OK")
 print("- no INTERNET permission")
 print("- no QUERY_ALL_PACKAGES")
 print("- no AccessibilityService")
+print("- no signing private key committed")
 print("- handoff documentation present")
 if version_match:
     print(f"- PROJECT_STATE/app version synchronized: {version_match.group(1)}")
