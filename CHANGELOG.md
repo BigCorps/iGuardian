@@ -1,26 +1,20 @@
 # Changelog
 
-## 0.1.4 — 2026-09-24
-- fixed DEV signing through GitHub Actions Secrets;
-- CI certificate verification;
-- repository keystore guard;
-- SYSTEM interval and dynamic HOME launcher detection;
-- exact second-level summary;
-- tracking coverage metadata;
-- scheduler state diagnostics;
-- 30-minute DEV background validation cadence;
-- boot/package-replaced/user-unlocked rescheduling;
-- schemas bumped to v2;
-- versionCode 5.
+## 0.1.5 — 2026-09-24
 
-## 0.1.3
-Privacy classifier v2, sensitive app repair, scheduler instrumentation.
-
-## 0.1.2
-Verified Downloads JSON export.
-
-## 0.1.1
-Restricted-settings guidance and UI redesign.
-
-## 0.1.0
-Initial foundation.
+- First in-place update validation build after fixed DEV signing.
+- Serialized UsageStats collection process-wide.
+- Removed manual periodic-job re-schedule after each JobService run.
+- Removed scheduler replacement on every Activity resume.
+- Added scheduler logic version 2 with fresh diagnostics counters.
+- User/profile switch now creates a hard privacy boundary and skips UsageStats replay from the private interval.
+- Added deterministic non-overlapping timeline resolution.
+- PRIVATE takes precedence over SCREEN_OFF/SYSTEM/APP.
+- Unknown timeline gaps are no longer silently bridged.
+- DB schema bumped to v3.
+- DB upgrade removes exact duplicate intervals and duplicate unlock timestamps from 0.1.4.
+- Unlock summary counts distinct UsageStats timestamps.
+- Expanded SYSTEM classifier for Play Services/package installers/Xiaomi system security components.
+- Fixed main-screen content scrolling under system bars.
+- Added TimelineNormalizer unit tests.
+- versionCode 6 / versionName 0.1.5.

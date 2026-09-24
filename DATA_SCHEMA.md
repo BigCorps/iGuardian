@@ -1,46 +1,32 @@
-# Data Schema — v2
+# Data Schema — v2 / DB v3
 
-## SQLite
+Timeline types:
+- APP
+- PRIVATE
+- SCREEN_OFF
+- SYSTEM
+- ANONYMOUS_BROWSER
 
-`intervals.type`:
-`APP | PRIVATE | SCREEN_OFF | SYSTEM | ANONYMOUS_BROWSER`
+Only APP may persist package/name.
 
-Somente `APP` pode armazenar `package_name` e `app_label`.
+## Export timeline precedence
 
-`PRIVATE`, `SCREEN_OFF`, `SYSTEM` e `ANONYMOUS_BROWSER` devem persistir identidade nula.
+When raw technical intervals overlap, exported reports resolve them deterministically:
 
-## Daily JSON v2
+1. PRIVATE
+2. ANONYMOUS_BROWSER
+3. SCREEN_OFF
+4. SYSTEM
+5. APP
 
-Seconds are authoritative:
+An exported millisecond belongs to only one category.
 
-```json
-{
-  "tracking": {
-    "tracking_started_at": "...",
-    "effective_period_start": "...",
-    "effective_period_seconds": 8000,
-    "recorded_seconds": 7870,
-    "unclassified_seconds": 130,
-    "coverage_percent": 98.4
-  },
-  "summary": {
-    "app_usage_seconds": 2610,
-    "app_usage_minutes": 43,
-    "screen_off_seconds": 5224,
-    "screen_off_minutes": 87,
-    "private_seconds": 6,
-    "private_minutes": 0,
-    "system_seconds": 176,
-    "system_minutes": 2,
-    "anonymous_browser_seconds": null,
-    "anonymous_browser_minutes": null,
-    "unlock_count": 13
-  }
-}
-```
+Unknown gaps stay unknown; adjacent entries are merged only when they truly touch.
 
-`SYSTEM` representa navegação técnica do Android sem identidade exportada.
+## DB v3 migration
 
-## Future browser rule
+The upgrade from DB v2 to v3 removes:
+- exact duplicate interval rows;
+- duplicate UNLOCK technical rows sharing the same UsageStats timestamp.
 
-Quando houver suporte, guardar apenas domínio principal/registrável. Nunca URL completa, path, query, fragment, título, formulário ou token.
+This repairs artifacts created when 0.1.4 manual/background collectors ran concurrently.

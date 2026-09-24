@@ -9,21 +9,40 @@ class SystemSurfaceClassifier(private val context: Context) {
         "com.android.systemui",
         "com.android.intentresolver",
         "com.android.permissioncontroller",
-        "com.google.android.permissioncontroller"
+        "com.google.android.permissioncontroller",
+        "com.android.packageinstaller",
+        "com.google.android.packageinstaller",
+        "com.google.android.gms",
+        "com.miui.securitycenter",
+        "com.miui.securitycore"
     )
 
     private val homePackages: Set<String> by lazy {
-        val intent = Intent(Intent.ACTION_MAIN).apply { addCategory(Intent.CATEGORY_HOME) }
-        val pm = context.packageManager
-        val resolved = if (android.os.Build.VERSION.SDK_INT >= 33) {
-            pm.queryIntentActivities(intent, PackageManager.ResolveInfoFlags.of(PackageManager.MATCH_DEFAULT_ONLY.toLong()))
-        } else {
-            @Suppress("DEPRECATION")
-            pm.queryIntentActivities(intent, PackageManager.MATCH_DEFAULT_ONLY)
+        val intent = Intent(Intent.ACTION_MAIN).apply {
+            addCategory(Intent.CATEGORY_HOME)
         }
+
+        val pm = context.packageManager
+        val resolved =
+            if (android.os.Build.VERSION.SDK_INT >= 33) {
+                pm.queryIntentActivities(
+                    intent,
+                    PackageManager.ResolveInfoFlags.of(
+                        PackageManager.MATCH_DEFAULT_ONLY.toLong()
+                    )
+                )
+            } else {
+                @Suppress("DEPRECATION")
+                pm.queryIntentActivities(
+                    intent,
+                    PackageManager.MATCH_DEFAULT_ONLY
+                )
+            }
+
         resolved.mapNotNull { it.activityInfo?.packageName }.toSet()
     }
 
     fun isSystemSurface(packageName: String): Boolean =
-        packageName in exactSystemPackages || packageName in homePackages
+        packageName in exactSystemPackages ||
+            packageName in homePackages
 }

@@ -1,104 +1,101 @@
-# Guardian DEV — Android 0.1.4
+# Guardian DEV — Android 0.1.5
 
-Codinome temporário do futuro produto BigCorps atualmente chamado de **iGuardian / Guardian**.
+## Status
 
-## PROJECT STATUS
+0.1.5 is the first deliberate **in-place update test** over the fixed-signed 0.1.4.
 
-- **Current version:** Android 0.1.4
-- **Current phase:** Android Foundation / stability + fixed DEV signing
-- **Repository:** `BigCorps/iGuardian`
-- **Backend / cloud / login / external AI:** none
-- **Internet permission:** intentionally absent
-- **DEV package:** `com.bigcorps.guardian.dev`
-- **Daily JSON schema:** v2
-- **Diagnostic schema:** v2
+Do NOT uninstall 0.1.4 before installing 0.1.5.
 
-## O que o teste prolongado do 0.1.3 comprovou
-
-O teste real no Xiaomi/Redmi Android 16 manteve coleta consistente por mais de duas horas após o início do tracking.
-
-Comprovado:
-- Usage Access;
-- uso por app;
-- PRIVATE sanitizado;
-- SCREEN_OFF;
-- desbloqueios;
-- SQLite;
-- JSON diário;
-- exportação verificada;
-- ausência de Internet.
-
-Foram encontrados dois pontos a melhorar:
-1. Launcher/IntentResolver estavam poluindo o ranking de apps.
-2. O JobScheduler foi aceito inicialmente, mas mais tarde deixou de aparecer como pendente.
-
-## 0.1.4
-
-### Assinatura DEV fixa
-
-GitHub Actions passa a assinar todos os APKs DEV com a mesma chave privada guardada apenas em Actions Secrets.
-
-**0.1.4 exige uma última desinstalação**, porque 0.1.3 foi assinado com chave de debug efêmera do runner. Depois que 0.1.4 estiver instalado, 0.1.5+ deve atualizar por cima preservando SQLite, preferências e histórico.
-
-A chave privada NÃO fica neste repositório. Veja `SIGNING_DEV.md` e o pacote separado KEEP-PRIVATE.
-
-### Segundos exatos
-
-JSON v2 mantém segundos como valor autoritativo. A UI mostra `6s`, e não `0m`, quando o período tem menos de um minuto.
-
-### SYSTEM separado
-
-Launcher, IntentResolver, System UI e permission controller viram `SYSTEM`, sem package/label armazenado.
-
-O launcher HOME é detectado dinamicamente para não depender de Xiaomi/Samsung/etc.
-
-### Cobertura do tracking
-
-JSON v2 adiciona:
+Expected preserved data:
+- local device name;
+- Usage Access authorization;
+- privacy review/preferences;
+- SQLite history;
 - tracking start;
-- effective period start;
-- recorded seconds;
-- unclassified seconds;
-- coverage percent.
+- daily reports.
 
-Assim uma IA não interpreta o período anterior à ativação como “tempo sem uso”.
+## Findings from the 0.1.4 physical test
 
-### Background instrumentado
+The 0.1.4 test proved:
+- fixed-signed APK installed and runs;
+- Usage Access active;
+- JSON v2 export works;
+- system surfaces separated from user app ranking;
+- PRIVATE time visible in seconds/minutes;
+- screen-off collection works;
+- user/profile switch signal works and becomes PRIVATE;
+- no guest-profile app identity appeared in exports.
 
-O DEV usa cadência de 30 minutos para validar rapidamente:
-- schedule attempts;
-- recovery count;
-- job starts;
-- job finishes;
-- job stops;
-- last scheduler check.
+It also exposed three correctness issues:
 
-O job é rechecado no início do processo, resume da Activity, boot, package replacement e user unlock.
+1. **Concurrent collectors.**
+   JobService and Activity could read the same UsageStats range simultaneously. This inflated raw interval counts and duplicated at least one unlock event.
 
-## Antes de subir 0.1.4
+2. **Scheduler self-rescheduling.**
+   `jobFinished()` was followed by a manual `ensureScheduled()`, and Activity resume also called `ensureScheduled()`. The test showed 12 job runs in about one hour, so this was not a clean 30-minute periodic-background result.
 
-Cadastre os quatro GitHub Actions Secrets do pacote KEEP-PRIVATE:
+3. **PRIVATE / SCREEN_OFF overlap on user switch.**
+   The visitor-profile test correctly raised PRIVATE, but a previously queued screen-off UsageStats interval overlapped part of that PRIVATE interval. Reports therefore needed deterministic precedence.
 
-- `GUARDIAN_DEV_KEYSTORE_BASE64`
-- `GUARDIAN_DEV_STORE_PASSWORD`
-- `GUARDIAN_DEV_KEY_ALIAS`
-- `GUARDIAN_DEV_KEY_PASSWORD`
+## 0.1.5 corrections
 
-Se faltar qualquer secret, o Actions falha de propósito em vez de gerar outro APK incompatível.
+### Serialized collection
+All `UsageCollector.collect()` calls share one process-wide lock.
 
-## Teste 0.1.4
+### Scheduler logic v2
+- periodic job remains owned by Android JobScheduler;
+- no manual re-schedule after every job finish;
+- no scheduler replacement on every Activity resume;
+- scheduler counters reset once for logic v2 so the next diagnostic measures only the corrected behavior.
 
-1. Guarde os JSONs do 0.1.3 que quiser.
-2. Desinstale 0.1.3 uma última vez.
-3. Instale o APK fixed-signed 0.1.4.
-4. Reative restricted settings/Usage Access se necessário.
-5. Use normalmente por 1–2 horas.
-6. Nos primeiros ~40 min, evite abrir o Guardian repetidamente para dar chance ao job de fundo.
-7. Depois abra e exporte JSON diário + diagnóstico.
+### Other-user/profile privacy boundary
+When the owner user goes background:
+- collect owner history only up to the switch timestamp;
+- close the current interval;
+- start generic PRIVATE.
 
-Esperado:
-- Launcher e IntentResolver não aparecem como APP.
-- `SYSTEM` aparece no lugar.
-- PRIVATE curto aparece em segundos.
-- `scheduler.job_run_count` informa se o background realmente executou.
-- a próxima 0.1.5 deverá instalar por cima sem desinstalar.
+When owner returns:
+- close PRIVATE;
+- advance the collector cursor to the return timestamp;
+- do not replay UsageStats events from the other profile.
+
+### Non-overlapping reports
+Timeline normalization now uses precedence:
+
+`PRIVATE > ANONYMOUS_BROWSER > SCREEN_OFF > SYSTEM > APP`
+
+Every millisecond can belong to at most one exported timeline type. Unknown gaps are no longer bridged automatically.
+
+### Data repair
+SQLite DB v3 removes exact duplicate interval rows and duplicate unlock timestamps produced by the 0.1.4 concurrency bug.
+
+### System noise cleanup
+Additional system-only packages are mapped to sanitized SYSTEM:
+- Google Play Services;
+- Android/Google package installer;
+- Xiaomi Security Center / system resource plugin.
+
+### Visual safe area
+The main ScrollView now clips content to system-bar padding so section headings/buttons do not scroll underneath the status/navigation bars.
+
+## Test
+
+Install 0.1.5 directly over 0.1.4.
+
+First confirm:
+- Android offers **Atualizar**, not uninstall/install;
+- device name remains `ith cel2`;
+- Usage Access remains authorized;
+- previous history still exists.
+
+Then leave Guardian mostly closed for at least 70 minutes and use the phone normally.
+
+Afterward:
+1. open Guardian;
+2. export daily JSON;
+3. export diagnostic JSON;
+4. send both back.
+
+For scheduler logic v2, approximately 1–3 runs in 70–90 minutes can be normal because Android may delay jobs. A rapid burst of many runs is not.
+
+Also perform one visitor-profile switch again. In the new JSON there must be no overlapping PRIVATE/SCREEN_OFF segments and no identity from the visitor profile.

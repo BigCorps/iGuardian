@@ -1,11 +1,15 @@
 # Static validation
 
 - `app/src/main/java/com/bigcorps/guardian/GuardianApplication.kt`: braces=0, parens=0
-- `app/src/main/java/com/bigcorps/guardian/core/PrivacyRepair.kt`: braces=0, parens=0
-- `app/src/main/java/com/bigcorps/guardian/core/GuardianScheduler.kt`: braces=0, parens=0
-- `app/src/main/java/com/bigcorps/guardian/core/GuardianDatabase.kt`: braces=0, parens=0
-- `app/src/main/java/com/bigcorps/guardian/core/LocalReportStore.kt`: braces=0, parens=0
-- `app/src/main/java/com/bigcorps/guardian/core/PrivacyClassifier.kt`: braces=0, parens=0
+- `app/src/main/java/com/bigcorps/guardian/MainActivity.kt`: braces=0, parens=0
 - `app/src/main/java/com/bigcorps/guardian/core/DiagnosticsGenerator.kt`: braces=0, parens=0
+- `app/src/main/java/com/bigcorps/guardian/core/GuardianDatabase.kt`: braces=0, parens=0
+- `app/src/main/java/com/bigcorps/guardian/core/GuardianJobService.kt`: braces=0, parens=0
+- `app/src/main/java/com/bigcorps/guardian/core/GuardianPrivacyOverride.kt`: braces=0, parens=0
+- `app/src/main/java/com/bigcorps/guardian/core/GuardianScheduler.kt`: braces=0, parens=0
+- `app/src/main/java/com/bigcorps/guardian/core/Preferences.kt`: braces=0, parens=0
+- `app/src/main/java/com/bigcorps/guardian/core/ReportGenerator.kt`: braces=0, parens=0
+- `app/src/main/java/com/bigcorps/guardian/core/SystemSurfaceClassifier.kt`: braces=0, parens=0
+- `app/src/main/java/com/bigcorps/guardian/core/TimelineNormalizer.kt`: braces=0, parens=0
 - `app/src/main/java/com/bigcorps/guardian/core/UsageCollector.kt`: braces=0, parens=0
-- `app/src/main/java/com/bigcorps/guardian/ui/PrivateAppsActivity.kt`: braces=0, parens=0
+- `app/src/test/java/com/bigcorps/guardian/core/TimelineNormalizerTest.kt`: braces=0, parens=0

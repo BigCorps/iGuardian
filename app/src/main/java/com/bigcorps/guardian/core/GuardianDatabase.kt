@@ -21,10 +21,7 @@ class GuardianDatabase(context: Context) :
             )
             """.trimIndent()
         )
-
-        db.execSQL(
-            "CREATE INDEX idx_intervals_time ON intervals(start_ms, end_ms)"
-        )
+        db.execSQL("CREATE INDEX idx_intervals_time ON intervals(start_ms, end_ms)")
 
         db.execSQL(
             """
@@ -36,10 +33,7 @@ class GuardianDatabase(context: Context) :
             )
             """.trimIndent()
         )
-
-        db.execSQL(
-            "CREATE INDEX idx_technical_time ON technical_events(ts_ms)"
-        )
+        db.execSQL("CREATE INDEX idx_technical_time ON technical_events(ts_ms)")
     }
 
     override fun onUpgrade(
@@ -47,8 +41,39 @@ class GuardianDatabase(context: Context) :
         oldVersion: Int,
         newVersion: Int
     ) {
-        // DB v2 does not change table shape. PrivacyRepair performs the
-        // content migration with the current classifier and purges derived JSON.
+        if (oldVersion < 3) {
+            // 0.1.4 could run the manual collector and JobService concurrently.
+            // Remove exact duplicate intervals while preserving the oldest row.
+            db.execSQL(
+                """
+                DELETE FROM intervals
+                WHERE id NOT IN (
+                    SELECT MIN(id)
+                    FROM intervals
+                    GROUP BY
+                        start_ms,
+                        end_ms,
+                        type,
+                        IFNULL(package_name, ''),
+                        IFNULL(app_label, '')
+                )
+                """.trimIndent()
+            )
+
+            // The same UsageStats unlock event could be logged twice concurrently.
+            db.execSQL(
+                """
+                DELETE FROM technical_events
+                WHERE code = 'UNLOCK'
+                  AND id NOT IN (
+                    SELECT MIN(id)
+                    FROM technical_events
+                    WHERE code = 'UNLOCK'
+                    GROUP BY ts_ms
+                  )
+                """.trimIndent()
+            )
+        }
     }
 
     @Synchronized
@@ -65,18 +90,11 @@ class GuardianDatabase(context: Context) :
             put("start_ms", interval.startMs)
             put("end_ms", interval.endMs)
             put("type", interval.type.name)
+            if (identity.packageName == null) putNull("package_name")
+            else put("package_name", identity.packageName)
 
-            if (identity.packageName == null) {
-                putNull("package_name")
-            } else {
-                put("package_name", identity.packageName)
-            }
-
-            if (identity.appLabel == null) {
-                putNull("app_label")
-            } else {
-                put("app_label", identity.appLabel)
-            }
+            if (identity.appLabel == null) putNull("app_label")
+            else put("app_label", identity.appLabel)
         }
 
         return writableDatabase.insert("intervals", null, values)
@@ -153,12 +171,8 @@ class GuardianDatabase(context: Context) :
         val values = ContentValues().apply {
             put("ts_ms", tsMs)
             put("code", safeCode)
-
-            if (safeValue == null) {
-                putNull("value")
-            } else {
-                put("value", safeValue)
-            }
+            if (safeValue == null) putNull("value")
+            else put("value", safeValue)
         }
 
         writableDatabase.insert("technical_events", null, values)
@@ -201,7 +215,6 @@ class GuardianDatabase(context: Context) :
                 )
             }
         }
-
         return result
     }
 
@@ -210,17 +223,17 @@ class GuardianDatabase(context: Context) :
         startMs: Long,
         endMs: Long
     ): Int {
+        val countExpression =
+            if (code == "UNLOCK") "COUNT(DISTINCT ts_ms)"
+            else "COUNT(*)"
+
         readableDatabase.rawQuery(
             """
-            SELECT COUNT(*)
+            SELECT $countExpression
             FROM technical_events
             WHERE code = ? AND ts_ms >= ? AND ts_ms < ?
             """.trimIndent(),
-            arrayOf(
-                code,
-                startMs.toString(),
-                endMs.toString()
-            )
+            arrayOf(code, startMs.toString(), endMs.toString())
         ).use { c ->
             return if (c.moveToFirst()) c.getInt(0) else 0
         }
@@ -253,14 +266,11 @@ class GuardianDatabase(context: Context) :
                 )
             }
         }
-
         return result
     }
 
     fun intervalCounts(): Map<IntervalType, Int> {
-        val result = IntervalType.entries
-            .associateWith { 0 }
-            .toMutableMap()
+        val result = IntervalType.entries.associateWith { 0 }.toMutableMap()
 
         readableDatabase.rawQuery(
             "SELECT type, COUNT(*) FROM intervals GROUP BY type",
@@ -274,19 +284,16 @@ class GuardianDatabase(context: Context) :
                 }
             }
         }
-
         return result
     }
 
     fun databaseSizeBytes(): Long {
         val path = readableDatabase.path ?: return 0
-        return runCatching {
-            java.io.File(path).length()
-        }.getOrDefault(0L)
+        return runCatching { java.io.File(path).length() }.getOrDefault(0L)
     }
 
     companion object {
         private const val DB_NAME = "guardian.db"
-        private const val DB_VERSION = 2
+        private const val DB_VERSION = 3
     }
 }

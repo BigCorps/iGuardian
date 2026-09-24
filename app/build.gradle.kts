@@ -21,8 +21,8 @@ android {
         applicationId = "com.bigcorps.guardian.dev"
         minSdk = 26
         targetSdk = 36
-        versionCode = 5
-        versionName = "0.1.4"
+        versionCode = 6
+        versionName = "0.1.5"
     }
 
     if (devSigningReady) {
@@ -38,11 +38,19 @@ android {
 
     buildTypes {
         getByName("debug") {
-            if (devSigningReady) signingConfig = signingConfigs.getByName("guardianDev")
+            if (devSigningReady) {
+                signingConfig = signingConfigs.getByName("guardianDev")
+            }
         }
+
         getByName("release") {
             isMinifyEnabled = false
-            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+            proguardFiles(
+                getDefaultProguardFile(
+                    "proguard-android-optimize.txt"
+                ),
+                "proguard-rules.pro"
+            )
         }
     }
 
