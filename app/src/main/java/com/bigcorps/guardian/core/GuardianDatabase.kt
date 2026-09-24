@@ -5,7 +5,8 @@ import android.content.Context
 import android.database.sqlite.SQLiteDatabase
 import android.database.sqlite.SQLiteOpenHelper
 
-class GuardianDatabase(context: Context) : SQLiteOpenHelper(context, DB_NAME, null, DB_VERSION) {
+class GuardianDatabase(context: Context) :
+    SQLiteOpenHelper(context, DB_NAME, null, DB_VERSION) {
 
     override fun onCreate(db: SQLiteDatabase) {
         db.execSQL(
@@ -20,7 +21,11 @@ class GuardianDatabase(context: Context) : SQLiteOpenHelper(context, DB_NAME, nu
             )
             """.trimIndent()
         )
-        db.execSQL("CREATE INDEX idx_intervals_time ON intervals(start_ms, end_ms)")
+
+        db.execSQL(
+            "CREATE INDEX idx_intervals_time ON intervals(start_ms, end_ms)"
+        )
+
         db.execSQL(
             """
             CREATE TABLE technical_events (
@@ -31,44 +36,150 @@ class GuardianDatabase(context: Context) : SQLiteOpenHelper(context, DB_NAME, nu
             )
             """.trimIndent()
         )
-        db.execSQL("CREATE INDEX idx_technical_time ON technical_events(ts_ms)")
+
+        db.execSQL(
+            "CREATE INDEX idx_technical_time ON technical_events(ts_ms)"
+        )
     }
 
-    override fun onUpgrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) {
-        // First schema. Future migrations must preserve local history where possible.
+    override fun onUpgrade(
+        db: SQLiteDatabase,
+        oldVersion: Int,
+        newVersion: Int
+    ) {
+        // DB v2 does not change table shape. PrivacyRepair performs the
+        // content migration with the current classifier and purges derived JSON.
     }
 
     @Synchronized
     fun insertInterval(interval: TimelineInterval): Long {
         if (interval.endMs <= interval.startMs) return -1
-        val identity = StorageSanitizer.identityFor(interval.type, interval.packageName, interval.appLabel)
+
+        val identity = StorageSanitizer.identityFor(
+            interval.type,
+            interval.packageName,
+            interval.appLabel
+        )
+
         val values = ContentValues().apply {
             put("start_ms", interval.startMs)
             put("end_ms", interval.endMs)
             put("type", interval.type.name)
-            if (identity.packageName == null) putNull("package_name") else put("package_name", identity.packageName)
-            if (identity.appLabel == null) putNull("app_label") else put("app_label", identity.appLabel)
+
+            if (identity.packageName == null) {
+                putNull("package_name")
+            } else {
+                put("package_name", identity.packageName)
+            }
+
+            if (identity.appLabel == null) {
+                putNull("app_label")
+            } else {
+                put("app_label", identity.appLabel)
+            }
         }
+
         return writableDatabase.insert("intervals", null, values)
     }
 
     @Synchronized
-    fun logTechnical(code: String, value: String? = null, tsMs: Long = System.currentTimeMillis()) {
-        val safeCode = code.take(80).replace(Regex("[^A-Z0-9_-]"), "_")
-        val safeValue = value?.take(120)?.replace(Regex("https?://\\S+"), "[redacted]")
+    fun repairSensitiveAppRows(): Int {
+        val ids = mutableListOf<Long>()
+
+        readableDatabase.query(
+            "intervals",
+            arrayOf("id", "package_name", "app_label"),
+            "type = ?",
+            arrayOf(IntervalType.APP.name),
+            null,
+            null,
+            null
+        ).use { cursor ->
+            while (cursor.moveToNext()) {
+                val id = cursor.getLong(0)
+                val pkg = if (cursor.isNull(1)) null else cursor.getString(1)
+                val label = if (cursor.isNull(2)) null else cursor.getString(2)
+
+                if (
+                    !pkg.isNullOrBlank() &&
+                    PrivacyClassifier.isAutomaticallyPrivate(pkg, label)
+                ) {
+                    ids += id
+                }
+            }
+        }
+
+        if (ids.isEmpty()) return 0
+
+        val values = ContentValues().apply {
+            put("type", IntervalType.PRIVATE.name)
+            putNull("package_name")
+            putNull("app_label")
+        }
+
+        var repaired = 0
+        writableDatabase.beginTransaction()
+        try {
+            ids.forEach { id ->
+                repaired += writableDatabase.update(
+                    "intervals",
+                    values,
+                    "id = ?",
+                    arrayOf(id.toString())
+                )
+            }
+            writableDatabase.setTransactionSuccessful()
+        } finally {
+            writableDatabase.endTransaction()
+        }
+
+        return repaired
+    }
+
+    @Synchronized
+    fun logTechnical(
+        code: String,
+        value: String? = null,
+        tsMs: Long = System.currentTimeMillis()
+    ) {
+        val safeCode = code
+            .take(80)
+            .replace(Regex("[^A-Z0-9_-]"), "_")
+
+        val safeValue = value
+            ?.take(120)
+            ?.replace(Regex("https?://\\S+"), "[redacted]")
+
         val values = ContentValues().apply {
             put("ts_ms", tsMs)
             put("code", safeCode)
-            if (safeValue == null) putNull("value") else put("value", safeValue)
+
+            if (safeValue == null) {
+                putNull("value")
+            } else {
+                put("value", safeValue)
+            }
         }
+
         writableDatabase.insert("technical_events", null, values)
     }
 
-    fun intervalsBetween(startMs: Long, endMs: Long): List<TimelineInterval> {
+    fun intervalsBetween(
+        startMs: Long,
+        endMs: Long
+    ): List<TimelineInterval> {
         val result = mutableListOf<TimelineInterval>()
+
         readableDatabase.query(
             "intervals",
-            arrayOf("id", "start_ms", "end_ms", "type", "package_name", "app_label"),
+            arrayOf(
+                "id",
+                "start_ms",
+                "end_ms",
+                "type",
+                "package_name",
+                "app_label"
+            ),
             "end_ms > ? AND start_ms < ?",
             arrayOf(startMs.toString(), endMs.toString()),
             null,
@@ -76,7 +187,10 @@ class GuardianDatabase(context: Context) : SQLiteOpenHelper(context, DB_NAME, nu
             "start_ms ASC"
         ).use { c ->
             while (c.moveToNext()) {
-                val type = runCatching { IntervalType.valueOf(c.getString(3)) }.getOrDefault(IntervalType.PRIVATE)
+                val type = runCatching {
+                    IntervalType.valueOf(c.getString(3))
+                }.getOrDefault(IntervalType.PRIVATE)
+
                 result += TimelineInterval(
                     id = c.getLong(0),
                     startMs = c.getLong(1),
@@ -87,22 +201,40 @@ class GuardianDatabase(context: Context) : SQLiteOpenHelper(context, DB_NAME, nu
                 )
             }
         }
+
         return result
     }
 
-    fun technicalCount(code: String, startMs: Long, endMs: Long): Int {
+    fun technicalCount(
+        code: String,
+        startMs: Long,
+        endMs: Long
+    ): Int {
         readableDatabase.rawQuery(
-            "SELECT COUNT(*) FROM technical_events WHERE code = ? AND ts_ms >= ? AND ts_ms < ?",
-            arrayOf(code, startMs.toString(), endMs.toString())
+            """
+            SELECT COUNT(*)
+            FROM technical_events
+            WHERE code = ? AND ts_ms >= ? AND ts_ms < ?
+            """.trimIndent(),
+            arrayOf(
+                code,
+                startMs.toString(),
+                endMs.toString()
+            )
         ).use { c ->
             return if (c.moveToFirst()) c.getInt(0) else 0
         }
     }
 
-    data class TechnicalEvent(val code: String, val value: String?, val tsMs: Long)
+    data class TechnicalEvent(
+        val code: String,
+        val value: String?,
+        val tsMs: Long
+    )
 
     fun recentTechnical(limit: Int = 40): List<TechnicalEvent> {
         val result = mutableListOf<TechnicalEvent>()
+
         readableDatabase.query(
             "technical_events",
             arrayOf("code", "value", "ts_ms"),
@@ -121,26 +253,40 @@ class GuardianDatabase(context: Context) : SQLiteOpenHelper(context, DB_NAME, nu
                 )
             }
         }
+
         return result
     }
 
     fun intervalCounts(): Map<IntervalType, Int> {
-        val result = IntervalType.entries.associateWith { 0 }.toMutableMap()
-        readableDatabase.rawQuery("SELECT type, COUNT(*) FROM intervals GROUP BY type", null).use { c ->
+        val result = IntervalType.entries
+            .associateWith { 0 }
+            .toMutableMap()
+
+        readableDatabase.rawQuery(
+            "SELECT type, COUNT(*) FROM intervals GROUP BY type",
+            null
+        ).use { c ->
             while (c.moveToNext()) {
-                runCatching { IntervalType.valueOf(c.getString(0)) }.getOrNull()?.let { result[it] = c.getInt(1) }
+                runCatching {
+                    IntervalType.valueOf(c.getString(0))
+                }.getOrNull()?.let { type ->
+                    result[type] = c.getInt(1)
+                }
             }
         }
+
         return result
     }
 
     fun databaseSizeBytes(): Long {
         val path = readableDatabase.path ?: return 0
-        return runCatching { java.io.File(path).length() }.getOrDefault(0L)
+        return runCatching {
+            java.io.File(path).length()
+        }.getOrDefault(0L)
     }
 
     companion object {
         private const val DB_NAME = "guardian.db"
-        private const val DB_VERSION = 1
+        private const val DB_VERSION = 2
     }
 }

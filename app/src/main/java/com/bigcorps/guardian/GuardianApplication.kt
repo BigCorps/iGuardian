@@ -8,38 +8,73 @@ import android.content.IntentFilter
 import android.os.Build
 import com.bigcorps.guardian.core.GuardianPrivacyOverride
 import com.bigcorps.guardian.core.GuardianScheduler
+import com.bigcorps.guardian.core.PrivacyRepair
 import com.bigcorps.guardian.core.SystemSignalRecorder
 
 class GuardianApplication : Application() {
     private val userReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) {
             when (intent.action) {
-                Intent.ACTION_USER_BACKGROUND -> GuardianPrivacyOverride.start(context.applicationContext)
-                Intent.ACTION_USER_FOREGROUND -> GuardianPrivacyOverride.end(context.applicationContext)
-                Intent.ACTION_SCREEN_OFF -> if (Build.VERSION.SDK_INT < 28) SystemSignalRecorder.screenOff(context.applicationContext)
-                Intent.ACTION_SCREEN_ON -> if (Build.VERSION.SDK_INT < 28) SystemSignalRecorder.screenOn(context.applicationContext)
-                Intent.ACTION_USER_PRESENT -> if (Build.VERSION.SDK_INT < 28) SystemSignalRecorder.userPresent(context.applicationContext)
+                Intent.ACTION_USER_BACKGROUND ->
+                    GuardianPrivacyOverride.start(context.applicationContext)
+
+                Intent.ACTION_USER_FOREGROUND ->
+                    GuardianPrivacyOverride.end(context.applicationContext)
+
+                Intent.ACTION_SCREEN_OFF ->
+                    if (Build.VERSION.SDK_INT < 28) {
+                        SystemSignalRecorder.screenOff(context.applicationContext)
+                    }
+
+                Intent.ACTION_SCREEN_ON ->
+                    if (Build.VERSION.SDK_INT < 28) {
+                        SystemSignalRecorder.screenOn(context.applicationContext)
+                    }
+
+                Intent.ACTION_USER_PRESENT ->
+                    if (Build.VERSION.SDK_INT < 28) {
+                        SystemSignalRecorder.userPresent(context.applicationContext)
+                    }
             }
         }
     }
 
     override fun onCreate() {
         super.onCreate()
-        GuardianScheduler.schedule(this)
+
+        // Run privacy migration before any new report is generated.
+        PrivacyRepair.runIfNeeded(this)
+
+        // Retry scheduling every time the process starts.
+        GuardianScheduler.ensureScheduled(this)
+
         val filter = IntentFilter().apply {
             addAction(Intent.ACTION_USER_BACKGROUND)
             addAction(Intent.ACTION_USER_FOREGROUND)
+
             if (Build.VERSION.SDK_INT < 28) {
                 addAction(Intent.ACTION_SCREEN_OFF)
                 addAction(Intent.ACTION_SCREEN_ON)
                 addAction(Intent.ACTION_USER_PRESENT)
             }
         }
+
         if (Build.VERSION.SDK_INT >= 33) {
-            registerReceiver(userReceiver, filter, "android.permission.MANAGE_USERS", null, Context.RECEIVER_EXPORTED)
+            registerReceiver(
+                userReceiver,
+                filter,
+                "android.permission.MANAGE_USERS",
+                null,
+                Context.RECEIVER_EXPORTED
+            )
         } else {
             @Suppress("DEPRECATION")
-            registerReceiver(userReceiver, filter, "android.permission.MANAGE_USERS", null)
+            registerReceiver(
+                userReceiver,
+                filter,
+                "android.permission.MANAGE_USERS",
+                null
+            )
         }
     }
 }

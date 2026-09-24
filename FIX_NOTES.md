@@ -1,15 +1,23 @@
-# iGuardian Android 0.1.2 — Export Fix
+# Guardian Android 0.1.3 — Privacy Fix
 
-Replace these files preserving paths:
+Replace/add these files preserving paths:
 
-- `app/src/main/java/com/bigcorps/guardian/MainActivity.kt`
-- `app/src/main/java/com/bigcorps/guardian/core/ExportStorage.kt` (new)
-- `app/build.gradle.kts`
-- `.github/workflows/android.yml`
-- `README.md`
-- `CHANGELOG.md`
-- `PROJECT_STATE.json`
+- app/src/main/java/com/bigcorps/guardian/core/PrivacyClassifier.kt
+- app/src/main/java/com/bigcorps/guardian/core/UsageCollector.kt
+- app/src/main/java/com/bigcorps/guardian/core/PrivacyRepair.kt (NEW)
+- app/src/main/java/com/bigcorps/guardian/core/GuardianDatabase.kt
+- app/src/main/java/com/bigcorps/guardian/core/LocalReportStore.kt
+- app/src/main/java/com/bigcorps/guardian/core/GuardianScheduler.kt
+- app/src/main/java/com/bigcorps/guardian/core/DiagnosticsGenerator.kt
+- app/src/main/java/com/bigcorps/guardian/GuardianApplication.kt
+- app/src/main/java/com/bigcorps/guardian/ui/PrivateAppsActivity.kt
+- app/build.gradle.kts
+- .github/workflows/android.yml
+- README.md
+- CHANGELOG.md
+- PROJECT_STATE.json
 
-The core fix is that Android 10+ no longer depends on ACTION_CREATE_DOCUMENT for export.
-Guardian writes directly to MediaStore.Downloads/Downloads/iGuardian and then reopens the
-destination and compares it byte-for-byte with the generated JSON before showing success.
+Reason:
+The first real exported diagnostic showed Nubank and InfinitePay as APP rather than PRIVATE.
+This patch fixes future classification and repairs existing local rows/reports.
+It also instruments the periodic JobScheduler failure reported by the diagnostic.
