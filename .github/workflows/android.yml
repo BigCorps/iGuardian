@@ -84,22 +84,22 @@ jobs:
 
           if [ -z "$APKSIGNER" ] || [ ! -x "$APKSIGNER" ]; then
             echo "::error::apksigner was not found in Android build-tools."
-            echo "SDK root: $SDK_ROOT"
-            find "$SDK_ROOT/build-tools" -maxdepth 2 -type f -name 'apksigner*' -print || true
             exit 1
           fi
 
           echo "Using apksigner: $APKSIGNER"
 
+          CERT_OUTPUT="$("$APKSIGNER" verify --verbose --print-certs "$APK")"
+          printf '%s\n' "$CERT_OUTPUT"
+
           ACTUAL="$(
-            "$APKSIGNER" verify --print-certs "$APK"             | sed -n 's/^Signer #1 certificate SHA-256 digest: //p'             | head -n 1             | tr '[:upper:]' '[:lower:]'             | tr -d '\r'
+            printf '%s\n' "$CERT_OUTPUT"             | grep -E 'certificate SHA-256 digest:'             | head -n 1             | sed -E 's/^.*certificate SHA-256 digest:[[:space:]]*//'             | tr '[:upper:]' '[:lower:]'             | tr -d '\r[:space:]'
           )"
 
           EXPECTED="4a40d0075db9691b16814e40d7db589fdfea59a046a006c1a4db07c8901b8986"
 
           if [ -z "$ACTUAL" ]; then
-            echo "::error::Could not read APK signing certificate SHA-256."
-            "$APKSIGNER" verify --verbose --print-certs "$APK" || true
+            echo "::error::Could not parse APK signing certificate SHA-256."
             exit 1
           fi
 
