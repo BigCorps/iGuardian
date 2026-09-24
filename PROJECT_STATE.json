@@ -9,9 +9,11 @@
   "repository_expected": "separate Guardian repository",
   "backend": "none",
   "internet_permission": false,
+  "ci_status": "Build Fix 02 prepared after run #2 reached Kotlin compilation and failed on an invalid escape sequence in GuardianDatabase.kt.",
   "completed": [
     "native Kotlin Android project",
     "GitHub Actions APK build workflow",
+    "Android SDK setup validated in GitHub Actions",
     "UsageStats collector",
     "SQLite local timeline",
     "privacy-before-storage sanitizer",
@@ -33,6 +35,7 @@
     "OEM background scheduling behavior varies"
   ],
   "pending": [
+    "confirm full APK compile after Build Fix 02",
     "expanded OEM compatibility handling",
     "local deterministic question engine",
     "local trend analysis",
@@ -42,7 +45,7 @@
     "landing/privacy/support web pages before store submission",
     "future premium login/payments/device sharing/external AI after initial approvals"
   ],
-  "next_task": "Install APK produced by GitHub Actions on available test devices, grant Usage Access, exercise normal/private/screen-off/user-switch scenarios, then inspect both exported JSON files.",
+  "next_task": "Replace GuardianDatabase.kt with Build Fix 02, update README/CHANGELOG/PROJECT_STATE, commit to main, then inspect the next GitHub Actions run.",
   "do_not_implement_without_explicit_decision": [
     "cloud history",
     "remote monitoring",

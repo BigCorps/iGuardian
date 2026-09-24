@@ -15,3 +15,5 @@ Initial Android foundation ZIP.
 - Added daily JSON and privacy-safe support diagnostic JSON exports.
 - Added private-app selector.
 - Added CI privacy invariant checks.
+- Build Fix 01: corrected Android SDK setup by removing obsolete `tools` package request and updating Java setup action.
+- Build Fix 02: corrected invalid Kotlin escape sequence in `GuardianDatabase.kt`.

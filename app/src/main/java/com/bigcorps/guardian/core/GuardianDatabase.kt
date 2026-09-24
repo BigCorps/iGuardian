@@ -54,7 +54,7 @@ class GuardianDatabase(context: Context) : SQLiteOpenHelper(context, DB_NAME, nu
 
     @Synchronized
     fun logTechnical(code: String, value: String? = null, tsMs: Long = System.currentTimeMillis()) {
-        val safeCode = code.take(80).replace(Regex("[^A-Z0-9_\-]"), "_")
+        val safeCode = code.take(80).replace(Regex("[^A-Z0-9_-]"), "_")
         val safeValue = value?.take(120)?.replace(Regex("https?://\\S+"), "[redacted]")
         val values = ContentValues().apply {
             put("ts_ms", tsMs)

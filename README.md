@@ -13,6 +13,7 @@ Codinome temporário do futuro produto BigCorps hoje chamado de **iGuardian.me /
 - **External AI API:** none
 - **Internet permission:** intentionally absent
 - **Primary package (DEV):** `com.bigcorps.guardian.dev`
+- **CI status:** first SDK setup issue fixed; second run reached Kotlin compilation. Build Fix 02 corrects the Kotlin escape error in `GuardianDatabase.kt`.
 
 ### Implemented in 0.1.0
 
@@ -96,6 +97,11 @@ fields BEFORE DB              |
 5. Download the `guardian-android-0.1.0-debug` artifact.
 
 The workflow uses Android Gradle Plugin 9.4.0, Gradle 9.6.0 and JDK 17.
+
+### CI fixes already applied
+
+- Build Fix 01: stopped requesting the obsolete Android SDK package `tools`; the SDK setup now completes successfully.
+- Build Fix 02: corrected an invalid Kotlin string escape in `GuardianDatabase.kt` (`\-` inside a regular Kotlin string). The regex now uses a literal hyphen at the end of the character class.
 
 ## First real-device test
 
