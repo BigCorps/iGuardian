@@ -1,0 +1,60 @@
+{
+  "project_codename": "Guardian",
+  "product_name_final": false,
+  "version": "0.1.0",
+  "platform": "android",
+  "phase": 1,
+  "phase_name": "Android Foundation",
+  "schema_version": 1,
+  "repository_expected": "separate Guardian repository",
+  "backend": "none",
+  "internet_permission": false,
+  "completed": [
+    "native Kotlin Android project",
+    "GitHub Actions APK build workflow",
+    "UsageStats collector",
+    "SQLite local timeline",
+    "privacy-before-storage sanitizer",
+    "PRIVATE interval model",
+    "SCREEN_OFF interval model",
+    "ANONYMOUS_BROWSER reserved distinct model",
+    "manual private-app preferences",
+    "automatic internal daily JSON folders",
+    "daily JSON export",
+    "support diagnostic JSON export",
+    "periodic JobScheduler collection",
+    "best-effort Android user-switch private interval signal",
+    "privacy CI verification"
+  ],
+  "known_platform_limits": [
+    "Android UsageStats cannot reliably identify incognito/private browser tabs",
+    "Android v0.1.0 cannot provide visited domains without adding a separate browser/network integration",
+    "user-switch broadcasts are runtime registered and exact capture is best-effort if the process is killed",
+    "OEM background scheduling behavior varies"
+  ],
+  "pending": [
+    "expanded OEM compatibility handling",
+    "local deterministic question engine",
+    "local trend analysis",
+    "browser main-domain support if a store-safe design is validated",
+    "Windows version after Android model stabilizes",
+    "store branding and final production applicationId",
+    "landing/privacy/support web pages before store submission",
+    "future premium login/payments/device sharing/external AI after initial approvals"
+  ],
+  "next_task": "Install APK produced by GitHub Actions on available test devices, grant Usage Access, exercise normal/private/screen-off/user-switch scenarios, then inspect both exported JSON files.",
+  "do_not_implement_without_explicit_decision": [
+    "cloud history",
+    "remote monitoring",
+    "automatic third-party sharing",
+    "AccessibilityService",
+    "VPN inspection",
+    "screen capture",
+    "keyboard capture",
+    "message or notification contents",
+    "full URLs",
+    "QUERY_ALL_PACKAGES",
+    "external AI API",
+    "payment or account backend"
+  ]
+}
