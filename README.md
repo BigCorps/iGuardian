@@ -1,119 +1,105 @@
-# Guardian DEV — Android 0.1.1
+# Guardian DEV — Android 0.1.2
 
-Codinome temporário do futuro produto BigCorps hoje chamado de **iGuardian / Guardian**. Nome, logo e domínio definitivos ainda não estão congelados.
+Codinome temporário do futuro produto BigCorps hoje chamado de **iGuardian / Guardian**.
 
 ## PROJECT STATUS
 
-- **Current version:** Android 0.1.1
-- **Current phase:** Phase 1 — Android Foundation / first real-device runtime fixes
-- **Build model:** GitHub + GitHub Actions
-- **Backend:** none
-- **Cloud:** none
-- **Login:** none
-- **External AI API:** none
+- **Current version:** Android 0.1.2
+- **Current phase:** Phase 1 — Android Foundation / physical-device validation
+- **Repository:** `BigCorps/iGuardian`
+- **Backend / cloud / login / external AI:** none
 - **Internet permission:** intentionally absent
-- **Primary package (DEV):** `com.bigcorps.guardian.dev`
-- **CI:** run #3 compiled and generated the first installable APK successfully.
+- **DEV package:** `com.bigcorps.guardian.dev`
+- **CI:** GitHub Actions run #6 successfully built Android 0.1.1.
 
-## Implemented
+## Why 0.1.2 exists
 
-- Native Kotlin Android app using framework APIs only.
-- UsageStats-based usage collector.
-- SQLite local timeline.
-- Daily local JSON reports.
-- Privacy Engine before storage.
-- Generic `PRIVATE` for protected apps, Android Settings and other-user context.
-- `SCREEN_OFF` intervals.
-- Reserved distinct `ANONYMOUS_BROWSER` schema type without fake detection.
-- Manual private-app review.
-- Local support diagnostic JSON.
-- GitHub Actions APK generation.
-- Privacy invariant checks in CI.
-- OEM/support diagnostic fields.
-- Android 15/16 edge-to-edge safe-area handling.
-- Redesigned responsive local-first UI.
-- Explicit sideload/restricted-settings onboarding for Android 13+ DEV APKs.
-- Robust JSON export through a cache-backed pending file so Activity recreation/document picker cannot produce an empty 0 KB file.
-- Export write validation and technical export error logging.
+The second physical-device test proved that the 0.1.1 exporter could still report the expected payload size while the selected Android document provider left a zero-byte destination file.
 
-## Runtime findings from first physical-device test
+The old success toast could therefore be misleading when provider metadata did not return a real size.
 
-### 1. Restricted settings block
-The test APK was sideloaded. Android 13+ can block sensitive/special settings for manually installed apps.
+### Export architecture changed
 
-Guardian 0.1.1 now explains this in-app and provides a direct button to App Info. The test flow is:
+On Android 10+:
 
-1. Tap **Liberar configuração restrita**.
-2. In App Info, tap **⋮**.
-3. Tap **Permitir configurações restritas**.
-4. Return to Guardian.
-5. Tap **Conceder acesso de uso**.
+1. Guardian inserts the JSON directly into `MediaStore.Downloads`.
+2. Destination is `Downloads/iGuardian`.
+3. Guardian writes the exact UTF-8 bytes.
+4. Guardian reopens the created destination.
+5. Guardian reads every byte back.
+6. Success is shown only when the read-back bytes exactly equal the generated payload.
+7. The user can immediately share the verified file through Android's share sheet.
 
-The ordinary **Permissões do app** screen may still show no granted permissions. That is expected: Usage Access is a special access, not a normal runtime permission.
+No storage permission is required for files the app itself creates in `MediaStore.Downloads` on Android 10+.
 
-### 2. 0 KB diagnostic JSON
-The original exporter stored the JSON only in an Activity field while Android's document picker was open. That state can be lost if the Activity is recreated, leaving the already-created destination document empty.
+On Android 9 and lower, Storage Access Framework remains the fallback, but now it also performs byte-for-byte read-back verification before reporting success.
 
-0.1.1 writes the generated payload to an app-private cache file before opening the picker. On return it copies that file to the selected destination, flushes it, validates that the result is not zero bytes, and logs export failures locally.
+## Restricted settings during GitHub APK testing
 
-### 3. Visual layout
-The first functional build intentionally used raw framework widgets. 0.1.1 adds:
-- cards and visual hierarchy;
-- compact status area;
-- clear two-step permission flow;
-- compact daily statistics;
-- safe-area handling for modern edge-to-edge Android;
-- consistent private-app selector;
-- non-default primary and outline buttons.
+`PACKAGE_USAGE_STATS` is a special access. Android can block this access for APKs installed manually.
+
+This is Android security behavior, not a normal app permission dialog. For the DEV APK:
+
+1. Guardian > **1. Abrir Informações do app**.
+2. Remain on the main **Informações do app** screen.
+3. Tap `⋮`.
+4. Choose **Permitir configurações restritas**.
+5. Return to Guardian.
+6. Tap **2. Conceder acesso de uso**.
+
+Do not use the ordinary **Permissões do app** screen for this step. It can correctly show no normal permissions even though Guardian declares Usage Access.
+
+The app cannot and must not bypass this Android protection programmatically.
 
 ## Locked product principles
 
-1. **Local first.** User history stays on the device unless the user manually exports it.
-2. **Privacy Engine precedes storage.**
-3. **No content capture.**
-4. **One generic `PRIVATE` state** for protected contexts.
-5. **`ANONYMOUS_BROWSER` remains distinct from `PRIVATE`**, but is not fabricated when Android cannot prove it.
-6. **Future browser data stores main/registrable domain only**, never full URL.
-7. **No fake telemetry.**
-8. **Support diagnostics remain privacy-safe.**
+- Local-first.
+- Privacy Engine before storage.
+- No screenshots/video.
+- No keyboard/input capture.
+- No notification/message content.
+- No INTERNET permission in the local-only MVP.
+- `PRIVATE` hides the reason/package for protected contexts.
+- `ANONYMOUS_BROWSER` remains a distinct schema type but is never fabricated.
+- Future browser storage: registrable/main domain only, never full URL.
+- Diagnostics are user-exported manually and privacy-safe.
 
-## Explicitly NOT implemented yet
+## Current implemented foundation
 
-- Supabase/Vercel/server.
-- Login/accounts.
-- Payments.
-- Device-to-device sharing.
-- External AI API.
-- On-device LLM.
-- Accessibility Service.
-- VPN inspection.
-- Screen/video capture.
-- Keyboard capture.
-- Notification/message contents.
-- Browser domains.
-- Reliable Android incognito detection.
-- `QUERY_ALL_PACKAGES`.
+- UsageStats collector.
+- SQLite local timeline.
+- Daily reports.
+- `APP`, `PRIVATE`, `SCREEN_OFF` timeline.
+- reserved `ANONYMOUS_BROWSER`.
+- local device name.
+- private-app picker.
+- background best-effort JobScheduler.
+- local diagnostic generator.
+- robust direct Downloads export + read-back verification.
+- share verified JSON via Android share sheet.
+- CI privacy verification.
+- GitHub Actions APK generation.
 
-## Next test
+## Next physical test
 
-Install the 0.1.1 APK generated by Actions and verify:
+1. Install 0.1.2.
+2. If Usage Access is blocked, perform the restricted-settings flow above.
+3. Confirm Guardian shows `Acesso de uso autorizado`.
+4. Use several normal apps.
+5. Open Android Settings.
+6. Lock/unlock the phone.
+7. Tap **Atualizar dados locais**.
+8. Export diagnostic JSON.
+9. Guardian should say `JSON salvo e verificado`.
+10. Use **Compartilhar** in that dialog and send the file to ChatGPT, or select it from `Downloads/iGuardian`.
 
-1. Restricted-settings guidance opens App Info correctly.
-2. After **Permitir configurações restritas**, Usage Access can be enabled.
-3. Guardian shows **Acesso de uso autorizado**.
-4. Use normal apps, Settings, screen lock/unlock and another user/profile if available.
-5. Tap **Atualizar dados locais**.
-6. Export the daily JSON and diagnostic JSON.
-7. Confirm both exported files are larger than 0 bytes.
-8. Send the diagnostic JSON back for analysis if any data is missing or incorrect.
+If byte-for-byte verification fails, Guardian must report an error instead of claiming a successful export.
 
-## Next planned milestone
+## Next milestone after this test
 
-After the permission/export path is proven on the available physical device(s):
+- inspect real diagnostic JSON;
 - validate timeline accuracy;
-- improve interval merging and reboot/day boundaries;
-- expand OEM compatibility diagnostics;
-- add daily/weekly local summaries;
-- begin deterministic local question engine.
+- refine OEM/background behavior;
+- then begin daily/weekly summaries and the deterministic local question engine.
 
-See `PROJECT_STATE.json`, `ROADMAP.md`, `PRIVACY_MODEL.md` and `DATA_SCHEMA.md` before changing architecture.
+See `PROJECT_STATE.json`, `ROADMAP.md`, `PRIVACY_MODEL.md` and `DATA_SCHEMA.md`.

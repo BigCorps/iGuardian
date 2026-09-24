@@ -22,6 +22,7 @@ import android.widget.ScrollView
 import android.widget.TextView
 import android.widget.Toast
 import com.bigcorps.guardian.core.DiagnosticsGenerator
+import com.bigcorps.guardian.core.ExportStorage
 import com.bigcorps.guardian.core.GuardianDatabase
 import com.bigcorps.guardian.core.GuardianPrivacyOverride
 import com.bigcorps.guardian.core.PrivatePreferences
@@ -75,13 +76,11 @@ class MainActivity : Activity() {
         }
         applySystemBarInsets(scroll)
 
-        val eyebrow = text("GUARDIAN • BUILD DE TESTE", 11f, true, PRIMARY)
-        root.addView(eyebrow)
-
+        root.addView(text("GUARDIAN • BUILD DE TESTE", 11f, true, PRIMARY))
         root.addView(text("Seu aparelho, explicado.", 28f, true, TEXT_PRIMARY).apply {
             setPadding(0, dp(4), 0, 0)
         })
-        root.addView(text("Android 0.1.1 • 100% local", 14f, false, TEXT_MUTED).apply {
+        root.addView(text("Android 0.1.2 • 100% local", 14f, false, TEXT_MUTED).apply {
             setPadding(0, dp(4), 0, dp(16))
         })
 
@@ -91,9 +90,10 @@ class MainActivity : Activity() {
                 "O Guardian registra metadados de uso, não conteúdo. Configurações, apps protegidos e outros usuários viram apenas PRIVATE antes do armazenamento.",
                 14f, false, TEXT_MUTED
             ).apply { setPadding(0, dp(6), 0, 0) })
-            addView(text("Sem Internet • Sem captura de tela • Sem teclado", 12f, true, PRIMARY).apply {
-                setPadding(0, dp(12), 0, 0)
-            })
+            addView(text(
+                "Sem Internet • Sem captura de tela • Sem teclado",
+                12f, true, PRIMARY
+            ).apply { setPadding(0, dp(12), 0, 0) })
         })
 
         root.addView(sectionTitle("Configuração"))
@@ -109,27 +109,17 @@ class MainActivity : Activity() {
         permissionHelpCard = card(WARNING_BG).apply {
             addView(text("Acesso de uso necessário", 17f, true, WARNING_TEXT))
             addView(text(
-                if (Build.VERSION.SDK_INT >= 33 && packageName.endsWith(".dev")) {
-                    "Como este APK de teste foi instalado fora da Play Store, o Android pode bloquear o Acesso de uso como uma configuração restrita. Se aparecer “Acesso negado ao app”, faça o passo 1 e depois o passo 2. É normal a tela “Permissões do app” mostrar nenhuma permissão: Acesso de uso fica em Acesso especial."
-                } else {
-                    "O Guardian precisa do Acesso de uso do Android para calcular tempo por aplicativo. Esse acesso é separado das permissões comuns do app."
-                },
+                "Em APK instalado manualmente, o Android pode bloquear este acesso. O Guardian não consegue remover essa proteção sozinho. Na tela principal de Informações do app, use ⋮ > Permitir configurações restritas. Não entre em “Permissões do app” para esse passo.",
                 13f, false, WARNING_TEXT
             ).apply { setPadding(0, dp(7), 0, 0) })
 
-            if (Build.VERSION.SDK_INT >= 33 && packageName.endsWith(".dev")) {
-                addView(outlineButton("1. Liberar configuração restrita") {
-                    showRestrictedSettingsHelp()
-                }.apply { topMargin(12) })
-            }
+            addView(outlineButton("1. Abrir Informações do app") {
+                showRestrictedSettingsHelp()
+            }.apply { topMargin(12) })
 
-            addView(primaryButton(
-                if (Build.VERSION.SDK_INT >= 33 && packageName.endsWith(".dev")) {
-                    "2. Conceder acesso de uso"
-                } else {
-                    "Conceder acesso de uso"
-                }
-            ) { openUsageSettings() }.apply { topMargin(10) })
+            addView(primaryButton("2. Conceder acesso de uso") {
+                openUsageSettings()
+            }.apply { topMargin(10) })
         }
         root.addView(permissionHelpCard)
 
@@ -145,7 +135,8 @@ class MainActivity : Activity() {
                 setSingleLine(true)
                 textSize = 16f
                 backgroundTintList = ColorStateList.valueOf(PRIMARY)
-                setText(getSharedPreferences("guardian_user", MODE_PRIVATE).getString("device_name", ""))
+                setText(getSharedPreferences("guardian_user", MODE_PRIVATE)
+                    .getString("device_name", ""))
             }
             addView(deviceName, matchWidth())
 
@@ -153,7 +144,11 @@ class MainActivity : Activity() {
                 getSharedPreferences("guardian_user", MODE_PRIVATE).edit()
                     .putString("device_name", deviceName.text.toString().trim())
                     .apply()
-                Toast.makeText(this@MainActivity, "Nome salvo somente neste aparelho.", Toast.LENGTH_SHORT).show()
+                Toast.makeText(
+                    this@MainActivity,
+                    "Nome salvo somente neste aparelho.",
+                    Toast.LENGTH_SHORT
+                ).show()
             }.apply { topMargin(10) })
         })
 
@@ -171,8 +166,12 @@ class MainActivity : Activity() {
 
         val divider = View(this).apply { setBackgroundColor(DIVIDER) }
         statsCard.addView(divider, LinearLayout.LayoutParams(
-            ViewGroup.LayoutParams.MATCH_PARENT, dp(1)
-        ).apply { topMargin = dp(14); bottomMargin = dp(14) })
+            ViewGroup.LayoutParams.MATCH_PARENT,
+            dp(1)
+        ).apply {
+            topMargin = dp(14)
+            bottomMargin = dp(14)
+        })
 
         unlockValue = text("0 desbloqueios", 14f, true, TEXT_PRIMARY)
         statsCard.addView(unlockValue)
@@ -182,20 +181,26 @@ class MainActivity : Activity() {
         statsCard.addView(topAppsText)
         root.addView(statsCard)
 
-        root.addView(primaryButton("Atualizar dados locais") { refresh(true) }.apply {
-            topMargin(10)
-        })
+        root.addView(primaryButton("Atualizar dados locais") {
+            refresh(true)
+        }.apply { topMargin(10) })
 
         root.addView(sectionTitle("Exportar"))
 
         root.addView(card().apply {
             addView(text(
-                "Os arquivos são criados somente quando você escolher onde salvar. Nada é enviado automaticamente.",
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                    "O JSON será salvo diretamente em Downloads/iGuardian. Antes de confirmar, o Guardian lê o arquivo de volta e compara os bytes gravados."
+                } else {
+                    "Escolha onde salvar. Antes de confirmar, o Guardian lê o arquivo de volta e compara os bytes gravados."
+                },
                 13f, false, TEXT_MUTED
             ))
+
             addView(outlineButton("Exportar JSON do dia") {
                 exportFresh(false)
             }.apply { topMargin(12) })
+
             addView(outlineButton("Exportar JSON de diagnóstico") {
                 exportFresh(true)
             }.apply { topMargin(10) })
@@ -213,9 +218,17 @@ class MainActivity : Activity() {
         val usageAllowed = UsageAccess.hasPermission(this)
 
         statusText.text = buildString {
-            append(if (privacyReady) "✓ Revisão de apps privados concluída" else "• Revisão de apps privados pendente")
+            append(if (privacyReady) {
+                "✓ Revisão de apps privados concluída"
+            } else {
+                "• Revisão de apps privados pendente"
+            })
             append("\n")
-            append(if (usageAllowed) "✓ Acesso de uso autorizado" else "• Acesso de uso pendente")
+            append(if (usageAllowed) {
+                "✓ Acesso de uso autorizado"
+            } else {
+                "• Acesso de uso pendente"
+            })
         }
 
         permissionHelpCard.visibility = if (usageAllowed) View.GONE else View.VISIBLE
@@ -226,6 +239,7 @@ class MainActivity : Activity() {
             appendLine("✓ SQLite + JSON local")
             appendLine("✓ PRIVATE antes do armazenamento")
             appendLine("✓ Diagnóstico para suporte BigCorps")
+            appendLine("✓ Exportação verificada por leitura de volta")
             appendLine("— Domínios: ainda não")
             appendLine("— Guia anônima: schema pronto; detecção automática ainda não")
             append("— Nuvem/API externa: não existe neste build")
@@ -237,11 +251,20 @@ class MainActivity : Activity() {
                 val result = UsageCollector(applicationContext).collect()
                 runOnUiThread {
                     statusText.text = buildString {
-                        append(if (privacyReady) "✓ Revisão de apps privados concluída" else "• Revisão de apps privados pendente")
+                        append(if (privacyReady) {
+                            "✓ Revisão de apps privados concluída"
+                        } else {
+                            "• Revisão de apps privados pendente"
+                        })
                         append("\n")
-                        append(if (result.permission) "✓ Acesso de uso autorizado" else "• Acesso de uso pendente")
+                        append(if (result.permission) {
+                            "✓ Acesso de uso autorizado"
+                        } else {
+                            "• Acesso de uso pendente"
+                        })
                     }
-                    permissionHelpCard.visibility = if (result.permission) View.GONE else View.VISIBLE
+                    permissionHelpCard.visibility =
+                        if (result.permission) View.GONE else View.VISIBLE
                     updateSummary()
                     Toast.makeText(
                         this,
@@ -291,24 +314,28 @@ class MainActivity : Activity() {
         AlertDialog.Builder(this)
             .setTitle("Liberar configuração restrita")
             .setMessage(
-                "No Android 13 ou superior, APKs instalados manualmente podem ter acessos especiais bloqueados.\n\n" +
-                    "1. Abra as informações do Guardian.\n" +
-                    "2. Toque nos três pontos (⋮) no canto superior.\n" +
-                    "3. Escolha “Permitir configurações restritas”.\n" +
-                    "4. Volte ao Guardian e toque em “Conceder acesso de uso”.\n\n" +
-                    "Se a tela de permissões mostrar “Nenhuma permissão autorizada”, isso é normal: Acesso de uso é um acesso especial."
+                "Esse bloqueio é imposto pelo Android quando um APK é instalado manualmente.\n\n" +
+                    "1. Toque em “Abrir Informações do app”.\n" +
+                    "2. Fique na tela PRINCIPAL de Informações do app.\n" +
+                    "3. Toque nos três pontos (⋮) no canto superior.\n" +
+                    "4. Escolha “Permitir configurações restritas”.\n" +
+                    "5. Volte ao Guardian e toque em “Conceder acesso de uso”.\n\n" +
+                    "Não é a tela “Permissões do app”. Acesso de uso é um acesso especial."
             )
             .setNegativeButton("Cancelar", null)
-            .setPositiveButton("Abrir informações do app") { _, _ -> openAppDetails() }
+            .setPositiveButton("Abrir Informações do app") { _, _ ->
+                openAppDetails()
+            }
             .show()
     }
 
     private fun openAppDetails() {
-        val intent = Intent(
-            Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
-            Uri.parse("package:$packageName")
+        startActivity(
+            Intent(
+                Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                Uri.parse("package:$packageName")
+            )
         )
-        startActivity(intent)
     }
 
     private fun openUsageSettings() {
@@ -341,23 +368,54 @@ class MainActivity : Activity() {
 
                 val contents: String
                 val filename: String
+
                 if (diagnostic) {
-                    contents = DiagnosticsGenerator(applicationContext).generate().toString(2)
+                    contents = DiagnosticsGenerator(applicationContext)
+                        .generate()
+                        .toString(2)
                     filename = "guardian-diagnostico-${
-                        SimpleDateFormat("yyyyMMdd-HHmm", Locale.US).format(Date())
+                        SimpleDateFormat("yyyyMMdd-HHmmss", Locale.US).format(Date())
                     }.json"
                 } else {
-                    contents = ReportGenerator(applicationContext).todayJson().toString(2)
+                    contents = ReportGenerator(applicationContext)
+                        .todayJson()
+                        .toString(2)
                     filename = "guardian-dia-${
-                        SimpleDateFormat("yyyy-MM-dd", Locale.US).format(Date())
+                        SimpleDateFormat("yyyy-MM-dd-HHmmss", Locale.US).format(Date())
                     }.json"
                 }
 
                 if (contents.isBlank()) throw IOException("generated_payload_empty")
 
-                runOnUiThread {
-                    updateSummary()
-                    requestSave(contents, filename)
+                val storage = ExportStorage(applicationContext)
+
+                if (storage.supportsDirectDownloads()) {
+                    val saved = storage.saveToDownloads(filename, contents)
+                    runCatching {
+                        GuardianDatabase(applicationContext).logTechnical(
+                            "EXPORT_OK",
+                            "bytes=${saved.bytes}"
+                        )
+                    }
+
+                    runOnUiThread {
+                        updateSummary()
+                        showSavedDialog(saved)
+                    }
+                } else {
+                    val pending = pendingExportFile()
+                    pending.writeText(contents, Charsets.UTF_8)
+                    if (pending.length() <= 0L) {
+                        throw IOException("pending_export_empty")
+                    }
+
+                    getSharedPreferences(EXPORT_PREFS, MODE_PRIVATE).edit()
+                        .putString(EXPORT_FILENAME, filename)
+                        .apply()
+
+                    runOnUiThread {
+                        requestLegacySave(filename)
+                    }
                 }
             } catch (t: Throwable) {
                 runCatching {
@@ -370,7 +428,7 @@ class MainActivity : Activity() {
                     refresh(false)
                     Toast.makeText(
                         this,
-                        "Não foi possível preparar o JSON: ${t::class.java.simpleName}",
+                        "Não foi possível exportar: ${t.message ?: t::class.java.simpleName}",
                         Toast.LENGTH_LONG
                     ).show()
                 }
@@ -378,37 +436,48 @@ class MainActivity : Activity() {
         }.start()
     }
 
-    private fun requestSave(contents: String, filename: String) {
+    private fun showSavedDialog(saved: ExportStorage.SavedFile) {
+        AlertDialog.Builder(this)
+            .setTitle("JSON salvo e verificado")
+            .setMessage(
+                "${saved.bytes} bytes foram gravados e lidos de volta com sucesso.\n\n" +
+                    saved.locationLabel
+            )
+            .setNegativeButton("Fechar", null)
+            .setPositiveButton("Compartilhar") { _, _ ->
+                shareUri(saved.uri)
+            }
+            .show()
+    }
+
+    private fun shareUri(uri: Uri) {
+        val send = Intent(Intent.ACTION_SEND).apply {
+            type = "application/json"
+            putExtra(Intent.EXTRA_STREAM, uri)
+            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        }
         try {
-            val pending = pendingExportFile()
-            pending.writeText(contents, Charsets.UTF_8)
-            if (!pending.exists() || pending.length() <= 0L) {
-                throw IOException("pending_export_empty")
-            }
-
-            getSharedPreferences(EXPORT_PREFS, MODE_PRIVATE).edit()
-                .putString(EXPORT_FILENAME, filename)
-                .apply()
-
-            val intent = Intent(Intent.ACTION_CREATE_DOCUMENT).apply {
-                addCategory(Intent.CATEGORY_OPENABLE)
-                type = "application/json"
-                putExtra(Intent.EXTRA_TITLE, filename)
-            }
-
-            @Suppress("DEPRECATION")
-            startActivityForResult(intent, REQUEST_EXPORT)
-        } catch (t: Throwable) {
-            clearPendingExport()
+            startActivity(Intent.createChooser(send, "Compartilhar JSON"))
+        } catch (_: Exception) {
             Toast.makeText(
                 this,
-                "Não foi possível iniciar a exportação: ${t::class.java.simpleName}",
+                "Nenhum aplicativo disponível para compartilhar.",
                 Toast.LENGTH_LONG
             ).show()
         }
     }
 
-    @Deprecated("Legacy Activity result API kept to avoid AndroidX dependency in the foundation build")
+    private fun requestLegacySave(filename: String) {
+        val intent = Intent(Intent.ACTION_CREATE_DOCUMENT).apply {
+            addCategory(Intent.CATEGORY_OPENABLE)
+            type = "application/json"
+            putExtra(Intent.EXTRA_TITLE, filename)
+        }
+        @Suppress("DEPRECATION")
+        startActivityForResult(intent, REQUEST_EXPORT)
+    }
+
+    @Deprecated("Legacy Activity result API kept for Android 9 and lower")
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
         if (requestCode != REQUEST_EXPORT) return
@@ -420,6 +489,7 @@ class MainActivity : Activity() {
 
         val uri = data?.data
         val pending = pendingExportFile()
+
         if (uri == null || !pending.exists() || pending.length() <= 0L) {
             clearPendingExport()
             Toast.makeText(
@@ -431,41 +501,26 @@ class MainActivity : Activity() {
         }
 
         try {
-            val expectedBytes = pending.length()
-            val output = contentResolver.openOutputStream(uri, "wt")
-                ?: throw IOException("output_stream_unavailable")
-
-            pending.inputStream().use { input ->
-                output.use { out ->
-                    input.copyTo(out)
-                    out.flush()
-                }
-            }
-
-            val writtenBytes = runCatching {
-                contentResolver.openFileDescriptor(uri, "r")?.use { descriptor ->
-                    descriptor.statSize
-                } ?: -1L
-            }.getOrDefault(-1L)
-
-            if (writtenBytes == 0L) {
-                throw IOException("exported_file_zero_bytes")
-            }
-
-            val shownBytes = if (writtenBytes > 0L) writtenBytes else expectedBytes
-            Toast.makeText(
-                this,
-                "JSON exportado • $shownBytes bytes",
-                Toast.LENGTH_LONG
-            ).show()
+            val contents = pending.readText(Charsets.UTF_8)
+            val bytes = ExportStorage(applicationContext)
+                .writeAndVerifyDocument(uri, contents)
 
             runCatching {
                 GuardianDatabase(applicationContext).logTechnical(
                     "EXPORT_OK",
-                    "bytes=$shownBytes"
+                    "bytes=$bytes"
                 )
             }
+
             clearPendingExport()
+
+            showSavedDialog(
+                ExportStorage.SavedFile(
+                    uri = uri,
+                    bytes = bytes,
+                    locationLabel = "Arquivo selecionado pelo usuário"
+                )
+            )
         } catch (t: Throwable) {
             runCatching {
                 GuardianDatabase(applicationContext).logTechnical(
@@ -475,13 +530,14 @@ class MainActivity : Activity() {
             }
             Toast.makeText(
                 this,
-                "Não foi possível gravar o JSON: ${t::class.java.simpleName}",
+                "Não foi possível gravar o JSON: ${t.message ?: t::class.java.simpleName}",
                 Toast.LENGTH_LONG
             ).show()
         }
     }
 
-    private fun pendingExportFile(): File = File(cacheDir, "guardian-pending-export.json")
+    private fun pendingExportFile(): File =
+        File(cacheDir, "guardian-pending-export.json")
 
     private fun clearPendingExport() {
         runCatching { pendingExportFile().delete() }
@@ -531,14 +587,24 @@ class MainActivity : Activity() {
             gravity = Gravity.CENTER
             setPadding(dp(4), dp(4), dp(4), dp(4))
         }
+
         val value = text("0m", 21f, true, TEXT_PRIMARY).apply {
             gravity = Gravity.CENTER
         }
+
         box.addView(value, matchWidth())
         box.addView(text(label, 11f, false, TEXT_MUTED).apply {
             gravity = Gravity.CENTER
         }, matchWidth())
-        parent.addView(box, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
+
+        parent.addView(
+            box,
+            LinearLayout.LayoutParams(
+                0,
+                ViewGroup.LayoutParams.WRAP_CONTENT,
+                1f
+            )
+        )
         return value
     }
 
@@ -554,46 +620,49 @@ class MainActivity : Activity() {
         if (bold) setTypeface(typeface, Typeface.BOLD)
     }
 
-    private fun primaryButton(label: String, action: (View) -> Unit): Button =
-        Button(this).apply {
-            text = label
-            isAllCaps = false
-            textSize = 14f
-            setTextColor(Color.WHITE)
-            minHeight = dp(52)
-            stateListAnimator = null
-            background = rounded(PRIMARY, 14f)
-            setOnClickListener { view -> action(view) }
-            layoutParams = matchWidth()
-        }
+    private fun primaryButton(
+        label: String,
+        action: (View) -> Unit
+    ): Button = Button(this).apply {
+        text = label
+        isAllCaps = false
+        textSize = 14f
+        setTextColor(Color.WHITE)
+        minHeight = dp(52)
+        stateListAnimator = null
+        background = rounded(PRIMARY, 14f)
+        setOnClickListener { view -> action(view) }
+        layoutParams = matchWidth()
+    }
 
-    private fun outlineButton(label: String, action: (View) -> Unit): Button =
-        Button(this).apply {
-            text = label
-            isAllCaps = false
-            textSize = 14f
-            setTextColor(PRIMARY)
-            minHeight = dp(50)
-            stateListAnimator = null
-            background = rounded(CARD, 14f, PRIMARY, 1)
-            setOnClickListener { view -> action(view) }
-            layoutParams = matchWidth()
-        }
+    private fun outlineButton(
+        label: String,
+        action: (View) -> Unit
+    ): Button = Button(this).apply {
+        text = label
+        isAllCaps = false
+        textSize = 14f
+        setTextColor(PRIMARY)
+        minHeight = dp(50)
+        stateListAnimator = null
+        background = rounded(CARD, 14f, PRIMARY, 1)
+        setOnClickListener { view -> action(view) }
+        layoutParams = matchWidth()
+    }
 
     private fun rounded(
         fillColor: Int,
         radiusDp: Float,
         strokeColor: Int? = null,
         strokeDp: Int = 0
-    ): GradientDrawable =
-        GradientDrawable().apply {
-            shape = GradientDrawable.RECTANGLE
-            setColor(fillColor)
-            cornerRadius = dp(radiusDp.toInt()).toFloat()
-            if (strokeColor != null && strokeDp > 0) {
-                setStroke(dp(strokeDp), strokeColor)
-            }
+    ): GradientDrawable = GradientDrawable().apply {
+        shape = GradientDrawable.RECTANGLE
+        setColor(fillColor)
+        cornerRadius = dp(radiusDp.toInt()).toFloat()
+        if (strokeColor != null && strokeDp > 0) {
+            setStroke(dp(strokeDp), strokeColor)
         }
+    }
 
     private fun matchWidth(): LinearLayout.LayoutParams =
         LinearLayout.LayoutParams(

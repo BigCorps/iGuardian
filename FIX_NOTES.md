@@ -1,24 +1,15 @@
-# Runtime Fix 0.1.1
+# iGuardian Android 0.1.2 — Export Fix
 
-This package replaces only the files listed below.
+Replace these files preserving paths:
 
-## Files
 - `app/src/main/java/com/bigcorps/guardian/MainActivity.kt`
-- `app/src/main/java/com/bigcorps/guardian/ui/PrivateAppsActivity.kt`
-- `app/src/main/res/values/themes.xml`
+- `app/src/main/java/com/bigcorps/guardian/core/ExportStorage.kt` (new)
 - `app/build.gradle.kts`
 - `.github/workflows/android.yml`
 - `README.md`
 - `CHANGELOG.md`
 - `PROJECT_STATE.json`
 
-## Fixes
-1. Android sideload/restricted-settings onboarding.
-2. Main screen visual redesign.
-3. Private-app screen visual redesign.
-4. Android edge-to-edge safe areas.
-5. 0 KB JSON export fix using app-private cache + validated output.
-6. Version bump to 0.1.1 / versionCode 2.
-7. Actions artifact renamed to `guardian-android-0.1.1-debug`.
-
-Upload these files preserving their paths. A push to `main` will start GitHub Actions automatically.
+The core fix is that Android 10+ no longer depends on ACTION_CREATE_DOCUMENT for export.
+Guardian writes directly to MediaStore.Downloads/Downloads/iGuardian and then reopens the
+destination and compares it byte-for-byte with the generated JSON before showing success.
