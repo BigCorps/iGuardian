@@ -1,15 +1,7 @@
-# Guardian Android 0.1.9
+# Guardian Android 0.1.10
 
-This build keeps the working WorkManager schedule unchanged and improves observability instead of changing it prematurely.
+WorkManager behavior is deliberately unchanged. This build validates report precision, runtime intelligence self-check, longer cadence telemetry and another update/privacy regression.
 
-Combined test:
-- WorkManager longer-run stability;
-- stop reason if an attempt is interrupted;
-- DB v5 system-surface cleanup;
-- rolling 24h questions;
-- deterministic insights.
+Do not uninstall 0.1.9.
 
-Do not uninstall 0.1.8.
-
-Expected artifact:
-guardian-android-0.1.9-fixed-signed-debug
+Expected artifact: `guardian-android-0.1.10-fixed-signed-debug`.

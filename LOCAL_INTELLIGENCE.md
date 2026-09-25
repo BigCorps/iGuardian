@@ -1,31 +1,7 @@
-# Local Intelligence v3 — Android 0.1.9
+# Local Intelligence v3 + Runtime Self-Check — 0.1.10
 
-100% local, deterministic and non-persistent.
+The question engine remains the physically tested v3 feature set: today, yesterday, last 24 hours, last 7 days, named-app usage, top apps, unlocks, screen-off, PRIVATE, SYSTEM, coverage, comparison and deterministic insights.
 
-Periods:
-- today;
-- yesterday;
-- rolling last 24 hours;
-- last 7 days.
+0.1.10 adds a diagnostic runtime self-check using fixed built-in phrases. It exports only check IDs/pass-fail and never reads/stores the user's typed query history.
 
-Functions:
-- summary;
-- top app / top 5;
-- named app usage;
-- unlocks;
-- screen-off;
-- PRIVATE;
-- SYSTEM;
-- coverage;
-- today vs yesterday comparison;
-- deterministic factual insights.
-
-Insights:
-- top app share of total app time;
-- longest continuous APP interval;
-- longest continuous SCREEN_OFF interval;
-- period coverage.
-
-No LLM, API, server, scoring or behavioral diagnosis.
-
-Questions are processed in memory and discarded.
+No LLM, API, network or query history.

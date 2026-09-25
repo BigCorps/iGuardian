@@ -159,11 +159,17 @@ class SchedulerStateStore(context: Context) {
         attempt: Int,
         nowMs: Long = System.currentTimeMillis()
     ) {
+        val history =
+            (recentWorkerStartsMs() + nowMs)
+                .takeLast(12)
+                .joinToString(",")
+
         prefs.edit()
             .putInt("worker_run_count", workerRunCount() + 1)
             .putLong("last_worker_start_ms", nowMs)
             .putString("last_worker_id", workId.take(80))
             .putInt("last_worker_attempt", attempt)
+            .putString("worker_start_history_ms", history)
             .apply()
     }
 
@@ -259,6 +265,14 @@ class SchedulerStateStore(context: Context) {
         prefs.getBoolean("last_ensure_created_new", false)
     fun lastWorkId(): String? =
         prefs.getString("last_work_id", null)
+
+    fun recentWorkerStartsMs(): List<Long> =
+        prefs.getString("worker_start_history_ms", "")
+            .orEmpty()
+            .split(",")
+            .mapNotNull { it.toLongOrNull() }
+            .filter { it > 0L }
+            .takeLast(12)
 
     fun workerRunCount(): Int = prefs.getInt("worker_run_count", 0)
     fun workerSuccessCount(): Int =

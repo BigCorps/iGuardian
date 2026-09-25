@@ -14,6 +14,11 @@ class ReportGenerator(private val context: Context) {
     private val state = CollectorStateStore(context)
 
     data class Summary(
+        val appMilliseconds: Long,
+        val privateMilliseconds: Long,
+        val screenOffMilliseconds: Long,
+        val systemMilliseconds: Long,
+        val anonymousMilliseconds: Long,
         val appSeconds: Long,
         val privateSeconds: Long,
         val screenOffSeconds: Long,
@@ -26,6 +31,7 @@ class ReportGenerator(private val context: Context) {
     data class AppAggregate(
         val packageName: String,
         val name: String,
+        val milliseconds: Long,
         val seconds: Long,
         val sessions: Int
     )
@@ -48,6 +54,7 @@ class ReportGenerator(private val context: Context) {
                 JSONObject().apply {
                     put("package", app.packageName)
                     put("name", app.name)
+                    put("foreground_milliseconds", app.milliseconds)
                     put("foreground_seconds", app.seconds)
                     put("sessions", app.sessions)
                 }
@@ -61,10 +68,10 @@ class ReportGenerator(private val context: Context) {
                     put("type", item.type.name)
                     put("start_at", iso(item.startMs))
                     put("end_at", iso(item.endMs))
-                    put(
-                        "duration_seconds",
-                        (item.endMs - item.startMs).coerceAtLeast(0L) / 1000L
-                    )
+                    val durationMs =
+                        (item.endMs - item.startMs).coerceAtLeast(0L)
+                    put("duration_milliseconds", durationMs)
+                    put("duration_seconds", durationMs / 1000L)
 
                     if (item.type == IntervalType.APP) {
                         put("package", item.packageName ?: JSONObject.NULL)
@@ -78,32 +85,36 @@ class ReportGenerator(private val context: Context) {
         }
 
         val effectiveStart = effectiveTrackingStart(startMs, endMs)
-        val effectivePeriodSeconds =
-            (endMs - effectiveStart).coerceAtLeast(0L) / 1000L
+        val effectivePeriodMilliseconds =
+            (endMs - effectiveStart).coerceAtLeast(0L)
 
-        val recordedSeconds =
-            summary.appSeconds +
-                summary.privateSeconds +
-                summary.screenOffSeconds +
-                summary.systemSeconds +
-                summary.anonymousSeconds
+        val recordedMilliseconds =
+            summary.appMilliseconds +
+                summary.privateMilliseconds +
+                summary.screenOffMilliseconds +
+                summary.systemMilliseconds +
+                summary.anonymousMilliseconds
 
-        val unclassifiedSeconds =
-            (effectivePeriodSeconds - recordedSeconds).coerceAtLeast(0L)
+        val unclassifiedMilliseconds =
+            (effectivePeriodMilliseconds - recordedMilliseconds).coerceAtLeast(0L)
+
+        val effectivePeriodSeconds = effectivePeriodMilliseconds / 1000L
+        val recordedSeconds = recordedMilliseconds / 1000L
+        val unclassifiedSeconds = unclassifiedMilliseconds / 1000L
 
         val coveragePercent =
-            if (effectivePeriodSeconds > 0L) {
+            if (effectivePeriodMilliseconds > 0L) {
                 round(
-                    recordedSeconds.toDouble() *
+                    recordedMilliseconds.toDouble() *
                         1000.0 /
-                        effectivePeriodSeconds.toDouble()
+                        effectivePeriodMilliseconds.toDouble()
                 ) / 10.0
             } else {
                 0.0
             }
 
         return JSONObject().apply {
-            put("schema_version", 2)
+            put("schema_version", 3)
             put(
                 "date",
                 SimpleDateFormat("yyyy-MM-dd", Locale.US).format(Date(startMs))
@@ -122,12 +133,15 @@ class ReportGenerator(private val context: Context) {
                             ?: JSONObject.NULL
                     )
                     put("effective_period_start", iso(effectiveStart))
+                    put("effective_period_milliseconds", effectivePeriodMilliseconds)
                     put("effective_period_seconds", effectivePeriodSeconds)
+                    put("recorded_milliseconds", recordedMilliseconds)
                     put("recorded_seconds", recordedSeconds)
+                    put("unclassified_milliseconds", unclassifiedMilliseconds)
                     put("unclassified_seconds", unclassifiedSeconds)
                     put("coverage_percent", coveragePercent)
                     put("overlap_resolution", "privacy_precedence_v1")
-                    put("aggregation_precision", "milliseconds_then_seconds")
+                    put("aggregation_precision", "milliseconds")
                 }
             )
 
@@ -136,14 +150,19 @@ class ReportGenerator(private val context: Context) {
             put(
                 "summary",
                 JSONObject().apply {
+                    put("app_usage_milliseconds", summary.appMilliseconds)
                     put("app_usage_seconds", summary.appSeconds)
                     put("app_usage_minutes", summary.appSeconds / 60L)
+                    put("screen_off_milliseconds", summary.screenOffMilliseconds)
                     put("screen_off_seconds", summary.screenOffSeconds)
                     put("screen_off_minutes", summary.screenOffSeconds / 60L)
+                    put("private_milliseconds", summary.privateMilliseconds)
                     put("private_seconds", summary.privateSeconds)
                     put("private_minutes", summary.privateSeconds / 60L)
+                    put("system_milliseconds", summary.systemMilliseconds)
                     put("system_seconds", summary.systemSeconds)
                     put("system_minutes", summary.systemSeconds / 60L)
+                    put("anonymous_browser_milliseconds", JSONObject.NULL)
                     put("anonymous_browser_seconds", JSONObject.NULL)
                     put("anonymous_browser_minutes", JSONObject.NULL)
                     put("unlock_count", summary.unlockCount)
@@ -169,6 +188,8 @@ class ReportGenerator(private val context: Context) {
                         else
                             "runtime_best_effort"
                     )
+                    put("duration_precision", "milliseconds+seconds")
+                    put("session_definition", "normalized_foreground_intervals")
                     put("system_surface_separation", true)
                     put("browser_domains", false)
                     put("anonymous_browser_detection", false)
@@ -246,6 +267,7 @@ class ReportGenerator(private val context: Context) {
                 AppAggregate(
                     packageName = pkg,
                     name = agg.name,
+                    milliseconds = agg.millis,
                     seconds = seconds,
                     sessions = agg.sessions
                 )
@@ -253,6 +275,11 @@ class ReportGenerator(private val context: Context) {
         }.sortedByDescending { it.seconds }
 
         return Summary(
+            appMilliseconds = appMs,
+            privateMilliseconds = privateMs,
+            screenOffMilliseconds = screenOffMs,
+            systemMilliseconds = systemMs,
+            anonymousMilliseconds = anonymousMs,
             appSeconds = appMs / 1000L,
             privateSeconds = privateMs / 1000L,
             screenOffSeconds = screenOffMs / 1000L,

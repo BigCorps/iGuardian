@@ -1,15 +1,7 @@
-# Data Schema — export v2 / DB v5 / diagnostic v7
+# Data Schema — report v3 / DB v5 / diagnostic v8
 
-Timeline:
-APP | PRIVATE | SCREEN_OFF | SYSTEM | ANONYMOUS_BROWSER
+Report v3 keeps v2 fields and adds millisecond precision to timeline intervals, app aggregates, summaries and tracking. Coverage is calculated from millisecond totals.
 
-Only APP may carry package/name.
+Only APP may carry package/name. PRIVATE/SYSTEM/SCREEN_OFF remain identity-free.
 
-DB v5:
-- historical `com.google.android.photopicker` rows become SYSTEM;
-- historical `com.mi.appfinder` rows become SYSTEM;
-- package/label identity is cleared during migration.
-
-Diagnostic v7 adds WorkManager stop telemetry.
-
-Local Intelligence v3 remains computed-only and creates no query history table.
+Diagnostic v8 adds WorkManager cadence telemetry and Local Intelligence runtime self-check. No user query history is stored.

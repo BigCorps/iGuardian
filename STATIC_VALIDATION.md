@@ -1,6 +1,4 @@
-# Static validation — 0.1.9
-
-Base: physically validated Android 0.1.8 package.
+# Static validation — 0.1.10
 
 - `app/src/main/java/com/bigcorps/guardian/GuardianApplication.kt`: braces=0; parens=0
 - `app/src/main/java/com/bigcorps/guardian/MainActivity.kt`: braces=0; parens=0
@@ -11,6 +9,7 @@ Base: physically validated Android 0.1.8 package.
 - `app/src/main/java/com/bigcorps/guardian/core/GuardianRescheduleReceiver.kt`: braces=0; parens=0
 - `app/src/main/java/com/bigcorps/guardian/core/GuardianScheduler.kt`: braces=0; parens=0
 - `app/src/main/java/com/bigcorps/guardian/core/GuardianWorker.kt`: braces=0; parens=0
+- `app/src/main/java/com/bigcorps/guardian/core/LocalIntelligenceSelfCheck.kt`: braces=0; parens=0
 - `app/src/main/java/com/bigcorps/guardian/core/LocalQuestionEngine.kt`: braces=0; parens=0
 - `app/src/main/java/com/bigcorps/guardian/core/Preferences.kt`: braces=0; parens=0
 - `app/src/main/java/com/bigcorps/guardian/core/ReportGenerator.kt`: braces=0; parens=0

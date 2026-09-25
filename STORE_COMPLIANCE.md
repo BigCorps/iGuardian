@@ -1,16 +1,3 @@
-# Store Compliance Design Notes — 0.1.9
+# Store Compliance Design Notes — 0.1.10
 
-Unchanged privacy posture:
-- no INTERNET;
-- no account/cloud;
-- no AccessibilityService;
-- no VPN;
-- no screen/media/input capture;
-- no notification/message contents;
-- no QUERY_ALL_PACKAGES;
-- explicit Usage Access;
-- privacy sanitization before storage;
-- local questions/insights are offline and not persisted;
-- WorkManager handles ordinary deferrable background maintenance.
-
-0.1.9 adds only technical WorkManager stop-reason telemetry and stricter SYSTEM classification.
+No permission expansion: no INTERNET, AccessibilityService, VPN, media/input capture, notification/message content or QUERY_ALL_PACKAGES. Usage Access remains explicit. Local intelligence is offline/non-persistent and WorkManager handles ordinary deferrable maintenance.

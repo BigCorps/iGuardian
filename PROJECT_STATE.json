@@ -1,43 +1,40 @@
 {
   "project_codename": "Guardian",
-  "version": "0.1.9",
+  "version": "0.1.10",
   "platform": "android",
   "phase": 2,
-  "phase_name": "Local Intelligence v3 + WorkManager stop telemetry",
-  "schema_version": 2,
-  "diagnostic_schema_version": 7,
+  "phase_name": "Local Intelligence validation + report precision",
+  "schema_version": 3,
+  "diagnostic_schema_version": 8,
   "database_version": 5,
   "repository": "BigCorps/iGuardian",
   "backend": "none",
   "internet_permission": false,
   "dev_application_id": "com.bigcorps.guardian.dev",
   "last_physically_validated_build": {
-    "version": "0.1.8",
-    "version_code": 9,
-    "generated_at": "2026-09-25T14:59:14.576-03:00",
-    "today_coverage_percent": 99.5,
+    "version": "0.1.9",
+    "version_code": 10,
+    "generated_at": "2026-09-25T18:27:04.564-03:00",
+    "today_coverage_percent": 99.4,
     "snapshot_24h_coverage_percent": 99.3,
     "privacy_timeline_result": "passed",
-    "scheduler": {
+    "workmanager": {
       "logic_version": 5,
-      "engine": "androidx_workmanager",
       "unique_work_present": true,
-      "enqueue_count": 1,
-      "worker_run_count": 3,
-      "worker_success_count": 3,
+      "worker_run_count": 5,
+      "worker_success_count": 5,
       "worker_retry_count": 0,
       "worker_failure_count": 0,
-      "boot_completed_seen": true,
-      "observation": "same Work UUID had one immediate attempt=1 after successful-looking attempt; stop reason not available in 0.1.8 telemetry"
+      "worker_stopped_count": 0,
+      "exact_periodicity": "not guaranteed",
+      "product_decision": "accepted as best-effort with retrospective catch-up"
     }
   },
-  "implemented_in_0_1_9": [
-    "WorkManager stop-reason telemetry",
-    "Worker onStopped telemetry",
-    "Photo Picker/App Finder SYSTEM sanitation",
-    "DB v5 historical system repair",
-    "rolling last 24 hours questions",
-    "deterministic factual insights"
+  "implemented_in_0_1_10": [
+    "report schema v3 millisecond precision",
+    "runtime Local Intelligence self-check",
+    "WorkManager recent-start cadence telemetry",
+    "explicit best-effort background semantics"
   ],
-  "next_task": "Install 0.1.9 over 0.1.8; test 24h and insights; leave mostly closed 60-90m; export daily+diagnostic JSON."
+  "next_task": "Install 0.1.10 over 0.1.9, leave 2-3h if convenient, export daily+diagnostic JSON."
 }

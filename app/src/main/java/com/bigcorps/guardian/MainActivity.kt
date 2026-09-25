@@ -242,7 +242,7 @@ class MainActivity : Activity() {
             card().apply {
                 addView(
                     textView(
-                        "Inteligência local v3 • sem internet",
+                        "Inteligência local v3 • auto-teste local • sem internet",
                         12f,
                         true,
                         PRIMARY
@@ -380,6 +380,9 @@ class MainActivity : Activity() {
             appendLine("✓ SQLite + JSON local")
             appendLine("✓ Exportação verificada")
             appendLine("✓ Coleta serializada")
+            appendLine("✓ WorkManager best-effort + catch-up")
+            appendLine("✓ Inteligência local com auto-teste")
+            appendLine("✓ Relatório com precisão em milissegundos")
             appendLine("— Domínios: ainda não")
             appendLine("— Guia anônima: schema pronto; detecção ainda não")
             append("— Nuvem/API externa: não existe neste build")

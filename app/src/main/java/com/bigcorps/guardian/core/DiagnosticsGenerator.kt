@@ -38,7 +38,7 @@ class DiagnosticsGenerator(private val context: Context) {
         }
 
         return JSONObject().apply {
-            put("diagnostic_schema", 7)
+            put("diagnostic_schema", 8)
             put("generated_at", iso(System.currentTimeMillis()))
 
             put(
@@ -105,6 +105,14 @@ class DiagnosticsGenerator(private val context: Context) {
                     put(
                         "periodic_job_scheduled",
                         GuardianScheduler.isScheduled(context)
+                    )
+                    put(
+                        "background_work_scheduled",
+                        GuardianScheduler.isScheduled(context)
+                    )
+                    put(
+                        "background_engine",
+                        GuardianScheduler.engine()
                     )
                     put("tracking_start_ms", state.trackingStartMs())
                     put(
@@ -351,6 +359,33 @@ class DiagnosticsGenerator(private val context: Context) {
                         "last_worker_stopped_attempt",
                         schedulerState.lastWorkerStoppedAttempt()
                     )
+                    val recentStarts =
+                        schedulerState.recentWorkerStartsMs()
+
+                    put(
+                        "recent_worker_starts_at",
+                        JSONArray().apply {
+                            recentStarts.forEach { value -> put(iso(value)) }
+                        }
+                    )
+                    put(
+                        "recent_worker_intervals_seconds",
+                        JSONArray().apply {
+                            recentStarts.zipWithNext().forEach { (before, after) ->
+                                put((after - before).coerceAtLeast(0L) / 1000L)
+                            }
+                        }
+                    )
+                    put(
+                        "last_worker_finish_age_seconds",
+                        schedulerState.lastWorkerFinishMs()
+                            .takeIf { it > 0L }
+                            ?.let {
+                                (System.currentTimeMillis() - it)
+                                    .coerceAtLeast(0L) / 1000L
+                            }
+                            ?: JSONObject.NULL
+                    )
                     put(
                         "reschedule_signal_count",
                         schedulerState.rescheduleSignalCount()
@@ -413,10 +448,14 @@ class DiagnosticsGenerator(private val context: Context) {
                     put("system_surface_separation", true)
                     put("timeline_overlap_resolution", true)
                     put("serialized_collection", true)
-                    put("process_start_scheduler_guard", true)
+                    put("process_start_scheduler_guard", false)
                     put("millisecond_summary_aggregation", true)
+                    put("report_schema_version", 3)
                     put("chained_one_shot_scheduler", false)
                     put("workmanager_background", true)
+                    put("workmanager_unique_periodic", true)
+                    put("background_exact_periodicity_guaranteed", false)
+                    put("background_catch_up_collection", true)
                     put("workmanager_version", GuardianScheduler.WORKMANAGER_VERSION)
                     put("local_question_engine", true)
                     put("local_question_engine_version", 3)
@@ -431,6 +470,19 @@ class DiagnosticsGenerator(private val context: Context) {
                     put("anonymous_browser_detection", false)
                     put("anonymous_browser_schema_ready", true)
                     put("network_transport", false)
+                }
+            )
+
+            put(
+                "local_intelligence_self_check",
+                runCatching {
+                    LocalIntelligenceSelfCheck.run(context)
+                }.getOrElse {
+                    JSONObject().apply {
+                        put("passed", false)
+                        put("error", it::class.java.simpleName.take(60))
+                        put("user_query_content_stored", false)
+                    }
                 }
             )
 

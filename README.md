@@ -1,87 +1,56 @@
-# Guardian DEV — Android 0.1.9
+# Guardian DEV — Android 0.1.10
 
-## What 0.1.8 proved
+## 0.1.9 result
 
-The WorkManager migration passed the main background/reboot test.
+The core Android data/privacy path remains stable.
 
-Diagnostic at 14:59 showed:
-- 0.1.8 / versionCode 9;
-- scheduler logic 5;
-- WorkManager 2.12.0;
-- unique periodic work still ENQUEUED;
-- one unique work UUID;
-- reboot signal BOOT_COMPLETED captured;
-- three worker starts and three local collector completions;
-- no recorded worker retry/failure in Guardian telemetry;
-- next schedule remained populated;
-- legacy JobScheduler IDs were cancelled.
+Confirmed on the physical Xiaomi/Android 16 test device:
+- 0.1.9 / versionCode 10;
+- Usage Access and history preserved;
+- no INTERNET permission;
+- no QUERY_ALL_PACKAGES;
+- WorkManager unique periodic work still present;
+- same unique work UUID retained;
+- 5 Worker runs / 5 successful results;
+- 0 retry / 0 failure / 0 stopped Worker;
+- current WorkInfo ENQUEUED;
+- prior BOOT_COMPLETED signal preserved;
+- today coverage 99.4%;
+- rolling 24h diagnostic coverage 99.3%;
+- full JSON analysis found no timeline overlaps;
+- full JSON analysis found no identity on PRIVATE/SYSTEM;
+- Photo Picker and Xiaomi App Finder no longer appear as APP.
 
-The first run after reboot occurred at 14:18. The next periodic run began about 30 minutes later at 14:49.
+## Background decision
 
-One additional WorkManager attempt started about 21 seconds later with attempt=1. It used the same unique work UUID and did not create a second enqueue. Data integrity was protected by the serialized/cursor-based collector, but 0.1.9 adds stop-reason telemetry so the next diagnostic can identify why WorkManager retried that attempt.
+The visible Worker starts show that Android/Xiaomi may defer a 30-minute periodic request substantially.
 
-## Data/privacy
+Guardian therefore treats WorkManager as best-effort maintenance, not an exact timer. UsageStats collection catches up retrospectively from the stored cursor whenever a Worker or the app runs. Exact timing is not a Phase 2 blocker.
 
-0.1.8 retained:
-- 99.5% coverage today;
-- 99.3% 24h snapshot coverage;
-- no timeline overlap found;
-- no PRIVATE/SYSTEM identity leak found;
-- no sensitive bank/settings identity found.
+## Report schema v3
 
-Two tiny OEM/system surfaces still appeared as user apps:
-- Xiaomi Localizador de apps;
-- Android/Google Photo Picker.
+0.1.10 adds millisecond precision while keeping seconds/minutes for compatibility.
 
-0.1.9 moves them to sanitized SYSTEM and DB v5 repairs the historical rows.
+New fields:
+- timeline `duration_milliseconds`;
+- app `foreground_milliseconds`;
+- summary millisecond totals;
+- tracking effective/recorded/unclassified milliseconds.
 
-## WorkManager telemetry
+Coverage is calculated directly from milliseconds. Sub-second transitions no longer look like unexplained `0s` entries.
 
-0.1.9 keeps scheduler logic 5. It does not reset the counters, so the next test extends the same WorkManager observation window.
+## Local Intelligence runtime self-check
 
-New telemetry:
-- WorkInfo.stopReason;
-- Worker class name;
-- onStopped count;
-- last stop reason;
-- stopped attempt number.
+The engine remains v3. Diagnostic schema v8 now runs fixed built-in local checks for summary today, top 5 last 24h, insights today and today-vs-yesterday comparison.
 
-This is diagnostic only; scheduling behavior itself is unchanged.
+Only check IDs and pass/fail are exported. User-entered questions remain non-persistent.
 
-## Local Intelligence v3
+## WorkManager cadence telemetry
 
-New:
-- exact rolling last 24 hours;
-- deterministic factual insights.
+Scheduling behavior is unchanged. New diagnostics keep recent Worker start timestamps, intervals between starts and age of last Worker finish.
 
-Examples:
-- `Top 5 das últimas 24 horas`
-- `Insights de hoje`
-- `Insights de ontem`
-- `Insights dos últimos 7 dias`
+## Next test
 
-Insights remain descriptive only:
-- leading app and share of app-use time;
-- longest continuous app session;
-- longest continuous screen-off interval;
-- coverage.
+Install 0.1.10 over 0.1.9. No reboot is required.
 
-No behavioral judgment, score or health claim is produced.
-
-## Combined validation
-
-Install 0.1.9 over 0.1.8 without uninstalling.
-
-Immediately try:
-1. `Top 5 das últimas 24 horas`
-2. `Insights de hoje`
-3. `Insights de ontem`
-4. `Compare hoje com ontem`
-
-Then use the phone normally and leave Guardian mostly closed.
-
-For background validation, 60–90 minutes is sufficient. A reboot is optional this time because BOOT_COMPLETED + WorkManager persistence already passed in 0.1.8.
-
-At the end export daily + diagnostic JSON.
-
-The next diagnostic should let us distinguish a normal WorkManager/system stop from an app-generated retry if another attempt=1 occurs.
+Use the phone normally and leave Guardian installed for 2–3 hours if convenient, then export daily + diagnostic JSON.
