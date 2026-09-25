@@ -155,6 +155,31 @@ class SchedulerStateStore(context: Context) {
         edit.apply()
     }
 
+    fun recordProcessStart(nowMs: Long = System.currentTimeMillis()) {
+        prefs.edit()
+            .putInt("process_start_count", processStartCount() + 1)
+            .putLong("last_process_start_ms", nowMs)
+            .apply()
+    }
+
+    fun recordProcessStartDecision(
+        decision: String,
+        skippedRecovery: Boolean,
+        nowMs: Long = System.currentTimeMillis()
+    ) {
+        val edit = prefs.edit()
+            .putString("last_process_start_decision", decision.take(60))
+            .putLong("last_process_start_decision_ms", nowMs)
+
+        if (skippedRecovery) {
+            edit.putInt(
+                "process_start_skip_count",
+                processStartSkipCount() + 1
+            )
+        }
+        edit.apply()
+    }
+
     fun recordJobStart(nowMs: Long = System.currentTimeMillis()) {
         prefs.edit()
             .putInt("job_run_count", jobRunCount() + 1)
@@ -174,6 +199,15 @@ class SchedulerStateStore(context: Context) {
 
     fun logicVersion(): Int = prefs.getInt("logic_version", 0)
     fun statsSinceMs(): Long = prefs.getLong("stats_since_ms", 0L)
+    fun processStartCount(): Int = prefs.getInt("process_start_count", 0)
+    fun processStartSkipCount(): Int =
+        prefs.getInt("process_start_skip_count", 0)
+    fun lastProcessStartMs(): Long =
+        prefs.getLong("last_process_start_ms", 0L)
+    fun lastProcessStartDecision(): String? =
+        prefs.getString("last_process_start_decision", null)
+    fun lastProcessStartDecisionMs(): Long =
+        prefs.getLong("last_process_start_decision_ms", 0L)
     fun scheduleAttemptCount(): Int = prefs.getInt("schedule_attempt_count", 0)
     fun recoveryCount(): Int = prefs.getInt("recovery_count", 0)
     fun jobRunCount(): Int = prefs.getInt("job_run_count", 0)

@@ -5,11 +5,15 @@
 - JSON/export;
 - PRIVATE/screen-off/unlocks;
 - fixed DEV signing;
+- update-in-place proof — **passed**;
 - SYSTEM separation;
-- scheduler validation;
-- update-in-place proof.
+- serialized collection;
+- timeline overlap resolution;
+- scheduler validation — logic v3 under test;
+- fresh other-user/profile validation still pending.
 
 ## Phase 2 — Local intelligence
+After scheduler/profile validation:
 - deterministic question parser;
 - local calculations;
 - daily/weekly comparisons;
@@ -34,4 +38,8 @@
 - EXE/store package.
 
 ## Phase 6 — Premium
-Only after store approvals: login, optional device pairing, optional cloud AI, web payment.
+Only after store approvals:
+- login;
+- optional device pairing;
+- optional cloud AI;
+- web payment.

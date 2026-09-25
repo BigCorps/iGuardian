@@ -127,6 +127,7 @@ class ReportGenerator(private val context: Context) {
                     put("unclassified_seconds", unclassifiedSeconds)
                     put("coverage_percent", coveragePercent)
                     put("overlap_resolution", "privacy_precedence_v1")
+                    put("aggregation_precision", "milliseconds_then_seconds")
                 }
             )
 
@@ -164,7 +165,7 @@ class ReportGenerator(private val context: Context) {
                     put(
                         "unlock_detection_mode",
                         if (android.os.Build.VERSION.SDK_INT >= 28)
-                            "usage_stats"
+                            "usage_stats_distinct_timestamp"
                         else
                             "runtime_best_effort"
                     )
@@ -195,60 +196,68 @@ class ReportGenerator(private val context: Context) {
         startMs: Long,
         endMs: Long
     ): Summary {
-        var appSeconds = 0L
-        var privateSeconds = 0L
-        var screenOffSeconds = 0L
-        var systemSeconds = 0L
-        var anonymousSeconds = 0L
+        var appMs = 0L
+        var privateMs = 0L
+        var screenOffMs = 0L
+        var systemMs = 0L
+        var anonymousMs = 0L
 
         data class MutableAgg(
             var name: String,
-            var seconds: Long = 0L,
+            var millis: Long = 0L,
             var sessions: Int = 0
         )
 
         val appMap = linkedMapOf<String, MutableAgg>()
 
         intervals.forEach { interval ->
-            val seconds =
-                (interval.endMs - interval.startMs).coerceAtLeast(0L) / 1000L
+            val millis =
+                (interval.endMs - interval.startMs).coerceAtLeast(0L)
 
             when (interval.type) {
                 IntervalType.APP -> {
-                    appSeconds += seconds
+                    appMs += millis
                     val pkg = interval.packageName ?: return@forEach
                     val agg = appMap.getOrPut(pkg) {
                         MutableAgg(interval.appLabel ?: pkg)
                     }
-                    agg.seconds += seconds
+                    agg.millis += millis
                     agg.sessions += 1
+
                     if (!interval.appLabel.isNullOrBlank()) {
                         agg.name = interval.appLabel
                     }
                 }
 
-                IntervalType.PRIVATE -> privateSeconds += seconds
-                IntervalType.SCREEN_OFF -> screenOffSeconds += seconds
-                IntervalType.SYSTEM -> systemSeconds += seconds
-                IntervalType.ANONYMOUS_BROWSER -> anonymousSeconds += seconds
+                IntervalType.PRIVATE -> privateMs += millis
+                IntervalType.SCREEN_OFF -> screenOffMs += millis
+                IntervalType.SYSTEM -> systemMs += millis
+                IntervalType.ANONYMOUS_BROWSER -> anonymousMs += millis
             }
         }
 
-        val topApps = appMap.map { (pkg, agg) ->
-            AppAggregate(
-                pkg,
-                agg.name,
-                agg.seconds,
-                agg.sessions
-            )
+        val topApps = appMap.mapNotNull { (pkg, agg) ->
+            val seconds = agg.millis / 1000L
+
+            // Do not show zero-second transition artifacts as "used apps".
+            if (seconds <= 0L) {
+                null
+            } else {
+                AppAggregate(
+                    packageName = pkg,
+                    name = agg.name,
+                    seconds = seconds,
+                    sessions = agg.sessions
+                )
+            }
         }.sortedByDescending { it.seconds }
 
         return Summary(
-            appSeconds = appSeconds,
-            privateSeconds = privateSeconds,
-            screenOffSeconds = screenOffSeconds,
-            systemSeconds = systemSeconds,
-            anonymousSeconds = anonymousSeconds,
+            appSeconds = appMs / 1000L,
+            privateSeconds = privateMs / 1000L,
+            screenOffSeconds = screenOffMs / 1000L,
+            systemSeconds = systemMs / 1000L,
+            anonymousSeconds = anonymousMs / 1000L,
             unlockCount = db.technicalCount("UNLOCK", startMs, endMs),
             topApps = topApps
         )

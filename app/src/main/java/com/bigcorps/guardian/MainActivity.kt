@@ -40,6 +40,8 @@ class MainActivity : Activity() {
     private lateinit var systemValue: TextView
     private lateinit var topAppsText: TextView
     private lateinit var capabilityText: TextView
+    @Volatile
+    private var exportInProgress = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -77,7 +79,7 @@ class MainActivity : Activity() {
         root.addView(textView("Seu aparelho, explicado.", 28f, true, TEXT_PRIMARY).apply {
             setPadding(0, dp(4), 0, 0)
         })
-        root.addView(textView("Android 0.1.5 • 100% local", 14f, false, TEXT_MUTED).apply {
+        root.addView(textView("Android ${currentVersionName()} • 100% local", 14f, false, TEXT_MUTED).apply {
             setPadding(0, dp(4), 0, dp(16))
         })
 
@@ -430,6 +432,16 @@ class MainActivity : Activity() {
     }
 
     private fun exportFresh(diagnostic: Boolean) {
+        if (exportInProgress) {
+            Toast.makeText(
+                this,
+                "Uma exportação já está em andamento.",
+                Toast.LENGTH_SHORT
+            ).show()
+            return
+        }
+
+        exportInProgress = true
         statusText.text = "Preparando exportação local…"
 
         Thread {
@@ -485,6 +497,7 @@ class MainActivity : Activity() {
                     }
 
                     runOnUiThread {
+                        exportInProgress = false
                         updateSummary()
                         showSavedDialog(saved)
                     }
@@ -514,6 +527,7 @@ class MainActivity : Activity() {
                 }
 
                 runOnUiThread {
+                    exportInProgress = false
                     refresh(false)
 
                     Toast.makeText(
@@ -586,6 +600,7 @@ class MainActivity : Activity() {
         if (requestCode != REQUEST_EXPORT) return
 
         if (resultCode != RESULT_OK) {
+            exportInProgress = false
             clearPendingExport()
             return
         }
@@ -598,6 +613,7 @@ class MainActivity : Activity() {
             !pending.exists() ||
             pending.length() <= 0L
         ) {
+            exportInProgress = false
             clearPendingExport()
 
             Toast.makeText(
@@ -622,6 +638,7 @@ class MainActivity : Activity() {
                 )
             }
 
+            exportInProgress = false
             clearPendingExport()
 
             showSavedDialog(
@@ -632,6 +649,7 @@ class MainActivity : Activity() {
                 )
             )
         } catch (t: Throwable) {
+            exportInProgress = false
             runCatching {
                 GuardianDatabase(applicationContext).logTechnical(
                     "EXPORT_WRITE_ERROR",
@@ -822,6 +840,13 @@ class MainActivity : Activity() {
 
     private fun dp(value: Int) =
         (value * resources.displayMetrics.density).toInt()
+
+    private fun currentVersionName(): String = try {
+        @Suppress("DEPRECATION")
+        packageManager.getPackageInfo(packageName, 0).versionName ?: "?"
+    } catch (_: Exception) {
+        "?"
+    }
 
     companion object {
         private const val REQUEST_EXPORT = 9001

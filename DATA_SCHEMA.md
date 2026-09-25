@@ -1,32 +1,29 @@
-# Data Schema — v2 / DB v3
+# Data Schema — export v2 / DB v4
 
-Timeline types:
-- APP
-- PRIVATE
-- SCREEN_OFF
-- SYSTEM
-- ANONYMOUS_BROWSER
+## Timeline types
 
-Only APP may persist package/name.
+- `APP`: normal user-facing application; identity may be stored.
+- `PRIVATE`: sensitive/private context; identity is never stored.
+- `SCREEN_OFF`: non-interactive screen; no identity.
+- `SYSTEM`: launcher, system chooser, package installer, system picker and other technical surfaces; no identity.
+- `ANONYMOUS_BROWSER`: reserved for a future reliable signal; never guessed.
 
-## Export timeline precedence
+## Export precedence
 
-When raw technical intervals overlap, exported reports resolve them deterministically:
+When raw technical intervals overlap, reports resolve them deterministically:
 
-1. PRIVATE
-2. ANONYMOUS_BROWSER
-3. SCREEN_OFF
-4. SYSTEM
-5. APP
+`PRIVATE > ANONYMOUS_BROWSER > SCREEN_OFF > SYSTEM > APP`
 
-An exported millisecond belongs to only one category.
+Each exported millisecond belongs to at most one timeline category.
 
-Unknown gaps stay unknown; adjacent entries are merged only when they truly touch.
+## Duration precision
 
-## DB v3 migration
+0.1.6 aggregates category/app duration in milliseconds first, then converts the final aggregate to seconds. This avoids losing sub-second fragments on every individual interval.
 
-The upgrade from DB v2 to v3 removes:
-- exact duplicate interval rows;
-- duplicate UNLOCK technical rows sharing the same UsageStats timestamp.
+Zero-second aggregate apps are omitted from the visible ranking.
 
-This repairs artifacts created when 0.1.4 manual/background collectors ran concurrently.
+## DB v4 migration
+
+In addition to previous duplicate repair, DB v4 reclassifies historical APP rows belonging to known Android/OEM system surfaces as `SYSTEM` and clears package/app-label identity.
+
+This includes known package installers, permission/system UI surfaces, Google Play Services, Xiaomi system-security components and DocumentsUI.

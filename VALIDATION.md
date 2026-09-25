@@ -1,22 +1,58 @@
-# Validation — Android 0.1.4
+# Validation — Android 0.1.6
 
-## Evidence from longer 0.1.3 real-device run
+## Long 0.1.5 real-device evidence
 
-Xiaomi/Redmi Android 16 showed:
-- Usage Access active;
-- 130 APP intervals by diagnostic time;
-- 14 SCREEN_OFF intervals;
-- 13 unlocks;
-- verified JSON export;
-- privacy classifier v2;
-- scheduler accepted initially but later not pending.
+Diagnostic generated 2026-09-25 09:03:33 on Xiaomi/Redmi Android 16 / API 36.
 
-The run covered about 98% of the period after tracking actually began.
+Build actually under test:
+- version 0.1.5
+- versionCode 6
+- diagnostic schema 3
+- scheduler logic 2
 
-## 0.1.4 acceptance
+Observed:
+- Usage Access: true
+- no INTERNET permission
+- no QUERY_ALL_PACKAGES
+- tracking start preserved from 2026-09-24 18:41:20
+- today's coverage: 99.8%
+- 24 scheduler job runs total in logic v2
+- 0 scheduler job stops
+- recent overnight cadence roughly 27–35 minutes
+- timeline overlaps: 0
 
-GitHub Actions must compile/test and verify DEV certificate SHA-256:
+## Fresh other-user/profile validation
 
-`4a40d0075db9691b16814e40d7db589fdfea59a046a006c1a4db07c8901b8986`
+Technical events:
+- PRIVATE_STARTED: 09:01:57.624
+- PRIVATE_ENDED: 09:02:38.664
 
-If the APK is signed by any other certificate, CI fails.
+Daily timeline:
+- generic PRIVATE interval from 09:01:57.624 to 09:02:38.664
+- no guest application/package identity inside the interval
+- no overlap with neighboring timeline entries
+
+Result: privacy boundary PASSED for the current Android approach.
+
+## Export observation
+
+One `EXPORT_PREPARE_ERROR: IOException` appeared immediately after an `EXPORT_OK` during rapid export activity. The final daily and diagnostic files were both successfully produced.
+
+0.1.6 adds single-flight export protection to prevent overlapping requests.
+
+## 0.1.6 acceptance
+
+The next files must prove the new build was actually installed:
+- app.version = 0.1.6
+- app.version_code = 7
+- diagnostic_schema = 4
+- scheduler.logic_version = 3
+
+Then validate for 60–90 minutes:
+- periodic jobs continue without bursts;
+- job_stop_count remains 0;
+- process-start guard records skips instead of false recoveries;
+- schedule_attempt_count does not grow merely because JobScheduler launched the process;
+- historical package installers/DocumentsUI no longer pollute the app ranking;
+- zero-second app artifacts disappear;
+- export succeeds without overlapping-export IOException.

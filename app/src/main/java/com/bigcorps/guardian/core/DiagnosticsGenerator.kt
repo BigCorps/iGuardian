@@ -38,7 +38,7 @@ class DiagnosticsGenerator(private val context: Context) {
         }
 
         return JSONObject().apply {
-            put("diagnostic_schema", 3)
+            put("diagnostic_schema", 4)
             put("generated_at", iso(System.currentTimeMillis()))
 
             put(
@@ -164,6 +164,41 @@ class DiagnosticsGenerator(private val context: Context) {
                 JSONObject().apply {
                     put("logic_version", schedulerState.logicVersion())
                     put(
+                        "process_start_grace_ms",
+                        GuardianScheduler.processStartGraceMs()
+                    )
+                    put(
+                        "recent_job_grace_ms",
+                        GuardianScheduler.recentJobGraceMs()
+                    )
+                    put(
+                        "process_start_count",
+                        schedulerState.processStartCount()
+                    )
+                    put(
+                        "process_start_skip_count",
+                        schedulerState.processStartSkipCount()
+                    )
+                    put(
+                        "last_process_start_at",
+                        schedulerState.lastProcessStartMs()
+                            .takeIf { it > 0L }
+                            ?.let(::iso)
+                            ?: JSONObject.NULL
+                    )
+                    put(
+                        "last_process_start_decision",
+                        schedulerState.lastProcessStartDecision()
+                            ?: JSONObject.NULL
+                    )
+                    put(
+                        "last_process_start_decision_at",
+                        schedulerState.lastProcessStartDecisionMs()
+                            .takeIf { it > 0L }
+                            ?.let(::iso)
+                            ?: JSONObject.NULL
+                    )
+                    put(
                         "stats_since_at",
                         schedulerState.statsSinceMs()
                             .takeIf { it > 0L }
@@ -280,6 +315,8 @@ class DiagnosticsGenerator(private val context: Context) {
                     put("system_surface_separation", true)
                     put("timeline_overlap_resolution", true)
                     put("serialized_collection", true)
+                    put("process_start_scheduler_guard", true)
+                    put("millisecond_summary_aggregation", true)
                     put("browser_domains", false)
                     put("anonymous_browser_detection", false)
                     put("anonymous_browser_schema_ready", true)

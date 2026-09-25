@@ -1,101 +1,83 @@
-# Guardian DEV — Android 0.1.5
+# Guardian DEV — Android 0.1.6
 
-## Status
+## PROJECT STATUS
 
-0.1.5 is the first deliberate **in-place update test** over the fixed-signed 0.1.4.
+- **Current code to upload:** Android 0.1.6
+- **Last physically validated build:** Android 0.1.5
+- **Repository currently observed before this upload:** Android 0.1.5
+- **Current phase:** Android Foundation / background hardening
+- **Backend / cloud / login / external AI:** none
+- **Internet permission:** intentionally absent
+- **DEV package:** `com.bigcorps.guardian.dev`
+- **Daily JSON schema:** v2
+- **Diagnostic schema:** v4
+- **SQLite DB:** v4
 
-Do NOT uninstall 0.1.4 before installing 0.1.5.
+## Long 0.1.5 validation — 2026-09-25
 
-Expected preserved data:
-- local device name;
-- Usage Access authorization;
-- privacy review/preferences;
-- SQLite history;
-- tracking start;
-- daily reports.
+The long test was still running Android 0.1.5 (versionCode 6). It was valuable and validated the current foundation before 0.1.6 is installed.
 
-## Findings from the 0.1.4 physical test
+Confirmed:
+- update-in-place from 0.1.4 to 0.1.5 preserved state/history;
+- device name and Usage Access remained preserved;
+- tracking start remained from the previous build;
+- daily coverage reached 99.8% from midnight to 09:03;
+- 24 periodic jobs completed with 0 job stops in scheduler logic v2;
+- the visible overnight cadence was approximately 27–35 minutes, centered near the 30-minute DEV period;
+- timeline export had no overlaps;
+- fresh other-user/profile switch was detected;
+- the other-user interval was stored generically as PRIVATE;
+- no guest app/package identity appeared inside the protected interval.
 
-The 0.1.4 test proved:
-- fixed-signed APK installed and runs;
-- Usage Access active;
-- JSON v2 export works;
-- system surfaces separated from user app ranking;
-- PRIVATE time visible in seconds/minutes;
-- screen-off collection works;
-- user/profile switch signal works and becomes PRIVATE;
-- no guest-profile app identity appeared in exports.
+Fresh switch boundary:
+- PRIVATE_STARTED: 09:01:57.624
+- PRIVATE_ENDED: 09:02:38.664
+- exported interval: PRIVATE for approximately 41 seconds.
 
-It also exposed three correctness issues:
+This closes the main privacy-boundary question for the current Android approach.
 
-1. **Concurrent collectors.**
-   JobService and Activity could read the same UsageStats range simultaneously. This inflated raw interval counts and duplicated at least one unlock event.
+## Why 0.1.6 is still needed
 
-2. **Scheduler self-rescheduling.**
-   `jobFinished()` was followed by a manual `ensureScheduled()`, and Activity resume also called `ensureScheduled()`. The test showed 12 job runs in about one hour, so this was not a clean 30-minute periodic-background result.
+The uploaded diagnostic is 0.1.5 / scheduler logic v2, so scheduler logic v3 has not yet been physically tested.
 
-3. **PRIVATE / SCREEN_OFF overlap on user switch.**
-   The visitor-profile test correctly raised PRIVATE, but a previously queued screen-off UsageStats interval overlapped part of that PRIVATE interval. Reports therefore needed deterministic precedence.
+0.1.5 also showed:
+- `pending_now=false` shortly after a successful periodic run;
+- two historical process-start recoveries from logic v2;
+- old SYSTEM/package-installer rows still present as APP in historical data;
+- zero-second app transition artifacts;
+- one export preparation IOException immediately after a successful export, consistent with overlapping export requests.
 
-## 0.1.5 corrections
+## 0.1.6 changes
 
-### Serialized collection
-All `UsageCollector.collect()` calls share one process-wide lock.
+### Scheduler logic v3
+When Android starts a dead Guardian process to execute JobScheduler, Application.onCreate() may run before JobService.onStartJob(). A short grace window prevents this normal lifecycle from being mistaken for a missing periodic job.
 
-### Scheduler logic v2
-- periodic job remains owned by Android JobScheduler;
-- no manual re-schedule after every job finish;
-- no scheduler replacement on every Activity resume;
-- scheduler counters reset once for logic v2 so the next diagnostic measures only the corrected behavior.
+### Historical SYSTEM sanitation
+DB v4 converts known old technical APP rows to sanitized SYSTEM and clears identity.
 
-### Other-user/profile privacy boundary
-When the owner user goes background:
-- collect owner history only up to the switch timestamp;
-- close the current interval;
-- start generic PRIVATE.
+### Millisecond-first aggregation
+Durations are summed in milliseconds and converted only after aggregation.
 
-When owner returns:
-- close PRIVATE;
-- advance the collector cursor to the return timestamp;
-- do not replay UsageStats events from the other profile.
+### Zero-second app cleanup
+Sub-second transition artifacts are omitted from the user-facing app ranking.
 
-### Non-overlapping reports
-Timeline normalization now uses precedence:
+### Export single-flight
+Only one JSON export may run at a time. This avoids two rapid taps racing against MediaStore/file verification.
 
-`PRIVATE > ANONYMOUS_BROWSER > SCREEN_OFF > SYSTEM > APP`
+### Dynamic version label
+The UI reads versionName from the installed APK instead of a hard-coded string.
 
-Every millisecond can belong to at most one exported timeline type. Unknown gaps are no longer bridged automatically.
+## Next validation
 
-### Data repair
-SQLite DB v3 removes exact duplicate interval rows and duplicate unlock timestamps produced by the 0.1.4 concurrency bug.
+1. Upload this 0.1.6 package to the repository preserving paths.
+2. Wait for the signed Actions artifact `guardian-android-0.1.6-fixed-signed-debug`.
+3. Install directly over 0.1.5. Do not uninstall.
+4. Confirm the UI says 0.1.6 and the diagnostic reports:
+   - version 0.1.6
+   - versionCode 7
+   - diagnostic_schema 4
+   - scheduler logic_version 3
+5. Leave mostly closed for about 60–90 minutes.
+6. Export daily + diagnostic JSON.
 
-### System noise cleanup
-Additional system-only packages are mapped to sanitized SYSTEM:
-- Google Play Services;
-- Android/Google package installer;
-- Xiaomi Security Center / system resource plugin.
-
-### Visual safe area
-The main ScrollView now clips content to system-bar padding so section headings/buttons do not scroll underneath the status/navigation bars.
-
-## Test
-
-Install 0.1.5 directly over 0.1.4.
-
-First confirm:
-- Android offers **Atualizar**, not uninstall/install;
-- device name remains `ith cel2`;
-- Usage Access remains authorized;
-- previous history still exists.
-
-Then leave Guardian mostly closed for at least 70 minutes and use the phone normally.
-
-Afterward:
-1. open Guardian;
-2. export daily JSON;
-3. export diagnostic JSON;
-4. send both back.
-
-For scheduler logic v2, approximately 1–3 runs in 70–90 minutes can be normal because Android may delay jobs. A rapid burst of many runs is not.
-
-Also perform one visitor-profile switch again. In the new JSON there must be no overlapping PRIVATE/SCREEN_OFF segments and no identity from the visitor profile.
+The visitor-profile test does not need to be repeated immediately; the fresh 0.1.5 test already validated the privacy boundary.

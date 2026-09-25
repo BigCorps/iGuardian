@@ -43,7 +43,6 @@ class GuardianDatabase(context: Context) :
     ) {
         if (oldVersion < 3) {
             // 0.1.4 could run the manual collector and JobService concurrently.
-            // Remove exact duplicate intervals while preserving the oldest row.
             db.execSQL(
                 """
                 DELETE FROM intervals
@@ -60,7 +59,6 @@ class GuardianDatabase(context: Context) :
                 """.trimIndent()
             )
 
-            // The same UsageStats unlock event could be logged twice concurrently.
             db.execSQL(
                 """
                 DELETE FROM technical_events
@@ -72,6 +70,45 @@ class GuardianDatabase(context: Context) :
                     GROUP BY ts_ms
                   )
                 """.trimIndent()
+            )
+        }
+
+        if (oldVersion < 4) {
+            // Clean historical technical/system surfaces that older builds
+            // had already stored as APP. Identity is removed as part of the
+            // migration, matching current StorageSanitizer behavior.
+            val knownSystemPackages = listOf(
+                "com.android.systemui",
+                "com.android.intentresolver",
+                "com.android.permissioncontroller",
+                "com.google.android.permissioncontroller",
+                "com.android.packageinstaller",
+                "com.google.android.packageinstaller",
+                "com.miui.global.packageinstaller",
+                "com.google.android.gms",
+                "com.miui.securitycenter",
+                "com.miui.securitycore",
+                "com.android.documentsui",
+                "com.google.android.documentsui"
+            )
+
+            val placeholders =
+                knownSystemPackages.joinToString(",") { "?" }
+
+            val values = ContentValues().apply {
+                put("type", IntervalType.SYSTEM.name)
+                putNull("package_name")
+                putNull("app_label")
+            }
+
+            db.update(
+                "intervals",
+                values,
+                "type = ? AND package_name IN ($placeholders)",
+                arrayOf(
+                    IntervalType.APP.name,
+                    *knownSystemPackages.toTypedArray()
+                )
             )
         }
     }
@@ -294,6 +331,6 @@ class GuardianDatabase(context: Context) :
 
     companion object {
         private const val DB_NAME = "guardian.db"
-        private const val DB_VERSION = 3
+        private const val DB_VERSION = 4
     }
 }

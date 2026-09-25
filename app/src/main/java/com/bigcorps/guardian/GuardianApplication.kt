@@ -48,7 +48,7 @@ class GuardianApplication : Application() {
         SchedulerStateStore(this).ensureLogicVersion(
             GuardianScheduler.LOGIC_VERSION
         )
-        GuardianScheduler.ensureScheduled(this, "process_start")
+        GuardianScheduler.recoverAfterProcessStart(this)
 
         val filter = IntentFilter().apply {
             addAction(Intent.ACTION_USER_BACKGROUND)
