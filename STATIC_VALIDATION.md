@@ -1,6 +1,4 @@
-# Static validation — 0.1.7
-
-Generated from the physically tested 0.1.6 R2 source package.
+# Static validation — 0.1.8
 
 - `app/src/main/java/com/bigcorps/guardian/GuardianApplication.kt`: braces=0; parens=0
 - `app/src/main/java/com/bigcorps/guardian/MainActivity.kt`: braces=0; parens=0
@@ -10,6 +8,7 @@ Generated from the physically tested 0.1.6 R2 source package.
 - `app/src/main/java/com/bigcorps/guardian/core/GuardianPrivacyOverride.kt`: braces=0; parens=0
 - `app/src/main/java/com/bigcorps/guardian/core/GuardianRescheduleReceiver.kt`: braces=0; parens=0
 - `app/src/main/java/com/bigcorps/guardian/core/GuardianScheduler.kt`: braces=0; parens=0
+- `app/src/main/java/com/bigcorps/guardian/core/GuardianWorker.kt`: braces=0; parens=0
 - `app/src/main/java/com/bigcorps/guardian/core/LocalQuestionEngine.kt`: braces=0; parens=0
 - `app/src/main/java/com/bigcorps/guardian/core/Preferences.kt`: braces=0; parens=0
 - `app/src/main/java/com/bigcorps/guardian/core/ReportGenerator.kt`: braces=0; parens=0

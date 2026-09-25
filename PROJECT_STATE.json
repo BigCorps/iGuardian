@@ -1,64 +1,33 @@
 {
   "project_codename": "Guardian",
-  "product_name_final": false,
-  "version": "0.1.7",
+  "version": "0.1.8",
   "platform": "android",
   "phase": 2,
-  "phase_name": "Android Foundation gate + Local Intelligence Alpha",
+  "phase_name": "Local Intelligence v2 + WorkManager background validation",
   "schema_version": 2,
-  "diagnostic_schema_version": 5,
+  "diagnostic_schema_version": 6,
   "database_version": 4,
   "repository": "BigCorps/iGuardian",
   "backend": "none",
   "internet_permission": false,
   "dev_application_id": "com.bigcorps.guardian.dev",
   "last_physically_validated_build": {
-    "version": "0.1.6",
-    "version_code": 7,
-    "generated_at": "2026-09-25T10:27:26.052-03:00",
-    "today_coverage_percent": 99.8,
-    "snapshot_24h_coverage_percent": 99.4,
-    "privacy_identity_leak_detected": false,
-    "timeline_overlap_detected": false,
-    "scheduler": {
-      "logic_version": 3,
-      "process_start_count": 1,
-      "schedule_attempt_count": 1,
-      "recovery_count": 1,
-      "job_run_count": 1,
-      "job_stop_count": 0,
-      "managed_job_present_at_end": false,
-      "result": "periodic model not reliable enough on tested Xiaomi Android 16"
-    }
+    "version": "0.1.7",
+    "version_code": 8,
+    "generated_at": "2026-09-25T13:03:30.974-03:00",
+    "today_coverage_percent": 99.5,
+    "privacy_timeline_result": "passed",
+    "scheduler_logic_version": 4,
+    "scheduler_result": "retired after chained jobs disappeared"
   },
-  "implemented_in_0_1_7": [
-    "scheduler logic v4 chained one-shot",
-    "alternating JobScheduler IDs",
-    "30-minute DEV minimum latency",
-    "45-minute DEV deadline",
-    "persisted reboot-capable one-shot jobs",
-    "Android 16 pending job reasons diagnostic",
-    "persistent reboot/package/user-unlock signal diagnostic",
-    "job stop reason diagnostic",
-    "local deterministic question engine alpha",
-    "Portuguese local intent parser",
-    "today summary/top apps/named app time/unlocks/screen-off/private/system/coverage answers",
-    "questions never persisted",
-    "local intelligence UI"
+  "implemented_in_0_1_8": [
+    "AndroidX WorkManager 2.12.0",
+    "unique periodic work 30m/10m flex",
+    "legacy JobScheduler migration",
+    "WorkInfo telemetry",
+    "local questions yesterday",
+    "local questions last 7 days",
+    "today-vs-yesterday comparison"
   ],
-  "next_task": "Build/install 0.1.7 over 0.1.6, validate local questions, leave closed 35-45m, reboot once, leave another 45-60m, then export daily+diagnostic JSON.",
-  "do_not_implement_without_explicit_decision": [
-    "cloud history",
-    "remote monitoring",
-    "automatic third-party sharing",
-    "AccessibilityService",
-    "VPN inspection",
-    "screen capture",
-    "keyboard capture",
-    "message or notification contents",
-    "full URLs",
-    "QUERY_ALL_PACKAGES",
-    "external AI API",
-    "payment or account backend"
-  ]
+  "next_task": "Build/install 0.1.8 over 0.1.7; test local period questions; leave 60-90m, optionally reboot, then export daily+diagnostic JSON."
 }

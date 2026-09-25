@@ -5,19 +5,60 @@ import org.junit.Test
 
 class LocalQuestionIntentParserTest {
     @Test
-    fun parsesTopApp() {
-        assertEquals(
-            LocalQuestionIntent.TOP_APP_TODAY,
-            LocalQuestionIntentParser.parse(
+    fun parsesTopAppToday() {
+        val plan =
+            LocalQuestionIntentParser.plan(
                 "Qual app mais usei hoje?"
             )
+
+        assertEquals(
+            LocalQuestionIntent.TOP_APP,
+            plan.intent
+        )
+        assertEquals(
+            LocalQuestionPeriod.TODAY,
+            plan.period
         )
     }
 
     @Test
-    fun parsesUnlocksWithAccent() {
+    fun parsesTopAppYesterday() {
+        val plan =
+            LocalQuestionIntentParser.plan(
+                "Qual app mais usei ontem?"
+            )
+
         assertEquals(
-            LocalQuestionIntent.UNLOCKS_TODAY,
+            LocalQuestionIntent.TOP_APP,
+            plan.intent
+        )
+        assertEquals(
+            LocalQuestionPeriod.YESTERDAY,
+            plan.period
+        )
+    }
+
+    @Test
+    fun parsesLastSevenDays() {
+        val plan =
+            LocalQuestionIntentParser.plan(
+                "Top 5 dos últimos 7 dias"
+            )
+
+        assertEquals(
+            LocalQuestionIntent.TOP_APPS,
+            plan.intent
+        )
+        assertEquals(
+            LocalQuestionPeriod.LAST_7_DAYS,
+            plan.period
+        )
+    }
+
+    @Test
+    fun parsesUnlocks() {
+        assertEquals(
+            LocalQuestionIntent.UNLOCKS,
             LocalQuestionIntentParser.parse(
                 "Quantas vezes desbloqueei?"
             )
@@ -27,7 +68,7 @@ class LocalQuestionIntentParserTest {
     @Test
     fun parsesNaturalScreenOffPhrase() {
         assertEquals(
-            LocalQuestionIntent.SCREEN_OFF_TODAY,
+            LocalQuestionIntent.SCREEN_OFF,
             LocalQuestionIntentParser.parse(
                 "Quanto tempo a tela ficou desligada?"
             )
@@ -35,41 +76,11 @@ class LocalQuestionIntentParserTest {
     }
 
     @Test
-    fun parsesDirectScreenOffPhrase() {
+    fun parsesComparison() {
         assertEquals(
-            LocalQuestionIntent.SCREEN_OFF_TODAY,
+            LocalQuestionIntent.COMPARE_TODAY_YESTERDAY,
             LocalQuestionIntentParser.parse(
-                "Tempo de tela desligada hoje"
-            )
-        )
-    }
-
-    @Test
-    fun parsesScreenOffEnglishTerm() {
-        assertEquals(
-            LocalQuestionIntent.SCREEN_OFF_TODAY,
-            LocalQuestionIntentParser.parse(
-                "Quanto tempo de screen off?"
-            )
-        )
-    }
-
-    @Test
-    fun parsesScreenApagadaPhrase() {
-        assertEquals(
-            LocalQuestionIntent.SCREEN_OFF_TODAY,
-            LocalQuestionIntentParser.parse(
-                "Quanto tempo fiquei com a tela apagada?"
-            )
-        )
-    }
-
-    @Test
-    fun rejectsOlderPeriodForNow() {
-        assertEquals(
-            LocalQuestionIntent.UNSUPPORTED_PERIOD,
-            LocalQuestionIntentParser.parse(
-                "Qual app mais usei ontem?"
+                "Compare hoje com ontem"
             )
         )
     }

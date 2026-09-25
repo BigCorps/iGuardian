@@ -1,26 +1,15 @@
-# Privacy Model — Guardian 0.1.7
+# Privacy Model — Guardian 0.1.8
 
-## Core rule
 Privacy Engine precedes Storage.
 
-## PRIVATE
-No package, app label or reason.
+APP may contain non-private identity.
+PRIVATE and SYSTEM never contain identity.
+Other Android users remain generic PRIVATE.
+ANONYMOUS_BROWSER is never guessed.
 
-## SYSTEM
-No package or app label.
+Local Intelligence v2 reads only sanitized report data.
+Questions are processed in memory and discarded.
 
-## Other Android user/profile
-The period is represented only as PRIVATE and UsageStats from that other user are not replayed into the owner's public history.
+WorkManager only schedules the same privacy-first UsageCollector. It adds no content or network access.
 
-## Local questions
-The 0.1.7 local question engine:
-- reads sanitized local report data only;
-- does not restore PRIVATE or SYSTEM identity;
-- does not store the user's question;
-- does not send the question anywhere;
-- does not use Internet or an external model.
-
-A question asking about a protected app cannot make Guardian reveal an identity that was never stored.
-
-## Never collected
-Screenshots/video, typed text, passwords, messages, notification contents, clipboard, banking content, Settings content, full URLs, page content, or identifiable other-user activity.
+Never collected: screenshots/video, typed input, passwords, message/notification content, clipboard, banking content, Settings content, full URLs, page content or identifiable other-user activity.

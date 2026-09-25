@@ -117,105 +117,88 @@ class SchedulerStateStore(context: Context) {
     fun ensureLogicVersion(
         version: Int,
         nowMs: Long = System.currentTimeMillis()
-    ) {
-        if (logicVersion() == version) return
+    ): Boolean {
+        if (logicVersion() == version) return false
 
         prefs.edit()
             .clear()
             .putInt("logic_version", version)
             .putLong("stats_since_ms", nowMs)
             .apply()
+
+        return true
     }
 
-    fun recordScheduleAttempt(
+    fun recordEnsure(
         reason: String,
-        result: Int,
-        pending: Boolean,
-        jobId: Int,
-        targetMs: Long,
-        deadlineMs: Long,
-        nowMs: Long = System.currentTimeMillis()
-    ) {
-        prefs.edit()
-            .putInt("schedule_attempt_count", scheduleAttemptCount() + 1)
-            .putLong("last_schedule_attempt_ms", nowMs)
-            .putString("last_schedule_reason", reason.take(40))
-            .putInt("last_schedule_result", result)
-            .putBoolean("last_schedule_pending", pending)
-            .putInt("last_scheduled_job_id", jobId)
-            .putLong("next_target_ms", targetMs)
-            .putLong("next_deadline_ms", deadlineMs)
-            .apply()
-    }
-
-    fun recordCheck(
-        reason: String,
-        present: Boolean,
+        createdNewWork: Boolean,
+        workId: String?,
         nowMs: Long = System.currentTimeMillis()
     ) {
         val edit = prefs.edit()
-            .putLong("last_scheduler_check_ms", nowMs)
-            .putString("last_scheduler_check_reason", reason.take(40))
-            .putBoolean("last_scheduler_check_pending", present)
+            .putInt("ensure_count", ensureCount() + 1)
+            .putLong("last_ensure_ms", nowMs)
+            .putString("last_ensure_reason", reason.take(60))
+            .putBoolean("last_ensure_created_new", createdNewWork)
 
-        if (!present) {
-            edit.putInt("recovery_count", recoveryCount() + 1)
+        if (createdNewWork) {
+            edit.putInt("enqueue_count", enqueueCount() + 1)
+        }
+
+        if (workId == null) {
+            edit.remove("last_work_id")
+        } else {
+            edit.putString("last_work_id", workId.take(80))
         }
 
         edit.apply()
     }
 
-    fun recordProcessStart(nowMs: Long = System.currentTimeMillis()) {
+    fun recordWorkerStart(
+        workId: String,
+        attempt: Int,
+        nowMs: Long = System.currentTimeMillis()
+    ) {
         prefs.edit()
-            .putInt("process_start_count", processStartCount() + 1)
-            .putLong("last_process_start_ms", nowMs)
+            .putInt("worker_run_count", workerRunCount() + 1)
+            .putLong("last_worker_start_ms", nowMs)
+            .putString("last_worker_id", workId.take(80))
+            .putInt("last_worker_attempt", attempt)
             .apply()
     }
 
-    fun recordProcessStartDecision(
-        decision: String,
-        skippedRecovery: Boolean,
+    fun recordWorkerFinish(
+        outcome: String,
+        events: Int,
+        note: String,
         nowMs: Long = System.currentTimeMillis()
     ) {
+        val value = outcome.take(24)
         val edit = prefs.edit()
-            .putString("last_process_start_decision", decision.take(60))
-            .putLong("last_process_start_decision_ms", nowMs)
+            .putLong("last_worker_finish_ms", nowMs)
+            .putString("last_worker_outcome", value)
+            .putInt("last_worker_events", events)
+            .putString("last_worker_note", note.take(80))
 
-        if (skippedRecovery) {
-            edit.putInt(
-                "process_start_skip_count",
-                processStartSkipCount() + 1
-            )
+        when (value) {
+            "success" ->
+                edit.putInt(
+                    "worker_success_count",
+                    workerSuccessCount() + 1
+                )
+            "retry" ->
+                edit.putInt(
+                    "worker_retry_count",
+                    workerRetryCount() + 1
+                )
+            "failure" ->
+                edit.putInt(
+                    "worker_failure_count",
+                    workerFailureCount() + 1
+                )
         }
 
         edit.apply()
-    }
-
-    fun recordJobStart(
-        jobId: Int,
-        nowMs: Long = System.currentTimeMillis()
-    ) {
-        prefs.edit()
-            .putInt("job_run_count", jobRunCount() + 1)
-            .putLong("last_job_start_ms", nowMs)
-            .putInt("last_started_job_id", jobId)
-            .apply()
-    }
-
-    fun recordJobFinish(nowMs: Long = System.currentTimeMillis()) =
-        prefs.edit()
-            .putLong("last_job_finish_ms", nowMs)
-            .apply()
-
-    fun recordJobStop(
-        stopReason: Int,
-        nowMs: Long = System.currentTimeMillis()
-    ) {
-        prefs.edit()
-            .putInt("job_stop_count", jobStopCount() + 1)
-            .putLong("last_job_stop_ms", nowMs)
-            .putInt("last_job_stop_reason", stopReason)
-            .apply()
     }
 
     fun recordRescheduleSignal(
@@ -227,101 +210,59 @@ class SchedulerStateStore(context: Context) {
                 "reschedule_signal_count",
                 rescheduleSignalCount() + 1
             )
-            .putString(
-                "last_reschedule_signal",
-                action.take(50)
-            )
-            .putLong(
-                "last_reschedule_signal_ms",
-                nowMs
-            )
+            .putString("last_reschedule_signal", action.take(50))
+            .putLong("last_reschedule_signal_ms", nowMs)
             .apply()
     }
 
-    fun logicVersion(): Int =
-        prefs.getInt("logic_version", 0)
+    fun recordLegacyJobsCancelled(
+        nowMs: Long = System.currentTimeMillis()
+    ) {
+        prefs.edit()
+            .putLong("legacy_jobs_cancelled_ms", nowMs)
+            .apply()
+    }
 
-    fun statsSinceMs(): Long =
-        prefs.getLong("stats_since_ms", 0L)
+    fun logicVersion(): Int = prefs.getInt("logic_version", 0)
+    fun statsSinceMs(): Long = prefs.getLong("stats_since_ms", 0L)
+    fun ensureCount(): Int = prefs.getInt("ensure_count", 0)
+    fun enqueueCount(): Int = prefs.getInt("enqueue_count", 0)
+    fun lastEnsureMs(): Long = prefs.getLong("last_ensure_ms", 0L)
+    fun lastEnsureReason(): String? =
+        prefs.getString("last_ensure_reason", null)
+    fun lastEnsureCreatedNew(): Boolean =
+        prefs.getBoolean("last_ensure_created_new", false)
+    fun lastWorkId(): String? =
+        prefs.getString("last_work_id", null)
 
-    fun processStartCount(): Int =
-        prefs.getInt("process_start_count", 0)
-
-    fun processStartSkipCount(): Int =
-        prefs.getInt("process_start_skip_count", 0)
-
-    fun lastProcessStartMs(): Long =
-        prefs.getLong("last_process_start_ms", 0L)
-
-    fun lastProcessStartDecision(): String? =
-        prefs.getString("last_process_start_decision", null)
-
-    fun lastProcessStartDecisionMs(): Long =
-        prefs.getLong("last_process_start_decision_ms", 0L)
-
-    fun scheduleAttemptCount(): Int =
-        prefs.getInt("schedule_attempt_count", 0)
-
-    fun recoveryCount(): Int =
-        prefs.getInt("recovery_count", 0)
-
-    fun jobRunCount(): Int =
-        prefs.getInt("job_run_count", 0)
-
-    fun jobStopCount(): Int =
-        prefs.getInt("job_stop_count", 0)
-
-    fun lastScheduleAttemptMs(): Long =
-        prefs.getLong("last_schedule_attempt_ms", 0L)
-
-    fun lastScheduleReason(): String? =
-        prefs.getString("last_schedule_reason", null)
-
-    fun lastScheduleResult(): Int =
-        prefs.getInt("last_schedule_result", -1)
-
-    fun lastSchedulePending(): Boolean =
-        prefs.getBoolean("last_schedule_pending", false)
-
-    fun lastScheduledJobId(): Int =
-        prefs.getInt("last_scheduled_job_id", -1)
-
-    fun nextTargetMs(): Long =
-        prefs.getLong("next_target_ms", 0L)
-
-    fun nextDeadlineMs(): Long =
-        prefs.getLong("next_deadline_ms", 0L)
-
-    fun lastSchedulerCheckMs(): Long =
-        prefs.getLong("last_scheduler_check_ms", 0L)
-
-    fun lastSchedulerCheckReason(): String? =
-        prefs.getString("last_scheduler_check_reason", null)
-
-    fun lastSchedulerCheckPending(): Boolean =
-        prefs.getBoolean("last_scheduler_check_pending", false)
-
-    fun lastJobStartMs(): Long =
-        prefs.getLong("last_job_start_ms", 0L)
-
-    fun lastStartedJobId(): Int =
-        prefs.getInt("last_started_job_id", -1)
-
-    fun lastJobFinishMs(): Long =
-        prefs.getLong("last_job_finish_ms", 0L)
-
-    fun lastJobStopMs(): Long =
-        prefs.getLong("last_job_stop_ms", 0L)
-
-    fun lastJobStopReason(): Int =
-        prefs.getInt("last_job_stop_reason", -1)
+    fun workerRunCount(): Int = prefs.getInt("worker_run_count", 0)
+    fun workerSuccessCount(): Int =
+        prefs.getInt("worker_success_count", 0)
+    fun workerRetryCount(): Int =
+        prefs.getInt("worker_retry_count", 0)
+    fun workerFailureCount(): Int =
+        prefs.getInt("worker_failure_count", 0)
+    fun lastWorkerStartMs(): Long =
+        prefs.getLong("last_worker_start_ms", 0L)
+    fun lastWorkerFinishMs(): Long =
+        prefs.getLong("last_worker_finish_ms", 0L)
+    fun lastWorkerId(): String? =
+        prefs.getString("last_worker_id", null)
+    fun lastWorkerAttempt(): Int =
+        prefs.getInt("last_worker_attempt", 0)
+    fun lastWorkerOutcome(): String? =
+        prefs.getString("last_worker_outcome", null)
+    fun lastWorkerEvents(): Int =
+        prefs.getInt("last_worker_events", 0)
+    fun lastWorkerNote(): String? =
+        prefs.getString("last_worker_note", null)
 
     fun rescheduleSignalCount(): Int =
         prefs.getInt("reschedule_signal_count", 0)
-
     fun lastRescheduleSignal(): String? =
         prefs.getString("last_reschedule_signal", null)
-
     fun lastRescheduleSignalMs(): Long =
         prefs.getLong("last_reschedule_signal_ms", 0L)
+    fun legacyJobsCancelledMs(): Long =
+        prefs.getLong("legacy_jobs_cancelled_ms", 0L)
 }

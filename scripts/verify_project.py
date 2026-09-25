@@ -7,10 +7,12 @@ root = Path(__file__).resolve().parents[1]
 manifest_path = root / "app/src/main/AndroidManifest.xml"
 state_path = root / "PROJECT_STATE.json"
 app_gradle_path = root / "app/build.gradle.kts"
+gradle_properties_path = root / "gradle.properties"
 
 manifest = manifest_path.read_text(encoding="utf-8")
 state = json.loads(state_path.read_text(encoding="utf-8"))
 app_gradle = app_gradle_path.read_text(encoding="utf-8")
+gradle_properties = gradle_properties_path.read_text(encoding="utf-8")
 
 required_docs = [
     "README.md",
@@ -22,6 +24,7 @@ required_docs = [
     "VALIDATION.md",
     "PROJECT_STATE.json",
     "SIGNING_DEV.md",
+    "LOCAL_INTELLIGENCE.md",
 ]
 
 errors = []
@@ -32,11 +35,18 @@ if "android.permission.QUERY_ALL_PACKAGES" in manifest:
     errors.append("MVP must not declare QUERY_ALL_PACKAGES")
 if "BIND_ACCESSIBILITY_SERVICE" in manifest:
     errors.append("MVP must not implement AccessibilityService")
+if "android.useAndroidX=true" not in gradle_properties:
+    errors.append("0.1.8+ requires android.useAndroidX=true")
+if "androidx.work:work-runtime:2.12.0" not in app_gradle:
+    errors.append("Required WorkManager 2.12.0 dependency missing")
+if ".core.GuardianJobService" in manifest:
+    errors.append("Legacy direct GuardianJobService must not remain in manifest")
 
 source = "\n".join(
     p.read_text(encoding="utf-8", errors="ignore")
     for p in (root / "app/src/main/java").rglob("*.kt")
 )
+
 for forbidden in [
     "AccessibilityService",
     "VpnService",
@@ -48,8 +58,14 @@ for forbidden in [
     if forbidden in source:
         errors.append(f"Forbidden MVP API found in source: {forbidden}")
 
-version_match = re.search(r'versionName\s*=\s*"([^"]+)"', app_gradle)
-code_match = re.search(r'versionCode\s*=\s*(\d+)', app_gradle)
+version_match = re.search(
+    r'versionName\s*=\s*"([^"]+)"',
+    app_gradle
+)
+code_match = re.search(
+    r'versionCode\s*=\s*(\d+)',
+    app_gradle
+)
 
 if version_match is None:
     errors.append("Could not read versionName from app/build.gradle.kts")
@@ -72,7 +88,10 @@ for name in required_docs:
 secret_suffixes = {".jks", ".keystore", ".p12", ".pfx"}
 for path in root.rglob("*"):
     if path.is_file() and path.suffix.lower() in secret_suffixes:
-        errors.append(f"Signing key material must not be committed: {path.relative_to(root)}")
+        errors.append(
+            f"Signing key material must not be committed: "
+            f"{path.relative_to(root)}"
+        )
 
 if errors:
     print("Privacy/project verification FAILED:")
@@ -84,9 +103,17 @@ print("Privacy/project verification OK")
 print("- no INTERNET permission")
 print("- no QUERY_ALL_PACKAGES")
 print("- no AccessibilityService")
+print("- WorkManager background architecture present")
+print("- no legacy direct GuardianJobService in app manifest")
 print("- no signing private key committed")
 print("- handoff documentation present")
 if version_match:
-    print(f"- PROJECT_STATE/app version synchronized: {version_match.group(1)}")
+    print(
+        "- PROJECT_STATE/app version synchronized: "
+        f"{version_match.group(1)}"
+    )
 if code_match:
-    print(f"- Android versionCode found: {code_match.group(1)}")
+    print(
+        "- Android versionCode found: "
+        f"{code_match.group(1)}"
+    )

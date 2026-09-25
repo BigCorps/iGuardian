@@ -21,8 +21,8 @@ android {
         applicationId = "com.bigcorps.guardian.dev"
         minSdk = 26
         targetSdk = 36
-        versionCode = 8
-        versionName = "0.1.7"
+        versionCode = 9
+        versionName = "0.1.8"
     }
 
     if (devSigningReady) {
@@ -61,5 +61,6 @@ android {
 }
 
 dependencies {
+    implementation("androidx.work:work-runtime:2.12.0")
     testImplementation("junit:junit:4.13.2")
 }

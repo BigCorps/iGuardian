@@ -48,25 +48,19 @@ class GuardianApplication : Application() {
         val schedulerState =
             SchedulerStateStore(this)
 
-        val previousSchedulerLogic =
-            schedulerState.logicVersion()
+        val schedulerChanged =
+            schedulerState.ensureLogicVersion(
+                GuardianScheduler.LOGIC_VERSION
+            )
 
-        schedulerState.ensureLogicVersion(
-            GuardianScheduler.LOGIC_VERSION
-        )
-
-        if (
-            previousSchedulerLogic !=
-            GuardianScheduler.LOGIC_VERSION
-        ) {
+        if (schedulerChanged) {
             GuardianScheduler
-                .resetForLogicUpgrade(
-                    this
-                )
+                .resetForLogicUpgrade(this)
         } else {
             GuardianScheduler
-                .recoverAfterProcessStart(
-                    this
+                .ensureScheduled(
+                    this,
+                    "process_start"
                 )
         }
 

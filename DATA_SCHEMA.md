@@ -1,21 +1,10 @@
-# Data Schema — export v2 / DB v4
+# Data Schema — export v2 / DB v4 / diagnostic v6
 
-No privacy schema expansion in 0.1.7.
+Timeline schema is unchanged:
+APP | PRIVATE | SCREEN_OFF | SYSTEM | ANONYMOUS_BROWSER
 
-Timeline types:
-- APP
-- PRIVATE
-- SCREEN_OFF
-- SYSTEM
-- ANONYMOUS_BROWSER
+Only APP may carry package/name.
 
-Only APP may contain package/name.
+Diagnostic v6 adds WorkManager state/telemetry.
 
-Export precedence:
-`PRIVATE > ANONYMOUS_BROWSER > SCREEN_OFF > SYSTEM > APP`
-
-Local Intelligence Alpha reads the already-sanitized generated report. It does not create a second identity store.
-
-Questions typed by the user are not persisted.
-
-Diagnostic schema v5 adds scheduler-chain telemetry and local-question-engine capability flags.
+Local Intelligence v2 creates no new persistent query/history table; answers are calculated from the existing sanitized timeline.

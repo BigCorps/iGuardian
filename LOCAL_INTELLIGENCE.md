@@ -1,32 +1,27 @@
-# Local Intelligence Alpha — 0.1.7
+# Local Intelligence v2 — 0.1.8
 
-The first local question engine is deterministic and offline.
+100% local and deterministic.
 
-It does NOT call an LLM, OpenAI, a server or the Internet.
+No LLM, server, API or query logging.
 
-Source of truth:
-- sanitized local report generated from SQLite;
-- APP identities only for non-private apps;
-- PRIVATE and SYSTEM never regain identity.
+Periods:
+- today;
+- yesterday;
+- last 7 days.
 
-Questions are processed in memory and are not persisted.
-
-Supported today:
-- summary of today;
-- most used app;
-- top 5 apps;
-- time for a named non-private app present in today's report;
+Intents:
+- summary;
+- top app;
+- top 5;
+- named app time;
 - total app usage;
-- screen-off time;
-- unlock count;
-- PRIVATE total;
-- SYSTEM total;
-- tracking coverage.
+- screen-off;
+- unlocks;
+- PRIVATE;
+- SYSTEM;
+- coverage;
+- today-vs-yesterday comparison.
 
-Unsupported-period questions such as yesterday/week/month return an explicit limitation instead of fabricated data.
+Comparisons include each period's effective tracked duration and coverage so a partial historical day is not silently treated as a complete day.
 
-Future:
-- yesterday / 7-day / custom periods;
-- trend comparisons;
-- richer local intent classification;
-- sanitized export fallback for complex questions.
+Source: sanitized ReportGenerator output over local SQLite.

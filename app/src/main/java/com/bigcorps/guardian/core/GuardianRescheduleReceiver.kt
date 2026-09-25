@@ -4,9 +4,7 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 
-class GuardianRescheduleReceiver :
-    BroadcastReceiver() {
-
+class GuardianRescheduleReceiver : BroadcastReceiver() {
     override fun onReceive(
         context: Context,
         intent: Intent
@@ -20,25 +18,19 @@ class GuardianRescheduleReceiver :
         val appContext =
             context.applicationContext
 
-        SchedulerStateStore(
-            appContext
-        ).recordRescheduleSignal(
-            action
-        )
+        SchedulerStateStore(appContext)
+            .recordRescheduleSignal(action)
 
         runCatching {
-            GuardianDatabase(
-                appContext
-            ).logTechnical(
+            GuardianDatabase(appContext).logTechnical(
                 "RESCHEDULE_SIGNAL",
                 action
             )
         }
 
-        GuardianScheduler
-            .ensureScheduled(
-                appContext,
-                "broadcast_$action"
-            )
+        GuardianScheduler.ensureScheduled(
+            appContext,
+            "broadcast_$action"
+        )
     }
 }

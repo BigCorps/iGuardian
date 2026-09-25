@@ -1,67 +1,39 @@
 # Guardian Roadmap
 
 ## Phase 1 — Android Foundation
-
 Validated:
-- UsageStats collection;
 - privacy-before-storage;
-- SQLite/local JSON;
-- fixed signing and update-in-place;
-- PRIVATE;
-- system-surface separation;
+- local SQLite/JSON;
+- fixed signing/update-in-place;
+- PRIVATE/SYSTEM/user-switch privacy;
 - screen-off/unlocks;
-- user/profile privacy boundary;
+- serialized collection;
 - non-overlapping timeline;
-- overnight/day-boundary clipping;
-- export verification;
-- 99%+ long-run coverage on test device.
+- 99%+ long-run coverage.
 
-Current:
-- scheduler v4 chained one-shot validation;
-- reboot recovery;
-- broader OEM hardening.
+Background:
+- direct JobScheduler experiments v1–v4 retired;
+- WorkManager v5 starts in 0.1.8;
+- OEM timing remains a compatibility track, not a data-integrity blocker.
 
-## Phase 2 — Local Intelligence — STARTED IN 0.1.7
-
-Alpha:
-- deterministic Portuguese intent parser;
-- today summary;
-- top app/top 5;
-- named app time;
-- unlock/screen-off/PRIVATE/SYSTEM/coverage questions;
-- no query persistence;
-- no external API.
+## Phase 2 — Local Intelligence — ACTIVE
+0.1.7: today-only.
+0.1.8: today, yesterday, 7 days, comparison.
 
 Next:
-- yesterday;
-- last 7 days;
-- comparisons/trends;
-- custom periods;
-- richer deterministic intent routing;
-- sanitized JSON handoff for complex questions.
+- custom date ranges;
+- richer trends;
+- daily/weekly insights;
+- sanitized handoff for complex questions.
 
-## Phase 3 — Android hardening
+## Phase 3 — hardening
+More OEMs, timezone changes, battery guidance, support diagnostics.
 
-- additional OEM/device tests;
-- timezone changes;
-- power-management guidance;
-- support diagnostics.
-
-## Phase 4 — Android Store
-
-- final brand/applicationId;
-- production signing;
-- landing/privacy/support;
-- AAB / Play review.
+## Phase 4 — Play Store
+Final brand/applicationId/signing/privacy/support/AAB.
 
 ## Phase 5 — Windows
+Same privacy contract with Windows-native collector.
 
-- Windows collector using the same privacy contract.
-
-## Phase 6 — Optional premium
-
-Only after initial approvals:
-- account;
-- pairing;
-- optional cloud/external AI;
-- payment.
+## Phase 6 — optional premium
+Only after approvals: account, pairing, optional cloud AI, payments.
