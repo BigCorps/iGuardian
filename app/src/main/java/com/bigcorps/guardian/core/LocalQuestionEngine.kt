@@ -102,7 +102,13 @@ object LocalQuestionIntentParser {
         }
 
         if (
-            q.contains("tela desligada") ||
+            (
+                q.contains("tela") &&
+                (
+                    q.contains("deslig") ||
+                    q.contains("apag")
+                )
+            ) ||
             q.contains("screen off")
         ) {
             return LocalQuestionIntent.SCREEN_OFF_TODAY
@@ -611,7 +617,7 @@ class LocalQuestionEngine(
         value: Double
     ): String =
         String.format(
-            Locale("pt", "BR"),
+            Locale.forLanguageTag("pt-BR"),
             "%.1f%%",
             value
         )

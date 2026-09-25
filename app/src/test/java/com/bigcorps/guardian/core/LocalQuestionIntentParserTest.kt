@@ -25,11 +25,41 @@ class LocalQuestionIntentParserTest {
     }
 
     @Test
-    fun parsesScreenOff() {
+    fun parsesNaturalScreenOffPhrase() {
         assertEquals(
             LocalQuestionIntent.SCREEN_OFF_TODAY,
             LocalQuestionIntentParser.parse(
                 "Quanto tempo a tela ficou desligada?"
+            )
+        )
+    }
+
+    @Test
+    fun parsesDirectScreenOffPhrase() {
+        assertEquals(
+            LocalQuestionIntent.SCREEN_OFF_TODAY,
+            LocalQuestionIntentParser.parse(
+                "Tempo de tela desligada hoje"
+            )
+        )
+    }
+
+    @Test
+    fun parsesScreenOffEnglishTerm() {
+        assertEquals(
+            LocalQuestionIntent.SCREEN_OFF_TODAY,
+            LocalQuestionIntentParser.parse(
+                "Quanto tempo de screen off?"
+            )
+        )
+    }
+
+    @Test
+    fun parsesScreenApagadaPhrase() {
+        assertEquals(
+            LocalQuestionIntent.SCREEN_OFF_TODAY,
+            LocalQuestionIntentParser.parse(
+                "Quanto tempo fiquei com a tela apagada?"
             )
         )
     }

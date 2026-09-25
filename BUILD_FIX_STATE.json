@@ -1,0 +1,16 @@
+{
+  "version": "0.1.7",
+  "build_fix": "01",
+  "failed_actions_run": 21,
+  "failed_step": "Unit tests",
+  "failing_test": "LocalQuestionIntentParserTest.parsesScreenOff",
+  "root_cause": "Parser required contiguous 'tela desligada' while natural Portuguese phrase inserted 'ficou'.",
+  "fix": [
+    "Recognize tela + deslig stem",
+    "Recognize tela + apag stem",
+    "Keep screen off synonym",
+    "Add four screen-off phrasing tests",
+    "Use Locale.forLanguageTag pt-BR"
+  ],
+  "version_bump_required": false
+}
