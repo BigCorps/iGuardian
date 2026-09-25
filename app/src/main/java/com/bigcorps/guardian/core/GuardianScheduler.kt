@@ -2,6 +2,7 @@ package com.bigcorps.guardian.core
 
 import android.app.job.JobScheduler
 import android.content.Context
+import android.os.Build
 import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.PeriodicWorkRequest
 import androidx.work.WorkInfo
@@ -30,7 +31,9 @@ object GuardianScheduler {
         val state: String,
         val generation: Int,
         val runAttemptCount: Int,
-        val nextScheduleTimeMs: Long
+        val nextScheduleTimeMs: Long,
+        val stopReason: Int,
+        val workerClassName: String?
     )
 
     fun resetForLogicUpgrade(context: Context) {
@@ -145,7 +148,15 @@ object GuardianScheduler {
                         state = it.state.name,
                         generation = it.generation,
                         runAttemptCount = it.runAttemptCount,
-                        nextScheduleTimeMs = it.nextScheduleTimeMillis
+                        nextScheduleTimeMs = it.nextScheduleTimeMillis,
+                        stopReason =
+                            if (Build.VERSION.SDK_INT >= 31) {
+                                it.stopReason
+                            } else {
+                                WorkInfo.STOP_REASON_UNKNOWN
+                            },
+                        workerClassName =
+                            it.workerClassName
                     )
                 }
             )

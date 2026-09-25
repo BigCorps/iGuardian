@@ -1,13 +1,15 @@
-# Guardian Android 0.1.8
+# Guardian Android 0.1.9
 
-One combined validation round:
-1. in-place update;
-2. WorkManager background migration;
-3. today/yesterday/7-day local intelligence;
-4. optional reboot continuity;
-5. JSON/export regression.
+This build keeps the working WorkManager schedule unchanged and improves observability instead of changing it prematurely.
 
-Do not uninstall 0.1.7.
+Combined test:
+- WorkManager longer-run stability;
+- stop reason if an attempt is interrupted;
+- DB v5 system-surface cleanup;
+- rolling 24h questions;
+- deterministic insights.
+
+Do not uninstall 0.1.8.
 
 Expected artifact:
-guardian-android-0.1.8-fixed-signed-debug
+guardian-android-0.1.9-fixed-signed-debug

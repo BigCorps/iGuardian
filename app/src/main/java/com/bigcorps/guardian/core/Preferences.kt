@@ -201,6 +201,31 @@ class SchedulerStateStore(context: Context) {
         edit.apply()
     }
 
+    fun recordWorkerStopped(
+        reason: Int,
+        attempt: Int,
+        nowMs: Long = System.currentTimeMillis()
+    ) {
+        prefs.edit()
+            .putInt(
+                "worker_stopped_count",
+                workerStoppedCount() + 1
+            )
+            .putLong(
+                "last_worker_stopped_ms",
+                nowMs
+            )
+            .putInt(
+                "last_worker_stop_reason",
+                reason
+            )
+            .putInt(
+                "last_worker_stopped_attempt",
+                attempt
+            )
+            .apply()
+    }
+
     fun recordRescheduleSignal(
         action: String,
         nowMs: Long = System.currentTimeMillis()
@@ -256,6 +281,30 @@ class SchedulerStateStore(context: Context) {
         prefs.getInt("last_worker_events", 0)
     fun lastWorkerNote(): String? =
         prefs.getString("last_worker_note", null)
+
+    fun workerStoppedCount(): Int =
+        prefs.getInt(
+            "worker_stopped_count",
+            0
+        )
+
+    fun lastWorkerStoppedMs(): Long =
+        prefs.getLong(
+            "last_worker_stopped_ms",
+            0L
+        )
+
+    fun lastWorkerStopReason(): Int =
+        prefs.getInt(
+            "last_worker_stop_reason",
+            -1
+        )
+
+    fun lastWorkerStoppedAttempt(): Int =
+        prefs.getInt(
+            "last_worker_stopped_attempt",
+            0
+        )
 
     fun rescheduleSignalCount(): Int =
         prefs.getInt("reschedule_signal_count", 0)

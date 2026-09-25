@@ -1,6 +1,8 @@
 package com.bigcorps.guardian.core
 
 import android.content.Context
+import android.os.Build
+import androidx.work.WorkInfo
 import androidx.work.Worker
 import androidx.work.WorkerParameters
 
@@ -62,4 +64,31 @@ class GuardianWorker(
             Result.retry()
         }
     }
+    override fun onStopped() {
+        super.onStopped()
+
+        val reason =
+            if (Build.VERSION.SDK_INT >= 31) {
+                stopReason
+            } else {
+                WorkInfo.STOP_REASON_UNKNOWN
+            }
+
+        SchedulerStateStore(
+            applicationContext
+        ).recordWorkerStopped(
+            reason = reason,
+            attempt = runAttemptCount
+        )
+
+        runCatching {
+            GuardianDatabase(
+                applicationContext
+            ).logTechnical(
+                "WORK_STOPPED",
+                "reason=$reason;attempt=$runAttemptCount"
+            )
+        }
+    }
+
 }

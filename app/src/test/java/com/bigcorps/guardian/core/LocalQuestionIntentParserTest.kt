@@ -39,6 +39,23 @@ class LocalQuestionIntentParserTest {
     }
 
     @Test
+    fun parsesLast24Hours() {
+        val plan =
+            LocalQuestionIntentParser.plan(
+                "Top 5 das últimas 24 horas"
+            )
+
+        assertEquals(
+            LocalQuestionIntent.TOP_APPS,
+            plan.intent
+        )
+        assertEquals(
+            LocalQuestionPeriod.LAST_24_HOURS,
+            plan.period
+        )
+    }
+
+    @Test
     fun parsesLastSevenDays() {
         val plan =
             LocalQuestionIntentParser.plan(
@@ -52,6 +69,16 @@ class LocalQuestionIntentParserTest {
         assertEquals(
             LocalQuestionPeriod.LAST_7_DAYS,
             plan.period
+        )
+    }
+
+    @Test
+    fun parsesInsights() {
+        assertEquals(
+            LocalQuestionIntent.INSIGHTS,
+            LocalQuestionIntentParser.parse(
+                "Me mostre insights de hoje"
+            )
         )
     }
 

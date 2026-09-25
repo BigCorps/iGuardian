@@ -1,10 +1,15 @@
-# Data Schema — export v2 / DB v4 / diagnostic v6
+# Data Schema — export v2 / DB v5 / diagnostic v7
 
-Timeline schema is unchanged:
+Timeline:
 APP | PRIVATE | SCREEN_OFF | SYSTEM | ANONYMOUS_BROWSER
 
 Only APP may carry package/name.
 
-Diagnostic v6 adds WorkManager state/telemetry.
+DB v5:
+- historical `com.google.android.photopicker` rows become SYSTEM;
+- historical `com.mi.appfinder` rows become SYSTEM;
+- package/label identity is cleared during migration.
 
-Local Intelligence v2 creates no new persistent query/history table; answers are calculated from the existing sanitized timeline.
+Diagnostic v7 adds WorkManager stop telemetry.
+
+Local Intelligence v3 remains computed-only and creates no query history table.

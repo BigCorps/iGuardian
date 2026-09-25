@@ -1,33 +1,43 @@
 {
   "project_codename": "Guardian",
-  "version": "0.1.8",
+  "version": "0.1.9",
   "platform": "android",
   "phase": 2,
-  "phase_name": "Local Intelligence v2 + WorkManager background validation",
+  "phase_name": "Local Intelligence v3 + WorkManager stop telemetry",
   "schema_version": 2,
-  "diagnostic_schema_version": 6,
-  "database_version": 4,
+  "diagnostic_schema_version": 7,
+  "database_version": 5,
   "repository": "BigCorps/iGuardian",
   "backend": "none",
   "internet_permission": false,
   "dev_application_id": "com.bigcorps.guardian.dev",
   "last_physically_validated_build": {
-    "version": "0.1.7",
-    "version_code": 8,
-    "generated_at": "2026-09-25T13:03:30.974-03:00",
+    "version": "0.1.8",
+    "version_code": 9,
+    "generated_at": "2026-09-25T14:59:14.576-03:00",
     "today_coverage_percent": 99.5,
+    "snapshot_24h_coverage_percent": 99.3,
     "privacy_timeline_result": "passed",
-    "scheduler_logic_version": 4,
-    "scheduler_result": "retired after chained jobs disappeared"
+    "scheduler": {
+      "logic_version": 5,
+      "engine": "androidx_workmanager",
+      "unique_work_present": true,
+      "enqueue_count": 1,
+      "worker_run_count": 3,
+      "worker_success_count": 3,
+      "worker_retry_count": 0,
+      "worker_failure_count": 0,
+      "boot_completed_seen": true,
+      "observation": "same Work UUID had one immediate attempt=1 after successful-looking attempt; stop reason not available in 0.1.8 telemetry"
+    }
   },
-  "implemented_in_0_1_8": [
-    "AndroidX WorkManager 2.12.0",
-    "unique periodic work 30m/10m flex",
-    "legacy JobScheduler migration",
-    "WorkInfo telemetry",
-    "local questions yesterday",
-    "local questions last 7 days",
-    "today-vs-yesterday comparison"
+  "implemented_in_0_1_9": [
+    "WorkManager stop-reason telemetry",
+    "Worker onStopped telemetry",
+    "Photo Picker/App Finder SYSTEM sanitation",
+    "DB v5 historical system repair",
+    "rolling last 24 hours questions",
+    "deterministic factual insights"
   ],
-  "next_task": "Build/install 0.1.8 over 0.1.7; test local period questions; leave 60-90m, optionally reboot, then export daily+diagnostic JSON."
+  "next_task": "Install 0.1.9 over 0.1.8; test 24h and insights; leave mostly closed 60-90m; export daily+diagnostic JSON."
 }

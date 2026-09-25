@@ -1,33 +1,28 @@
 # Guardian Roadmap
 
 ## Phase 1 — Android Foundation
-Validated:
-- privacy-before-storage;
-- local SQLite/JSON;
-- fixed signing/update-in-place;
-- PRIVATE/SYSTEM/user-switch privacy;
-- screen-off/unlocks;
-- serialized collection;
-- non-overlapping timeline;
-- 99%+ long-run coverage.
+
+Core data/privacy: validated on the primary Xiaomi Android 16 device.
 
 Background:
-- direct JobScheduler experiments v1–v4 retired;
-- WorkManager v5 starts in 0.1.8;
-- OEM timing remains a compatibility track, not a data-integrity blocker.
+- direct JobScheduler v1-v4 retired;
+- WorkManager v5 passed first periodic + reboot persistence validation in 0.1.8;
+- 0.1.9 adds stop-reason telemetry for OEM/system retry diagnosis.
 
 ## Phase 2 — Local Intelligence — ACTIVE
-0.1.7: today-only.
-0.1.8: today, yesterday, 7 days, comparison.
+
+0.1.7: today.
+0.1.8: yesterday, 7 days, today-vs-yesterday.
+0.1.9: rolling 24h + deterministic factual insights.
 
 Next:
-- custom date ranges;
-- richer trends;
-- daily/weekly insights;
-- sanitized handoff for complex questions.
+- explicit custom date ranges;
+- week-over-week trends once enough history exists;
+- daily/weekly local insight cards;
+- sanitized handoff for genuinely complex questions.
 
 ## Phase 3 — hardening
-More OEMs, timezone changes, battery guidance, support diagnostics.
+Additional OEMs, timezone/date changes, battery guidance, support diagnostics.
 
 ## Phase 4 — Play Store
 Final brand/applicationId/signing/privacy/support/AAB.

@@ -17,6 +17,7 @@ enum class LocalQuestionIntent {
     PRIVATE,
     SYSTEM,
     COVERAGE,
+    INSIGHTS,
     COMPARE_TODAY_YESTERDAY,
     HELP
 }
@@ -24,6 +25,7 @@ enum class LocalQuestionIntent {
 enum class LocalQuestionPeriod {
     TODAY,
     YESTERDAY,
+    LAST_24_HOURS,
     LAST_7_DAYS
 }
 
@@ -56,6 +58,12 @@ object LocalQuestionIntentParser {
             q.contains("ontem") ->
                 LocalQuestionPeriod.YESTERDAY
 
+            q.contains("ultimas 24") ||
+                q.contains("ultimos 24") ||
+                q.contains("24 horas") ||
+                q.contains("24h") ->
+                LocalQuestionPeriod.LAST_24_HOURS
+
             q.contains("ultimos 7") ||
                 q.contains("ultimas 7") ||
                 q.contains("7 dias") ||
@@ -86,6 +94,11 @@ object LocalQuestionIntentParser {
                     q.contains("hoje ou ontem") ||
                     q.contains("hoje com ontem") ->
                     LocalQuestionIntent.COMPARE_TODAY_YESTERDAY
+
+                q.contains("insight") ||
+                    q.contains("destaque") ||
+                    q.contains("resumo inteligente") ->
+                    LocalQuestionIntent.INSIGHTS
 
                 q.contains("top 5") ||
                     q.contains("top cinco") ||
@@ -193,9 +206,12 @@ class LocalQuestionEngine(
                 range.endMs
             )
 
-        val summary = report.getJSONObject("summary")
-        val tracking = report.getJSONObject("tracking")
-        val apps = report.getJSONArray("apps")
+        val summary =
+            report.getJSONObject("summary")
+        val tracking =
+            report.getJSONObject("tracking")
+        val apps =
+            report.getJSONArray("apps")
         val normalized =
             LocalQuestionIntentParser.normalize(question)
 
@@ -324,6 +340,12 @@ class LocalQuestionEngine(
                     )
                 )
 
+            LocalQuestionIntent.INSIGHTS ->
+                insightsAnswer(
+                    plan.period,
+                    report
+                )
+
             LocalQuestionIntent.HELP ->
                 LocalQuestionAnswer(
                     plan.intent,
@@ -360,10 +382,7 @@ class LocalQuestionEngine(
                     Calendar.getInstance()
                         .apply {
                             timeInMillis = todayStart
-                            add(
-                                Calendar.DAY_OF_YEAR,
-                                -1
-                            )
+                            add(Calendar.DAY_OF_YEAR, -1)
                         }
                         .timeInMillis
 
@@ -373,15 +392,18 @@ class LocalQuestionEngine(
                 )
             }
 
+            LocalQuestionPeriod.LAST_24_HOURS ->
+                Range(
+                    nowMs - 24L * 60L * 60L * 1000L,
+                    nowMs
+                )
+
             LocalQuestionPeriod.LAST_7_DAYS -> {
                 val start =
                     Calendar.getInstance()
                         .apply {
                             timeInMillis = todayStart
-                            add(
-                                Calendar.DAY_OF_YEAR,
-                                -6
-                            )
+                            add(Calendar.DAY_OF_YEAR, -6)
                         }
                         .timeInMillis
 
@@ -393,6 +415,110 @@ class LocalQuestionEngine(
         }
     }
 
+    private fun insightsAnswer(
+        period: LocalQuestionPeriod,
+        report: JSONObject
+    ): LocalQuestionAnswer {
+        val summary =
+            report.getJSONObject("summary")
+        val tracking =
+            report.getJSONObject("tracking")
+        val apps =
+            report.getJSONArray("apps")
+        val timeline =
+            report.getJSONArray("timeline")
+
+        val appUsage =
+            summary.getLong("app_usage_seconds")
+
+        val topLine =
+            if (apps.length() > 0 && appUsage > 0L) {
+                val top = apps.getJSONObject(0)
+                val seconds =
+                    top.getLong("foreground_seconds")
+                val share =
+                    seconds.toDouble() * 100.0 /
+                        appUsage.toDouble()
+
+                "• ${
+                    top.getString("name")
+                } liderou o tempo em apps: ${
+                    durationLabel(seconds)
+                } (${percentLabel(share)} do uso de apps)."
+            } else {
+                "• Ainda não há uso de apps suficiente para destacar um líder."
+            }
+
+        var longestScreenOff = 0L
+        var longestApp = 0L
+        var longestAppName: String? = null
+
+        for (index in 0 until timeline.length()) {
+            val item =
+                timeline.getJSONObject(index)
+            val duration =
+                item.optLong(
+                    "duration_seconds",
+                    0L
+                )
+
+            when (
+                item.optString("type")
+            ) {
+                "SCREEN_OFF" -> {
+                    if (duration > longestScreenOff) {
+                        longestScreenOff = duration
+                    }
+                }
+
+                "APP" -> {
+                    if (duration > longestApp) {
+                        longestApp = duration
+                        longestAppName =
+                            item.optString(
+                                "name",
+                                "App"
+                            )
+                    }
+                }
+            }
+        }
+
+        val appSessionLine =
+            if (
+                longestApp > 0L &&
+                !longestAppName.isNullOrBlank()
+            ) {
+                "• Maior sessão contínua registrada: $longestAppName por ${
+                    durationLabel(longestApp)
+                }."
+            } else {
+                "• Nenhuma sessão contínua de app longa o suficiente foi registrada."
+            }
+
+        val screenLine =
+            if (longestScreenOff > 0L) {
+                "• Maior período contínuo com a tela desligada: ${
+                    durationLabel(longestScreenOff)
+                }."
+            } else {
+                "• Nenhum período de tela desligada foi registrado."
+            }
+
+        return LocalQuestionAnswer(
+            intent = LocalQuestionIntent.INSIGHTS,
+            period = period,
+            text =
+                "Insights de ${periodLabelLower(period)}:\n" +
+                    "$topLine\n" +
+                    "$appSessionLine\n" +
+                    "$screenLine\n" +
+                    "• Cobertura do período: ${
+                        coverageLabel(tracking)
+                    }."
+        )
+    }
+
     private fun compareTodayYesterday(
         nowMs: Long
     ): LocalQuestionAnswer {
@@ -401,7 +527,6 @@ class LocalQuestionEngine(
                 LocalQuestionPeriod.TODAY,
                 nowMs
             )
-
         val yesterdayRange =
             rangeFor(
                 LocalQuestionPeriod.YESTERDAY,
@@ -413,7 +538,6 @@ class LocalQuestionEngine(
                 todayRange.startMs,
                 todayRange.endMs
             )
-
         val yesterday =
             ReportGenerator(context).periodJson(
                 yesterdayRange.startMs,
@@ -454,8 +578,7 @@ class LocalQuestionEngine(
         return LocalQuestionAnswer(
             intent =
                 LocalQuestionIntent.COMPARE_TODAY_YESTERDAY,
-            period =
-                LocalQuestionPeriod.TODAY,
+            period = LocalQuestionPeriod.TODAY,
             text =
                 "Hoje há ${
                     durationLabel(todaySeconds)
@@ -486,7 +609,8 @@ class LocalQuestionEngine(
     ): LocalQuestionAnswer {
         val top =
             if (apps.length() > 0) {
-                val first = apps.getJSONObject(0)
+                val first =
+                    apps.getJSONObject(0)
                 "${
                     first.getString("name")
                 } (${
@@ -542,7 +666,8 @@ class LocalQuestionEngine(
             )
         }
 
-        val first = apps.getJSONObject(0)
+        val first =
+            apps.getJSONObject(0)
 
         return LocalQuestionAnswer(
             LocalQuestionIntent.TOP_APP,
@@ -579,7 +704,6 @@ class LocalQuestionEngine(
         for (index in 0 until count) {
             val item =
                 apps.getJSONObject(index)
-
             lines +=
                 "${index + 1}. ${
                     item.getString("name")
@@ -630,6 +754,15 @@ class LocalQuestionEngine(
             )
         )
 
+    private fun percentLabel(
+        value: Double
+    ): String =
+        String.format(
+            Locale.forLanguageTag("pt-BR"),
+            "%.1f%%",
+            value
+        )
+
     private fun findNamedApp(
         normalizedQuestion: String,
         apps: JSONArray
@@ -642,14 +775,14 @@ class LocalQuestionEngine(
         for (index in 0 until apps.length()) {
             val item =
                 apps.getJSONObject(index)
-
             val label =
                 LocalQuestionIntentParser.normalize(
                     item.getString("name")
                 )
 
             if (label.isNotBlank()) {
-                candidates += label to item
+                candidates +=
+                    label to item
             }
         }
 
@@ -673,12 +806,28 @@ class LocalQuestionEngine(
                 "Hoje"
             LocalQuestionPeriod.YESTERDAY ->
                 "Ontem"
+            LocalQuestionPeriod.LAST_24_HOURS ->
+                "Nas últimas 24 horas"
             LocalQuestionPeriod.LAST_7_DAYS ->
                 "Nos últimos 7 dias"
         }
 
+    private fun periodLabelLower(
+        period: LocalQuestionPeriod
+    ): String =
+        when (period) {
+            LocalQuestionPeriod.TODAY ->
+                "hoje"
+            LocalQuestionPeriod.YESTERDAY ->
+                "ontem"
+            LocalQuestionPeriod.LAST_24_HOURS ->
+                "últimas 24 horas"
+            LocalQuestionPeriod.LAST_7_DAYS ->
+                "últimos 7 dias"
+        }
+
     private fun helpText(): String =
-        "Tente: “Resumo de hoje”, “Resumo de ontem”, “Top 5 dos últimos 7 dias”, “Quanto tempo usei o Chrome Dev ontem?”, “Quantas vezes desbloqueei hoje?”, “Qual a cobertura de ontem?” ou “Compare hoje com ontem”. Perguntas não são salvas."
+        "Tente: “Resumo de hoje”, “Resumo de ontem”, “Top 5 das últimas 24 horas”, “Top 5 dos últimos 7 dias”, “Quanto tempo usei o Chrome Dev ontem?”, “Compare hoje com ontem” ou “Insights de hoje”. Perguntas não são salvas."
 
     private fun startOfDay(
         nowMs: Long
@@ -686,10 +835,7 @@ class LocalQuestionEngine(
         Calendar.getInstance()
             .apply {
                 timeInMillis = nowMs
-                set(
-                    Calendar.HOUR_OF_DAY,
-                    0
-                )
+                set(Calendar.HOUR_OF_DAY, 0)
                 set(Calendar.MINUTE, 0)
                 set(Calendar.SECOND, 0)
                 set(Calendar.MILLISECOND, 0)
@@ -703,8 +849,10 @@ class LocalQuestionEngine(
             return "${seconds}s"
         }
 
-        val minutes = seconds / 60L
-        val remainingSeconds = seconds % 60L
+        val minutes =
+            seconds / 60L
+        val remainingSeconds =
+            seconds % 60L
 
         if (minutes < 60L) {
             return if (remainingSeconds == 0L) {
@@ -714,8 +862,10 @@ class LocalQuestionEngine(
             }
         }
 
-        val hours = minutes / 60L
-        val remainingMinutes = minutes % 60L
+        val hours =
+            minutes / 60L
+        val remainingMinutes =
+            minutes % 60L
 
         return if (remainingMinutes == 0L) {
             "${hours}h"

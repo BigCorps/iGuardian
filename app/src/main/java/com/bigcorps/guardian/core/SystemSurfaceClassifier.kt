@@ -18,7 +18,9 @@ class SystemSurfaceClassifier(private val context: Context) {
         "com.miui.securitycenter",
         "com.miui.securitycore",
         "com.android.documentsui",
-        "com.google.android.documentsui"
+        "com.google.android.documentsui",
+        "com.google.android.photopicker",
+        "com.mi.appfinder"
     )
 
     private val homePackages: Set<String> by lazy {
@@ -57,7 +59,9 @@ class SystemSurfaceClassifier(private val context: Context) {
 
         val normalized = packageName.lowercase()
         return normalized.contains("packageinstaller") ||
-            normalized.endsWith(".documentsui")
+            normalized.endsWith(".documentsui") ||
+            normalized.contains("photopicker") ||
+            normalized.endsWith(".appfinder")
     }
 
     private fun isSystemApplication(packageName: String): Boolean = try {

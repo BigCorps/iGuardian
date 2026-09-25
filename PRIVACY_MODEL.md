@@ -1,4 +1,4 @@
-# Privacy Model — Guardian 0.1.8
+# Privacy Model — Guardian 0.1.9
 
 Privacy Engine precedes Storage.
 
@@ -7,9 +7,10 @@ PRIVATE and SYSTEM never contain identity.
 Other Android users remain generic PRIVATE.
 ANONYMOUS_BROWSER is never guessed.
 
-Local Intelligence v2 reads only sanitized report data.
-Questions are processed in memory and discarded.
+Local Intelligence v3 reads only sanitized report data.
+Questions are not stored or transmitted.
+Insights are deterministic descriptions of stored metrics and do not infer sensitive content.
 
-WorkManager only schedules the same privacy-first UsageCollector. It adds no content or network access.
+DB v5 additionally sanitizes Android Photo Picker and Xiaomi App Finder historical rows as SYSTEM.
 
-Never collected: screenshots/video, typed input, passwords, message/notification content, clipboard, banking content, Settings content, full URLs, page content or identifiable other-user activity.
+WorkManager telemetry stores only technical execution state/reason codes, never user content.

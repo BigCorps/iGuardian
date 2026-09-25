@@ -38,7 +38,7 @@ class DiagnosticsGenerator(private val context: Context) {
         }
 
         return JSONObject().apply {
-            put("diagnostic_schema", 6)
+            put("diagnostic_schema", 7)
             put("generated_at", iso(System.currentTimeMillis()))
 
             put(
@@ -236,6 +236,15 @@ class DiagnosticsGenerator(private val context: Context) {
                                                 ?.let(::iso)
                                                 ?: JSONObject.NULL
                                         )
+                                        put(
+                                            "stop_reason",
+                                            item.stopReason
+                                        )
+                                        put(
+                                            "worker_class_name",
+                                            item.workerClassName
+                                                ?: JSONObject.NULL
+                                        )
                                     }
                                 )
                             }
@@ -324,6 +333,25 @@ class DiagnosticsGenerator(private val context: Context) {
                             ?: JSONObject.NULL
                     )
                     put(
+                        "worker_stopped_count",
+                        schedulerState.workerStoppedCount()
+                    )
+                    put(
+                        "last_worker_stopped_at",
+                        schedulerState.lastWorkerStoppedMs()
+                            .takeIf { it > 0L }
+                            ?.let(::iso)
+                            ?: JSONObject.NULL
+                    )
+                    put(
+                        "last_worker_stop_reason",
+                        schedulerState.lastWorkerStopReason()
+                    )
+                    put(
+                        "last_worker_stopped_attempt",
+                        schedulerState.lastWorkerStoppedAttempt()
+                    )
+                    put(
                         "reschedule_signal_count",
                         schedulerState.rescheduleSignalCount()
                     )
@@ -391,11 +419,13 @@ class DiagnosticsGenerator(private val context: Context) {
                     put("workmanager_background", true)
                     put("workmanager_version", GuardianScheduler.WORKMANAGER_VERSION)
                     put("local_question_engine", true)
-                    put("local_question_engine_version", 2)
+                    put("local_question_engine_version", 3)
                     put("local_question_period_today", true)
                     put("local_question_period_yesterday", true)
+                    put("local_question_period_last_24_hours", true)
                     put("local_question_period_last_7_days", true)
                     put("local_question_compare_today_yesterday", true)
+                    put("local_question_deterministic_insights", true)
                     put("local_question_persists_queries", false)
                     put("browser_domains", false)
                     put("anonymous_browser_detection", false)

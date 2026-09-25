@@ -1,27 +1,31 @@
-# Local Intelligence v2 — 0.1.8
+# Local Intelligence v3 — Android 0.1.9
 
-100% local and deterministic.
-
-No LLM, server, API or query logging.
+100% local, deterministic and non-persistent.
 
 Periods:
 - today;
 - yesterday;
+- rolling last 24 hours;
 - last 7 days.
 
-Intents:
+Functions:
 - summary;
-- top app;
-- top 5;
-- named app time;
-- total app usage;
-- screen-off;
+- top app / top 5;
+- named app usage;
 - unlocks;
+- screen-off;
 - PRIVATE;
 - SYSTEM;
 - coverage;
-- today-vs-yesterday comparison.
+- today vs yesterday comparison;
+- deterministic factual insights.
 
-Comparisons include each period's effective tracked duration and coverage so a partial historical day is not silently treated as a complete day.
+Insights:
+- top app share of total app time;
+- longest continuous APP interval;
+- longest continuous SCREEN_OFF interval;
+- period coverage.
 
-Source: sanitized ReportGenerator output over local SQLite.
+No LLM, API, server, scoring or behavioral diagnosis.
+
+Questions are processed in memory and discarded.

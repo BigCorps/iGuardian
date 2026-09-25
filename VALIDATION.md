@@ -1,36 +1,38 @@
-# Validation — Android 0.1.8
+# Validation — Android 0.1.9
 
-## 0.1.7 evidence
-- 0.1.7 / versionCode 8
-- diagnostic schema 5
-- today coverage 99.5%
-- 24h coverage 99.3%
-- timeline overlap found: 0
-- non-APP identity leak found: 0
-- sensitive bank/settings identity found: 0
+## 0.1.8 result
 
-Scheduler v4:
-- 41001 scheduled 11:02:41
-- 41001 started 13:03:10
-- 41002 scheduled 13:03:12 with present=true
-- diagnostic seconds later: managed IDs empty
-- pending reason -2 for both IDs = job does not exist
+PASS:
+- 0.1.8 / versionCode 9 installed in place.
+- Usage Access/history/device name preserved.
+- WorkManager unique periodic work present.
+- BOOT_COMPLETED captured.
+- background work executed after reboot.
+- next periodic run occurred about 30 minutes later.
+- no extra enqueue/duplicate unique work.
+- no WorkManager retry/failure recorded by Guardian's result path.
+- privacy/timeline invariants remained clean.
 
-## 0.1.8 acceptance
-WorkManager:
-- logic 5
-- engine androidx_workmanager
-- stable WorkManager 2.12.0
-- unique periodic work exists
-- worker runs given system opportunity
-- no burst duplication
+OBSERVATION:
+A third Worker start occurred ~21 seconds after the second, with attempt=1 and the same unique work UUID. This is consistent with WorkManager re-attempting work after a stop/process event, but 0.1.8 did not export stopReason.
+
+## 0.1.9 acceptance
+
+Background:
+- unique periodic work remains present;
+- worker_stopped_count / stop_reason explain any attempt>0;
+- no second unique work UUID is created;
+- collector integrity remains duplicate-safe.
+
+System cleanup:
+- Photo Picker and Xiaomi App Finder no longer appear as APP.
 
 Local intelligence:
-- today/yesterday/7-day answers match period calculations
-- questions do not appear in exported diagnostics/reports
+- last 24h queries work;
+- deterministic insights match report data;
+- queries remain absent from exports/logs.
 
 Core:
-- update preserves state
-- no INTERNET / QUERY_ALL_PACKAGES
-- no timeline overlap
-- PRIVATE/SYSTEM remain identity-free.
+- no timeline overlap;
+- no PRIVATE/SYSTEM identity;
+- no INTERNET / QUERY_ALL_PACKAGES.

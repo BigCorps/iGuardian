@@ -1,124 +1,87 @@
-# Guardian DEV — Android 0.1.8
+# Guardian DEV — Android 0.1.9
 
-## Current direction
+## What 0.1.8 proved
 
-0.1.8 advances two tracks in one build:
+The WorkManager migration passed the main background/reboot test.
 
-1. background maintenance migrates from hand-written JobScheduler recurrence to **AndroidX WorkManager 2.12.0**;
-2. local intelligence expands from today-only to **today, yesterday and the last 7 days**.
+Diagnostic at 14:59 showed:
+- 0.1.8 / versionCode 9;
+- scheduler logic 5;
+- WorkManager 2.12.0;
+- unique periodic work still ENQUEUED;
+- one unique work UUID;
+- reboot signal BOOT_COMPLETED captured;
+- three worker starts and three local collector completions;
+- no recorded worker retry/failure in Guardian telemetry;
+- next schedule remained populated;
+- legacy JobScheduler IDs were cancelled.
 
-No cloud, login, external AI or Internet permission is added.
+The first run after reboot occurred at 14:18. The next periodic run began about 30 minutes later at 14:49.
 
-## 0.1.7 findings
+One additional WorkManager attempt started about 21 seconds later with attempt=1. It used the same unique work UUID and did not create a second enqueue. Data integrity was protected by the serialized/cursor-based collector, but 0.1.9 adds stop-reason telemetry so the next diagnostic can identify why WorkManager retried that attempt.
 
-The physical diagnostic confirms:
-- version 0.1.7 / versionCode 8;
-- diagnostic schema 5;
-- Usage Access active;
-- no INTERNET;
-- no QUERY_ALL_PACKAGES;
-- tracking history preserved;
-- today coverage 99.5%;
-- 24h snapshot coverage 99.3%;
-- no timeline overlap;
-- no PRIVATE/SYSTEM identity leak found in analysis.
+## Data/privacy
 
-Today at export:
-- app use: 1h55m53s;
-- screen off: 10h45m13s;
-- PRIVATE: 4m11s;
-- SYSTEM: 14m27s;
-- unlocks: 51.
+0.1.8 retained:
+- 99.5% coverage today;
+- 99.3% 24h snapshot coverage;
+- no timeline overlap found;
+- no PRIVATE/SYSTEM identity leak found;
+- no sensitive bank/settings identity found.
 
-Top apps:
-1. WhatsApp Business — 41m05s
-2. Chrome Dev — 32m50s
-3. ChatGPT — 15m50s
-4. Claude — 8m23s
-5. Manus — 5m30s
+Two tiny OEM/system surfaces still appeared as user apps:
+- Xiaomi Localizador de apps;
+- Android/Google Photo Picker.
 
-## Scheduler v4 conclusion
+0.1.9 moves them to sanitized SYSTEM and DB v5 repairs the historical rows.
 
-At 11:02 job 41001 was scheduled successfully.
+## WorkManager telemetry
 
-At 13:03 it finally ran and scheduled 41002 with `present=true`.
+0.1.9 keeps scheduler logic 5. It does not reset the counters, so the next test extends the same WorkManager observation window.
 
-Seconds later the diagnostic showed no managed IDs and Android 16 returned reason `-2` for both IDs, meaning those jobs did not exist anymore.
+New telemetry:
+- WorkInfo.stopReason;
+- Worker class name;
+- onStopped count;
+- last stop reason;
+- stopped attempt number.
 
-Therefore Guardian stops hand-building recurrence with JobScheduler.
+This is diagnostic only; scheduling behavior itself is unchanged.
 
-This is not a data-loss blocker: UsageStats collection catches up retrospectively from the stored cursor whenever Guardian or background work next runs.
+## Local Intelligence v3
 
-## Background v5 — WorkManager
-
-Guardian now uses stable AndroidX WorkManager 2.12.0.
-
-DEV schedule:
-- unique periodic work;
-- 30 minute repeat;
-- 10 minute flex;
-- one unique work chain only;
-- WorkManager owns system/reboot rescheduling.
-
-Migration:
-- legacy JobScheduler IDs 41001/41002 are cancelled;
-- legacy GuardianJobService is removed from the app manifest.
-
-Diagnostics now include:
-- WorkInfo state;
-- work UUID;
-- generation;
-- run attempts;
-- next eligible schedule;
-- worker run/success/retry/failure counters;
-- boot/update/user-unlock signals.
-
-## Local Intelligence v2
-
-Supported periods:
-- today;
-- yesterday;
-- last 7 days.
-
-Supported questions:
-- summary;
-- top app / top 5;
-- named app usage;
-- unlocks;
-- screen-off;
-- PRIVATE;
-- SYSTEM;
-- coverage;
-- compare today with yesterday.
+New:
+- exact rolling last 24 hours;
+- deterministic factual insights.
 
 Examples:
-- `Resumo de ontem`
-- `Top 5 dos últimos 7 dias`
-- `Quanto tempo usei o Chrome Dev ontem?`
-- `Qual a cobertura de ontem?`
-- `Compare hoje com ontem`
+- `Top 5 das últimas 24 horas`
+- `Insights de hoje`
+- `Insights de ontem`
+- `Insights dos últimos 7 dias`
 
-Questions are never persisted.
+Insights remain descriptive only:
+- leading app and share of app-use time;
+- longest continuous app session;
+- longest continuous screen-off interval;
+- coverage.
 
-## Combined test
+No behavioral judgment, score or health claim is produced.
 
-Install directly over 0.1.7; do not uninstall.
+## Combined validation
 
-Immediately test:
-1. Resumo de hoje
-2. Resumo de ontem
-3. Top 5 dos últimos 7 dias
-4. Quanto tempo usei o Chrome Dev hoje?
-5. Compare hoje com ontem
+Install 0.1.9 over 0.1.8 without uninstalling.
 
-Then leave Guardian mostly closed for 60–90 minutes.
+Immediately try:
+1. `Top 5 das últimas 24 horas`
+2. `Insights de hoje`
+3. `Insights de ontem`
+4. `Compare hoje com ontem`
 
-If convenient, reboot once during the period. At the end export daily + diagnostic JSON.
+Then use the phone normally and leave Guardian mostly closed.
 
-Success:
-- scheduler logic 5;
-- engine `androidx_workmanager`;
-- periodic work ENQUEUED/RUNNING;
-- worker executes without bursts;
-- update preserves name/history/Usage Access;
-- local answers agree with period reports.
+For background validation, 60–90 minutes is sufficient. A reboot is optional this time because BOOT_COMPLETED + WorkManager persistence already passed in 0.1.8.
+
+At the end export daily + diagnostic JSON.
+
+The next diagnostic should let us distinguish a normal WorkManager/system stop from an app-generated retry if another attempt=1 occurs.
