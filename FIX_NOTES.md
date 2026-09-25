@@ -1,23 +1,17 @@
-# Guardian 0.1.6 — Background Hardening R2
+# Guardian Android 0.1.7
 
-Important finding from the newest JSONs:
-the phone was still running 0.1.5 (versionCode 6). The repository also remained at 0.1.5 before this upload.
+This package deliberately validates several tracks in one round:
 
-The long 0.1.5 test was still valuable:
-- 99.8% coverage today;
-- overnight background scheduler ran repeatedly;
-- fresh visitor/user switch became generic PRIVATE with no exposed guest identity;
-- no timeline overlaps;
-- 0 job stops.
+1. in-place update preservation;
+2. background scheduler v4;
+3. reboot recovery;
+4. Android 16 JobScheduler introspection;
+5. local deterministic question engine;
+6. normal JSON export.
 
-This R2 keeps the 0.1.6 scheduler-v3 corrections and additionally prevents concurrent JSON export requests.
+Do not uninstall 0.1.6.
 
-Upload these files preserving paths.
-Do NOT uninstall 0.1.5.
-Install the resulting 0.1.6 APK directly over it.
+Expected Actions artifact:
+`guardian-android-0.1.7-fixed-signed-debug`
 
-Before starting the timed test, confirm the diagnostic says:
-- version 0.1.6
-- versionCode 7
-- diagnostic_schema 4
-- scheduler logic_version 3
+After install, run the combined procedure in README.md.

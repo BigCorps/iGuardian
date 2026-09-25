@@ -4,68 +4,111 @@ import android.app.job.JobInfo
 import android.app.job.JobScheduler
 import android.content.ComponentName
 import android.content.Context
+import android.os.Build
 import android.os.Handler
 import android.os.Looper
 
 object GuardianScheduler {
-    const val LOGIC_VERSION = 3
+    const val LOGIC_VERSION = 4
 
-    private const val JOB_ID = 41001
-    private const val PERIOD_MS = 30L * 60L * 1000L
+    private const val JOB_A = 41001
+    private const val JOB_B = 41002
 
-    // Important for a process started by JobScheduler itself:
-    // Application.onCreate() runs before GuardianJobService.onStartJob().
-    // A short grace window prevents us from mistaking that normal job launch
-    // for a missing schedule and scheduling a second periodic job.
-    private const val PROCESS_START_GRACE_MS = 5_000L
-    private const val RECENT_JOB_GRACE_MS = 15_000L
+    private const val DELAY_MS =
+        30L * 60L * 1000L
 
-    fun recoverAfterProcessStart(context: Context) {
-        val appContext = context.applicationContext
-        val state = SchedulerStateStore(appContext)
-        state.recordProcessStart()
+    private const val DEADLINE_MS =
+        45L * 60L * 1000L
 
-        Handler(Looper.getMainLooper()).postDelayed({
-            val now = System.currentTimeMillis()
-            val lastJobStart = state.lastJobStartMs()
-            val recentJobLaunch =
-                lastJobStart > 0L &&
-                    now >= lastJobStart &&
-                    now - lastJobStart <= RECENT_JOB_GRACE_MS
+    private const val PROCESS_START_GRACE_MS =
+        8_000L
 
-            if (recentJobLaunch) {
+    fun resetForLogicUpgrade(
+        context: Context
+    ) {
+        val scheduler =
+            context.getSystemService(
+                JobScheduler::class.java
+            ) ?: return
+
+        scheduler.cancel(JOB_A)
+        scheduler.cancel(JOB_B)
+
+        scheduleOne(
+            context = context,
+            jobId = JOB_A,
+            reason = "logic_upgrade"
+        )
+    }
+
+    fun recoverAfterProcessStart(
+        context: Context
+    ) {
+        val appContext =
+            context.applicationContext
+
+        val state =
+            SchedulerStateStore(appContext)
+
+        val processStartMs =
+            System.currentTimeMillis()
+
+        state.recordProcessStart(
+            processStartMs
+        )
+
+        Handler(
+            Looper.getMainLooper()
+        ).postDelayed({
+            val now =
+                System.currentTimeMillis()
+
+            val jobs =
+                managedJobIds(
+                    appContext
+                )
+
+            if (jobs.isNotEmpty()) {
+                state.recordCheck(
+                    "process_start_grace",
+                    true,
+                    now
+                )
+
                 state.recordProcessStartDecision(
-                    decision = "skip_recent_job_launch",
+                    decision = "managed_job_present",
                     skippedRecovery = true,
                     nowMs = now
                 )
-                runCatching {
-                    GuardianDatabase(appContext).logTechnical(
-                        "SCHEDULER_RECOVERY_SKIP",
-                        "reason=recent_job_launch"
-                    )
-                }
+
                 return@postDelayed
             }
 
-            if (isScheduled(appContext)) {
-                state.recordCheck("process_start_grace", true, now)
+            val lastJobStart =
+                state.lastJobStartMs()
+
+            if (
+                lastJobStart >=
+                processStartMs
+            ) {
                 state.recordProcessStartDecision(
-                    decision = "pending_ok",
+                    decision = "job_started_during_grace",
                     skippedRecovery = true,
                     nowMs = now
                 )
+
                 return@postDelayed
             }
 
             state.recordProcessStartDecision(
-                decision = "recover_missing",
+                decision = "recover_missing_chain",
                 skippedRecovery = false,
                 nowMs = now
             )
+
             ensureScheduled(
                 appContext,
-                "process_start_grace"
+                "process_start_recover"
             )
         }, PROCESS_START_GRACE_MS)
     }
@@ -74,49 +117,218 @@ object GuardianScheduler {
         context: Context,
         reason: String
     ): Boolean {
-        val scheduler =
-            context.getSystemService(JobScheduler::class.java) ?: return false
+        val state =
+            SchedulerStateStore(context)
 
-        val state = SchedulerStateStore(context)
-        val existing = scheduler.getPendingJob(JOB_ID)
+        val jobs =
+            managedJobIds(context)
 
-        if (existing != null) {
-            state.recordCheck(reason, true)
+        if (jobs.isNotEmpty()) {
+            state.recordCheck(
+                reason,
+                true
+            )
             return true
         }
 
-        state.recordCheck(reason, false)
-
-        val info = JobInfo.Builder(
-            JOB_ID,
-            ComponentName(context, GuardianJobService::class.java)
+        state.recordCheck(
+            reason,
+            false
         )
-            .setPersisted(true)
-            .setPeriodic(PERIOD_MS)
-            .build()
 
-        val result = scheduler.schedule(info)
-        val pending = scheduler.getPendingJob(JOB_ID) != null
-
-        state.recordScheduleAttempt(reason, result, pending)
-
-        runCatching {
-            GuardianDatabase(context).logTechnical(
-                "JOB_SCHEDULE",
-                "reason=${reason.take(24)};result=$result;pending=$pending"
-            )
-        }
-
-        return result == JobScheduler.RESULT_SUCCESS && pending
+        return scheduleOne(
+            context = context,
+            jobId = JOB_A,
+            reason = reason
+        )
     }
 
-    fun isScheduled(context: Context): Boolean =
-        context.getSystemService(JobScheduler::class.java)
-            ?.getPendingJob(JOB_ID) != null
+    fun scheduleAfterJob(
+        context: Context,
+        completedJobId: Int
+    ): Boolean {
+        val nextId =
+            if (completedJobId == JOB_A) {
+                JOB_B
+            } else {
+                JOB_A
+            }
 
-    fun periodMinutes(): Int =
-        (PERIOD_MS / 60_000L).toInt()
+        val scheduler =
+            context.getSystemService(
+                JobScheduler::class.java
+            ) ?: return false
 
-    fun processStartGraceMs(): Long = PROCESS_START_GRACE_MS
-    fun recentJobGraceMs(): Long = RECENT_JOB_GRACE_MS
+        val existing =
+            scheduler
+                .getAllPendingJobs()
+                .any {
+                    it.id == nextId
+                }
+
+        if (existing) {
+            SchedulerStateStore(context)
+                .recordCheck(
+                    "job_finish_existing",
+                    true
+                )
+            return true
+        }
+
+        return scheduleOne(
+            context = context,
+            jobId = nextId,
+            reason = "job_finish"
+        )
+    }
+
+    private fun scheduleOne(
+        context: Context,
+        jobId: Int,
+        reason: String
+    ): Boolean {
+        val scheduler =
+            context.getSystemService(
+                JobScheduler::class.java
+            ) ?: return false
+
+        val now =
+            System.currentTimeMillis()
+
+        val targetMs =
+            now + DELAY_MS
+
+        val deadlineMs =
+            now + DEADLINE_MS
+
+        val info =
+            JobInfo.Builder(
+                jobId,
+                ComponentName(
+                    context,
+                    GuardianJobService::class.java
+                )
+            )
+                .setPersisted(true)
+                .setMinimumLatency(
+                    DELAY_MS
+                )
+                .setOverrideDeadline(
+                    DEADLINE_MS
+                )
+                .build()
+
+        val result =
+            scheduler.schedule(
+                info
+            )
+
+        val present =
+            scheduler
+                .getAllPendingJobs()
+                .any {
+                    it.id == jobId
+                }
+
+        SchedulerStateStore(context)
+            .recordScheduleAttempt(
+                reason = reason,
+                result = result,
+                pending = present,
+                jobId = jobId,
+                targetMs = targetMs,
+                deadlineMs = deadlineMs
+            )
+
+        runCatching {
+            GuardianDatabase(context)
+                .logTechnical(
+                    "JOB_SCHEDULE",
+                    "mode=chain;id=$jobId;reason=${reason.take(20)};result=$result;present=$present"
+                )
+        }
+
+        return (
+            result ==
+                JobScheduler.RESULT_SUCCESS &&
+                present
+            )
+    }
+
+    fun isScheduled(
+        context: Context
+    ): Boolean =
+        managedJobIds(context)
+            .isNotEmpty()
+
+    fun managedJobIds(
+        context: Context
+    ): List<Int> {
+        val scheduler =
+            context.getSystemService(
+                JobScheduler::class.java
+            ) ?: return emptyList()
+
+        return scheduler
+            .getAllPendingJobs()
+            .map { it.id }
+            .filter {
+                it == JOB_A ||
+                    it == JOB_B
+            }
+            .distinct()
+            .sorted()
+    }
+
+    fun pendingReasons(
+        context: Context
+    ): Map<Int, List<Int>> {
+        if (
+            Build.VERSION.SDK_INT < 36
+        ) {
+            return emptyMap()
+        }
+
+        val scheduler =
+            context.getSystemService(
+                JobScheduler::class.java
+            ) ?: return emptyMap()
+
+        return listOf(
+            JOB_A,
+            JOB_B
+        ).associateWith { id ->
+            runCatching {
+                scheduler
+                    .getPendingJobReasons(id)
+                    .toList()
+            }.getOrDefault(
+                emptyList()
+            )
+        }
+    }
+
+    fun mode():
+        String =
+        "chained_one_shot"
+
+    fun delayMinutes():
+        Int =
+        (
+            DELAY_MS /
+                60_000L
+            )
+            .toInt()
+
+    fun deadlineMinutes():
+        Int =
+        (
+            DEADLINE_MS /
+                60_000L
+            )
+            .toInt()
+
+    fun processStartGraceMs():
+        Long =
+        PROCESS_START_GRACE_MS
 }

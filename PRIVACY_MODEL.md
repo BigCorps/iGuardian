@@ -1,38 +1,26 @@
-# Privacy Model — Guardian 0.1.6
+# Privacy Model — Guardian 0.1.7
 
-## Non-negotiable rule
+## Core rule
+Privacy Engine precedes Storage.
 
-**Privacy Engine precedes Storage.**
+## PRIVATE
+No package, app label or reason.
 
-## Types
+## SYSTEM
+No package or app label.
 
-- `APP`: normal app; package/label may be stored.
-- `PRIVATE`: bank/settings/authenticator/password manager/manual private app/other Android user; no identity.
-- `SCREEN_OFF`: screen non-interactive; no identity.
-- `SYSTEM`: launcher/system chooser/permission/package-installer/document-picker/technical system surface; no identity.
-- `ANONYMOUS_BROWSER`: reserved; never inferred without a reliable signal.
+## Other Android user/profile
+The period is represented only as PRIVATE and UsageStats from that other user are not replayed into the owner's public history.
 
-## Priority
+## Local questions
+The 0.1.7 local question engine:
+- reads sanitized local report data only;
+- does not restore PRIVATE or SYSTEM identity;
+- does not store the user's question;
+- does not send the question anywhere;
+- does not use Internet or an external model.
 
-`PRIVATE > ANONYMOUS_BROWSER > SCREEN_OFF > SYSTEM > APP`
-
-Privacy therefore wins even when Android emits overlapping technical events.
-
-## Other Android users/profiles
-
-On owner-user background:
-- owner history is collected only up to the switch boundary;
-- an anonymous PRIVATE interval begins.
-
-On owner-user foreground:
-- PRIVATE is closed;
-- collector cursor advances to the return boundary;
-- UsageStats from the other profile are not replayed into owner history.
+A question asking about a protected app cannot make Guardian reveal an identity that was never stored.
 
 ## Never collected
-
-Screenshots, video, keyboard input, passwords, messages, notification content, clipboard, banking content, Settings content, full URLs, URL query strings, form content, or identifiable activity from another Android user/profile.
-
-## Historical sanitation
-
-DB migrations may make privacy stricter. DB v4 reclassifies known historical technical/system APP rows to sanitized SYSTEM and removes stored package/label identity.
+Screenshots/video, typed text, passwords, messages, notification contents, clipboard, banking content, Settings content, full URLs, page content, or identifiable other-user activity.

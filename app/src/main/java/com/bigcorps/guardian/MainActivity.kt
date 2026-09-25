@@ -40,6 +40,9 @@ class MainActivity : Activity() {
     private lateinit var systemValue: TextView
     private lateinit var topAppsText: TextView
     private lateinit var capabilityText: TextView
+    private lateinit var localQuestionInput: EditText
+    private lateinit var localQuestionAnswer: TextView
+    private lateinit var localQuestionButton: Button
     @Volatile
     private var exportInProgress = false
 
@@ -229,6 +232,101 @@ class MainActivity : Activity() {
             }.apply { topMargin(10) }
         )
 
+        root.addView(
+            sectionTitle(
+                "Perguntar ao Guardian"
+            )
+        )
+
+        root.addView(
+            card().apply {
+                addView(
+                    textView(
+                        "Alpha local • sem internet",
+                        12f,
+                        true,
+                        PRIMARY
+                    )
+                )
+
+                addView(
+                    textView(
+                        "As respostas são calculadas somente a partir do histórico local já sanitizado. A pergunta digitada não é salva.",
+                        13f,
+                        false,
+                        TEXT_MUTED
+                    ).apply {
+                        setPadding(
+                            0,
+                            dp(5),
+                            0,
+                            dp(8)
+                        )
+                    }
+                )
+
+                localQuestionInput =
+                    EditText(
+                        this@MainActivity
+                    ).apply {
+                        hint =
+                            "Ex.: Qual app mais usei hoje?"
+
+                        minLines =
+                            1
+
+                        maxLines =
+                            3
+
+                        textSize =
+                            15f
+
+                        backgroundTintList =
+                            ColorStateList
+                                .valueOf(
+                                    PRIMARY
+                                )
+                    }
+
+                addView(
+                    localQuestionInput,
+                    matchWidth()
+                )
+
+                localQuestionButton =
+                    primaryButton(
+                        "Responder localmente"
+                    ) {
+                        answerLocalQuestion()
+                    }.apply {
+                        topMargin(10)
+                    }
+
+                addView(
+                    localQuestionButton
+                )
+
+                localQuestionAnswer =
+                    textView(
+                        "Exemplos: resumo de hoje • top 5 apps • desbloqueios • tela desligada • PRIVATE • cobertura.",
+                        13f,
+                        false,
+                        TEXT_MUTED
+                    ).apply {
+                        setPadding(
+                            0,
+                            dp(12),
+                            0,
+                            0
+                        )
+                    }
+
+                addView(
+                    localQuestionAnswer
+                )
+            }
+        )
+
         root.addView(sectionTitle("Exportar"))
 
         root.addView(card().apply {
@@ -374,6 +472,53 @@ class MainActivity : Activity() {
         val restMinutes = minutes % 60L
         return if (restMinutes == 0L) "${hours}h"
         else "${hours}h ${restMinutes}m"
+    }
+
+    private fun answerLocalQuestion() {
+        val question =
+            localQuestionInput
+                .text
+                .toString()
+                .trim()
+
+        localQuestionButton.isEnabled =
+            false
+
+        localQuestionAnswer.text =
+            "Calculando somente neste aparelho…"
+
+        Thread {
+            try {
+                UsageCollector(
+                    applicationContext
+                ).collect()
+
+                val answer =
+                    LocalQuestionEngine(
+                        applicationContext
+                    ).answer(
+                        question
+                    )
+
+                runOnUiThread {
+                    localQuestionButton.isEnabled =
+                        true
+
+                    localQuestionAnswer.text =
+                        answer.text
+
+                    updateSummary()
+                }
+            } catch (t: Throwable) {
+                runOnUiThread {
+                    localQuestionButton.isEnabled =
+                        true
+
+                    localQuestionAnswer.text =
+                        "Não consegui calcular essa resposta agora. Tente atualizar os dados locais e perguntar novamente."
+                }
+            }
+        }.start()
     }
 
     private fun showRestrictedSettingsHelp() {

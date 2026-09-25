@@ -1,21 +1,20 @@
-# Store Compliance Design Notes
+# Store Compliance Design Notes — 0.1.7
 
-Current Android foundation:
-- no INTERNET permission;
+Current MVP:
+- own-device local diagnostics/digital wellbeing;
+- no Internet permission;
+- no account/cloud;
 - no Accessibility Service;
-- no VPN interception;
-- no screen/media capture;
+- no VPN inspection;
+- no screen capture;
 - no keyboard/input capture;
 - no notification/message content;
 - no QUERY_ALL_PACKAGES;
-- Usage Access is explicit;
-- PRIVATE is sanitized before storage;
-- SYSTEM identity is sanitized before storage;
-- other-user/profile activity is represented generically as PRIVATE;
-- export occurs only by explicit user action;
-- background work uses Android JobScheduler;
-- no remote monitoring or hidden collection path exists.
+- explicit Usage Access;
+- PRIVATE sanitized before storage;
+- SYSTEM sanitized before storage;
+- local questions use sanitized data and are not stored;
+- background work uses standard Android JobScheduler only;
+- boot recovery uses RECEIVE_BOOT_COMPLETED only for the local scheduled collector.
 
-DEV signing is separate from future production signing.
-
-Background reliability work must not introduce covert persistence, Accessibility, VPN or content capture.
+Final production submission still requires a current policy review.

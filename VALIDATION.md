@@ -1,58 +1,57 @@
-# Validation — Android 0.1.6
+# Validation — Android 0.1.7
 
-## Long 0.1.5 real-device evidence
+## 0.1.6 evidence
 
-Diagnostic generated 2026-09-25 09:03:33 on Xiaomi/Redmi Android 16 / API 36.
+Latest diagnostic:
+- version 0.1.6 / versionCode 7;
+- diagnostic schema 4;
+- Usage Access true;
+- no Internet permission;
+- no QUERY_ALL_PACKAGES;
+- today coverage 99.8%;
+- 24h snapshot coverage 99.4%;
+- no public sensitive-app identity leak detected;
+- no non-APP identity fields;
+- no timeline overlap detected;
+- known system-installer packages absent from current app aggregate;
+- no new post-0.1.6 export failure.
 
-Build actually under test:
-- version 0.1.5
-- versionCode 6
-- diagnostic schema 3
-- scheduler logic 2
+Scheduler logic v3:
+- one process start;
+- one recovery/schedule;
+- one job run;
+- zero job stops;
+- no second run after approximately one hour;
+- managed periodic job absent at diagnostic time.
 
-Observed:
-- Usage Access: true
-- no INTERNET permission
-- no QUERY_ALL_PACKAGES
-- tracking start preserved from 2026-09-24 18:41:20
-- today's coverage: 99.8%
-- 24 scheduler job runs total in logic v2
-- 0 scheduler job stops
-- recent overnight cadence roughly 27–35 minutes
-- timeline overlaps: 0
+Conclusion:
+privacy/data pipeline is strong; periodic background scheduling remains the active foundation issue.
 
-## Fresh other-user/profile validation
+## Why scheduler v4 uses chained one-shots
 
-Technical events:
-- PRIVATE_STARTED: 09:01:57.624
-- PRIVATE_ENDED: 09:02:38.664
+Official Android JobScheduler supports one-time jobs with minimum latency and persisted jobs. 0.1.7 alternates two IDs so scheduling the next job cannot replace the currently running one.
 
-Daily timeline:
-- generic PRIVATE interval from 09:01:57.624 to 09:02:38.664
-- no guest application/package identity inside the interval
-- no overlap with neighboring timeline entries
+## 0.1.7 acceptance
 
-Result: privacy boundary PASSED for the current Android approach.
+### Update
+- installs over 0.1.6;
+- name, permission, tracking start and history preserved.
 
-## Export observation
+### Local intelligence
+Queries return values consistent with exported daily JSON.
+No raw question appears in SQLite/diagnostic/export.
 
-One `EXPORT_PREPARE_ERROR: IOException` appeared immediately after an `EXPORT_OK` during rapid export activity. The final daily and diagnostic files were both successfully produced.
+### Scheduler
+After install and a reboot:
+- `scheduler.logic_version = 4`
+- `scheduler.mode = chained_one_shot`
+- managed job exists between runs;
+- `job_run_count >= 2` over a sufficient test window;
+- `job_stop_count = 0` ideally;
+- schedule attempts grow roughly one per completed chained job, not in bursts;
+- alternate job IDs are visible;
+- next target/deadline are populated;
+- Android 16 pending reasons are captured.
 
-0.1.6 adds single-flight export protection to prevent overlapping requests.
-
-## 0.1.6 acceptance
-
-The next files must prove the new build was actually installed:
-- app.version = 0.1.6
-- app.version_code = 7
-- diagnostic_schema = 4
-- scheduler.logic_version = 3
-
-Then validate for 60–90 minutes:
-- periodic jobs continue without bursts;
-- job_stop_count remains 0;
-- process-start guard records skips instead of false recoveries;
-- schedule_attempt_count does not grow merely because JobScheduler launched the process;
-- historical package installers/DocumentsUI no longer pollute the app ranking;
-- zero-second app artifacts disappear;
-- export succeeds without overlapping-export IOException.
+### Reboot
+Diagnostic must show a persisted reschedule signal such as BOOT_COMPLETED or USER_UNLOCKED and the chain must continue afterward.

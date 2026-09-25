@@ -1,25 +1,34 @@
 # Changelog
 
-## 0.1.6 — 2026-09-24
+## 0.1.7 — 2026-09-25
 
-- versionCode 7 / versionName 0.1.6.
-- Scheduler logic v3.
-- Added 5-second process-start grace before recovering a missing periodic job.
-- Detects recent JobService launch and skips false rescheduling.
-- Added scheduler process-start/skip diagnostics.
-- Diagnostic schema v4.
-- SQLite DB v4.
-- DB v4 reclassifies historical known system/package-installer rows to SYSTEM and removes identity.
-- Added Xiaomi global package installer and DocumentsUI to SYSTEM classification.
-- Added system-app-only generic OEM installer/document picker detection.
-- Summary aggregation now accumulates milliseconds before converting to seconds.
-- Zero-second transition artifacts are omitted from the user app ranking.
-- UI reads versionName dynamically instead of hard-coding it.
-- Added single-flight export protection after a rapid-export race produced one IOException in 0.1.5.
+### Background scheduler v4
+- Replaced periodic DEV JobScheduler job with alternating chained one-shot jobs.
+- Job IDs 41001/41002 alternate to avoid replacing a currently running job.
+- Each DEV job uses 30-minute minimum latency and 45-minute deadline.
+- Next one-shot is scheduled before the current job finishes.
+- Process-start recovery checks all managed jobs after an 8-second grace window.
+- Scheduler logic counters reset once for v4.
+- Added persisted reboot/package/user-unlock signal diagnostics.
+- Added Android 16 pending-job-reasons diagnostics.
+- Added job ID and stop reason diagnostics.
 
-## 0.1.5
-- In-place update validation build.
-- Serialized collection.
-- Scheduler logic v2.
-- Non-overlapping timeline with privacy precedence.
-- DB v3 duplicate repair.
+### Local Intelligence Alpha
+- Added offline deterministic question engine.
+- Added main-screen “Perguntar ao Guardian” card.
+- Supports today's summary, top app/top 5, named-app time, app-use total, screen-off, unlocks, PRIVATE, SYSTEM and coverage.
+- Unsupported periods are explicit rather than guessed.
+- Questions are never persisted.
+- No network/API/LLM call.
+
+### Version
+- versionCode 8
+- versionName 0.1.7
+- diagnostic schema 5
+
+## 0.1.6
+- scheduler logic v3;
+- DB v4 SYSTEM sanitation;
+- millisecond-first aggregate durations;
+- single-flight JSON export;
+- dynamic UI version.

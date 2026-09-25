@@ -1,83 +1,138 @@
-# Guardian DEV — Android 0.1.6
+# Guardian DEV — Android 0.1.7
 
 ## PROJECT STATUS
 
-- **Current code to upload:** Android 0.1.6
-- **Last physically validated build:** Android 0.1.5
-- **Repository currently observed before this upload:** Android 0.1.5
-- **Current phase:** Android Foundation / background hardening
+- **Current version:** Android 0.1.7
+- **Phase:** Android Foundation gate + Local Intelligence Alpha
+- **Repository:** `BigCorps/iGuardian`
 - **Backend / cloud / login / external AI:** none
 - **Internet permission:** intentionally absent
 - **DEV package:** `com.bigcorps.guardian.dev`
 - **Daily JSON schema:** v2
-- **Diagnostic schema:** v4
+- **Diagnostic schema:** v5
 - **SQLite DB:** v4
+- **Scheduler logic:** v4
 
-## Long 0.1.5 validation — 2026-09-25
+## 0.1.6 physical result
 
-The long test was still running Android 0.1.5 (versionCode 6). It was valuable and validated the current foundation before 0.1.6 is installed.
+The 0.1.6 JSONs proved several corrections:
 
-Confirmed:
-- update-in-place from 0.1.4 to 0.1.5 preserved state/history;
-- device name and Usage Access remained preserved;
-- tracking start remained from the previous build;
-- daily coverage reached 99.8% from midnight to 09:03;
-- 24 periodic jobs completed with 0 job stops in scheduler logic v2;
-- the visible overnight cadence was approximately 27–35 minutes, centered near the 30-minute DEV period;
-- timeline export had no overlaps;
-- fresh other-user/profile switch was detected;
-- the other-user interval was stored generically as PRIVATE;
-- no guest app/package identity appeared inside the protected interval.
+- actual installed build is 0.1.6 / versionCode 7;
+- Usage Access remains active;
+- local history still begins at 0.1.4/0.1.5 tracking start;
+- today's coverage is 99.8%;
+- the 24-hour diagnostic snapshot coverage is 99.4%;
+- no INTERNET or QUERY_ALL_PACKAGES permission;
+- no sensitive bank/settings identity appeared in the public day report;
+- no non-APP interval exposed package/name;
+- no timeline overlaps were found;
+- 0.1.6 system cleanup removed known package-installer/system packages from the user app aggregate after upgrade;
+- export single-flight produced successful new exports and no new post-0.1.6 export error.
 
-Fresh switch boundary:
-- PRIVATE_STARTED: 09:01:57.624
-- PRIVATE_ENDED: 09:02:38.664
-- exported interval: PRIVATE for approximately 41 seconds.
+The remaining issue is background scheduling.
 
-This closes the main privacy-boundary question for the current Android approach.
+### Scheduler v3 finding
 
-## Why 0.1.6 is still needed
+In approximately one hour:
+- process started once;
+- one schedule/recovery was created;
+- the job ran once immediately after scheduling;
+- one hour later there was no managed periodic job and no second run.
 
-The uploaded diagnostic is 0.1.5 / scheduler logic v2, so scheduler logic v3 has not yet been physically tested.
+This shows the periodic model is still not robust enough on the tested Xiaomi/Android 16 device.
 
-0.1.5 also showed:
-- `pending_now=false` shortly after a successful periodic run;
-- two historical process-start recoveries from logic v2;
-- old SYSTEM/package-installer rows still present as APP in historical data;
-- zero-second app transition artifacts;
-- one export preparation IOException immediately after a successful export, consistent with overlapping export requests.
+## 0.1.7 scheduler v4
 
-## 0.1.6 changes
+The DEV scheduler now uses an alternating **chained one-shot** strategy instead of `setPeriodic()`.
 
-### Scheduler logic v3
-When Android starts a dead Guardian process to execute JobScheduler, Application.onCreate() may run before JobService.onStartJob(). A short grace window prevents this normal lifecycle from being mistaken for a missing periodic job.
+Two job IDs alternate:
 
-### Historical SYSTEM sanitation
-DB v4 converts known old technical APP rows to sanitized SYSTEM and clears identity.
+`41001 → 41002 → 41001 ...`
 
-### Millisecond-first aggregation
-Durations are summed in milliseconds and converted only after aggregation.
+Each next job:
+- is persisted across reboot;
+- cannot run before 30 minutes;
+- has a DEV deadline window of 45 minutes;
+- is scheduled by the finishing job before that job reports completion.
 
-### Zero-second app cleanup
-Sub-second transition artifacts are omitted from the user-facing app ranking.
+This avoids replacing a currently running job with the same ID.
 
-### Export single-flight
-Only one JSON export may run at a time. This avoids two rapid taps racing against MediaStore/file verification.
+Process-start recovery still exists, but it now checks all Guardian-managed jobs and waits 8 seconds before deciding the chain was lost.
 
-### Dynamic version label
-The UI reads versionName from the installed APK instead of a hard-coded string.
+Android 16 diagnostics also export the raw `getPendingJobReasons()` values for both job IDs.
 
-## Next validation
+## Reboot diagnostics
 
-1. Upload this 0.1.6 package to the repository preserving paths.
-2. Wait for the signed Actions artifact `guardian-android-0.1.6-fixed-signed-debug`.
-3. Install directly over 0.1.5. Do not uninstall.
-4. Confirm the UI says 0.1.6 and the diagnostic reports:
-   - version 0.1.6
-   - versionCode 7
-   - diagnostic_schema 4
-   - scheduler logic_version 3
-5. Leave mostly closed for about 60–90 minutes.
-6. Export daily + diagnostic JSON.
+Boot/package-replaced/user-unlocked signals are persisted in scheduler diagnostics:
+- signal count;
+- last signal;
+- timestamp.
 
-The visitor-profile test does not need to be repeated immediately; the fresh 0.1.5 test already validated the privacy boundary.
+This lets one test validate update + background + reboot recovery together.
+
+## Local Intelligence Alpha
+
+0.1.7 also begins Phase 2 without waiting for another round.
+
+A new **Perguntar ao Guardian** card answers deterministic questions locally, for example:
+
+- Qual app mais usei hoje?
+- Top 5 apps
+- Quanto tempo usei o WhatsApp?
+- Quantas vezes desbloqueei?
+- Quanto tempo a tela ficou desligada?
+- Quanto tempo ficou PRIVATE?
+- Qual a cobertura de hoje?
+- Resumo de hoje
+
+Important:
+- no API;
+- no Internet;
+- no LLM call;
+- no hallucinated numbers;
+- questions are not stored;
+- answers use the sanitized local report only;
+- periods other than today explicitly return “not supported yet”.
+
+See `LOCAL_INTELLIGENCE.md`.
+
+## Combined next test
+
+Install 0.1.7 directly over 0.1.6. Do not uninstall.
+
+### Immediately
+Confirm:
+- version shows 0.1.7;
+- device name/history remain;
+- Usage Access remains enabled.
+
+Ask at least these:
+1. `Resumo de hoje`
+2. `Qual app mais usei hoje?`
+3. `Quanto tempo usei o Chrome Dev?`
+4. `Quantas vezes desbloqueei?`
+5. `Qual a cobertura de hoje?`
+6. `Qual app mais usei ontem?`
+
+The first five must return exact local calculations. The last one must state that older periods are not supported yet.
+
+### Background + reboot
+1. Close Guardian.
+2. Leave it mostly closed for about 35–45 minutes.
+3. Reboot the phone once.
+4. After reboot, do not open Guardian immediately.
+5. Leave another 45–60 minutes.
+6. Open Guardian, ask `Resumo de hoje` again.
+7. Export daily + diagnostic JSON.
+
+This single round validates:
+- another in-place update;
+- local Q&A;
+- first chained job;
+- reboot persistence/receiver;
+- post-reboot chained job;
+- scheduler pending reasons;
+- no job bursts/stops;
+- JSON/export after reboot.
+
+If scheduler v4 + reboot pass, the Android foundation can move out of the critical blocking path and Phase 2 can expand while OEM hardening continues in parallel.

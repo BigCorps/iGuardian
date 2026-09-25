@@ -45,10 +45,30 @@ class GuardianApplication : Application() {
 
         PrivacyRepair.runIfNeeded(this)
 
-        SchedulerStateStore(this).ensureLogicVersion(
+        val schedulerState =
+            SchedulerStateStore(this)
+
+        val previousSchedulerLogic =
+            schedulerState.logicVersion()
+
+        schedulerState.ensureLogicVersion(
             GuardianScheduler.LOGIC_VERSION
         )
-        GuardianScheduler.recoverAfterProcessStart(this)
+
+        if (
+            previousSchedulerLogic !=
+            GuardianScheduler.LOGIC_VERSION
+        ) {
+            GuardianScheduler
+                .resetForLogicUpgrade(
+                    this
+                )
+        } else {
+            GuardianScheduler
+                .recoverAfterProcessStart(
+                    this
+                )
+        }
 
         val filter = IntentFilter().apply {
             addAction(Intent.ACTION_USER_BACKGROUND)

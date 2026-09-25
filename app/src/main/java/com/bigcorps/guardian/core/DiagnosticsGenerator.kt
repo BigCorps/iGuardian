@@ -38,7 +38,7 @@ class DiagnosticsGenerator(private val context: Context) {
         }
 
         return JSONObject().apply {
-            put("diagnostic_schema", 4)
+            put("diagnostic_schema", 5)
             put("generated_at", iso(System.currentTimeMillis()))
 
             put(
@@ -162,117 +162,262 @@ class DiagnosticsGenerator(private val context: Context) {
             put(
                 "scheduler",
                 JSONObject().apply {
-                    put("logic_version", schedulerState.logicVersion())
                     put(
-                        "process_start_grace_ms",
-                        GuardianScheduler.processStartGraceMs()
+                        "logic_version",
+                        schedulerState.logicVersion()
                     )
                     put(
-                        "recent_job_grace_ms",
-                        GuardianScheduler.recentJobGraceMs()
+                        "mode",
+                        GuardianScheduler.mode()
+                    )
+                    put(
+                        "managed_job_ids",
+                        JSONArray(
+                            GuardianScheduler
+                                .managedJobIds(
+                                    context
+                                )
+                        )
+                    )
+                    put(
+                        "pending_reasons_android_16",
+                        JSONObject().apply {
+                            GuardianScheduler
+                                .pendingReasons(
+                                    context
+                                )
+                                .forEach {
+                                    (
+                                        jobId,
+                                        reasons
+                                    ) ->
+                                    put(
+                                        jobId.toString(),
+                                        JSONArray(
+                                            reasons
+                                        )
+                                    )
+                                }
+                        }
+                    )
+                    put(
+                        "process_start_grace_ms",
+                        GuardianScheduler
+                            .processStartGraceMs()
+                    )
+                    put(
+                        "dev_delay_minutes",
+                        GuardianScheduler
+                            .delayMinutes()
+                    )
+                    put(
+                        "dev_deadline_minutes",
+                        GuardianScheduler
+                            .deadlineMinutes()
                     )
                     put(
                         "process_start_count",
-                        schedulerState.processStartCount()
+                        schedulerState
+                            .processStartCount()
                     )
                     put(
                         "process_start_skip_count",
-                        schedulerState.processStartSkipCount()
+                        schedulerState
+                            .processStartSkipCount()
                     )
                     put(
                         "last_process_start_at",
-                        schedulerState.lastProcessStartMs()
-                            .takeIf { it > 0L }
+                        schedulerState
+                            .lastProcessStartMs()
+                            .takeIf {
+                                it > 0L
+                            }
                             ?.let(::iso)
                             ?: JSONObject.NULL
                     )
                     put(
                         "last_process_start_decision",
-                        schedulerState.lastProcessStartDecision()
+                        schedulerState
+                            .lastProcessStartDecision()
                             ?: JSONObject.NULL
                     )
                     put(
                         "last_process_start_decision_at",
-                        schedulerState.lastProcessStartDecisionMs()
-                            .takeIf { it > 0L }
+                        schedulerState
+                            .lastProcessStartDecisionMs()
+                            .takeIf {
+                                it > 0L
+                            }
                             ?.let(::iso)
                             ?: JSONObject.NULL
                     )
                     put(
                         "stats_since_at",
-                        schedulerState.statsSinceMs()
-                            .takeIf { it > 0L }
+                        schedulerState
+                            .statsSinceMs()
+                            .takeIf {
+                                it > 0L
+                            }
                             ?.let(::iso)
                             ?: JSONObject.NULL
                     )
                     put(
-                        "pending_now",
-                        GuardianScheduler.isScheduled(context)
-                    )
-                    put(
-                        "dev_period_minutes",
-                        GuardianScheduler.periodMinutes()
+                        "managed_job_present_now",
+                        GuardianScheduler
+                            .isScheduled(
+                                context
+                            )
                     )
                     put(
                         "schedule_attempt_count",
-                        schedulerState.scheduleAttemptCount()
+                        schedulerState
+                            .scheduleAttemptCount()
                     )
-                    put("recovery_count", schedulerState.recoveryCount())
-                    put("job_run_count", schedulerState.jobRunCount())
-                    put("job_stop_count", schedulerState.jobStopCount())
+                    put(
+                        "recovery_count",
+                        schedulerState
+                            .recoveryCount()
+                    )
+                    put(
+                        "job_run_count",
+                        schedulerState
+                            .jobRunCount()
+                    )
+                    put(
+                        "job_stop_count",
+                        schedulerState
+                            .jobStopCount()
+                    )
                     put(
                         "last_schedule_attempt_at",
-                        schedulerState.lastScheduleAttemptMs()
-                            .takeIf { it > 0L }
+                        schedulerState
+                            .lastScheduleAttemptMs()
+                            .takeIf {
+                                it > 0L
+                            }
                             ?.let(::iso)
                             ?: JSONObject.NULL
                     )
                     put(
                         "last_schedule_reason",
-                        schedulerState.lastScheduleReason() ?: JSONObject.NULL
+                        schedulerState
+                            .lastScheduleReason()
+                            ?: JSONObject.NULL
                     )
                     put(
                         "last_schedule_result",
-                        schedulerState.lastScheduleResult()
+                        schedulerState
+                            .lastScheduleResult()
                     )
                     put(
-                        "last_schedule_pending",
-                        schedulerState.lastSchedulePending()
+                        "last_schedule_present",
+                        schedulerState
+                            .lastSchedulePending()
+                    )
+                    put(
+                        "last_scheduled_job_id",
+                        schedulerState
+                            .lastScheduledJobId()
+                    )
+                    put(
+                        "next_target_at",
+                        schedulerState
+                            .nextTargetMs()
+                            .takeIf {
+                                it > 0L
+                            }
+                            ?.let(::iso)
+                            ?: JSONObject.NULL
+                    )
+                    put(
+                        "next_deadline_at",
+                        schedulerState
+                            .nextDeadlineMs()
+                            .takeIf {
+                                it > 0L
+                            }
+                            ?.let(::iso)
+                            ?: JSONObject.NULL
                     )
                     put(
                         "last_scheduler_check_at",
-                        schedulerState.lastSchedulerCheckMs()
-                            .takeIf { it > 0L }
+                        schedulerState
+                            .lastSchedulerCheckMs()
+                            .takeIf {
+                                it > 0L
+                            }
                             ?.let(::iso)
                             ?: JSONObject.NULL
                     )
                     put(
                         "last_scheduler_check_reason",
-                        schedulerState.lastSchedulerCheckReason()
+                        schedulerState
+                            .lastSchedulerCheckReason()
                             ?: JSONObject.NULL
                     )
                     put(
-                        "last_scheduler_check_pending",
-                        schedulerState.lastSchedulerCheckPending()
+                        "last_scheduler_check_present",
+                        schedulerState
+                            .lastSchedulerCheckPending()
                     )
                     put(
                         "last_job_start_at",
-                        schedulerState.lastJobStartMs()
-                            .takeIf { it > 0L }
+                        schedulerState
+                            .lastJobStartMs()
+                            .takeIf {
+                                it > 0L
+                            }
                             ?.let(::iso)
                             ?: JSONObject.NULL
                     )
                     put(
+                        "last_started_job_id",
+                        schedulerState
+                            .lastStartedJobId()
+                    )
+                    put(
                         "last_job_finish_at",
-                        schedulerState.lastJobFinishMs()
-                            .takeIf { it > 0L }
+                        schedulerState
+                            .lastJobFinishMs()
+                            .takeIf {
+                                it > 0L
+                            }
                             ?.let(::iso)
                             ?: JSONObject.NULL
                     )
                     put(
                         "last_job_stop_at",
-                        schedulerState.lastJobStopMs()
-                            .takeIf { it > 0L }
+                        schedulerState
+                            .lastJobStopMs()
+                            .takeIf {
+                                it > 0L
+                            }
+                            ?.let(::iso)
+                            ?: JSONObject.NULL
+                    )
+                    put(
+                        "last_job_stop_reason",
+                        schedulerState
+                            .lastJobStopReason()
+                    )
+                    put(
+                        "reschedule_signal_count",
+                        schedulerState
+                            .rescheduleSignalCount()
+                    )
+                    put(
+                        "last_reschedule_signal",
+                        schedulerState
+                            .lastRescheduleSignal()
+                            ?: JSONObject.NULL
+                    )
+                    put(
+                        "last_reschedule_signal_at",
+                        schedulerState
+                            .lastRescheduleSignalMs()
+                            .takeIf {
+                                it > 0L
+                            }
                             ?.let(::iso)
                             ?: JSONObject.NULL
                     )
@@ -317,6 +462,12 @@ class DiagnosticsGenerator(private val context: Context) {
                     put("serialized_collection", true)
                     put("process_start_scheduler_guard", true)
                     put("millisecond_summary_aggregation", true)
+                    put("chained_one_shot_scheduler", true)
+                    put("android_16_pending_job_reasons", android.os.Build.VERSION.SDK_INT >= 36)
+                    put("local_question_engine", true)
+                    put("local_question_engine_version", 1)
+                    put("local_question_period_today", true)
+                    put("local_question_persists_queries", false)
                     put("browser_domains", false)
                     put("anonymous_browser_detection", false)
                     put("anonymous_browser_schema_ready", true)

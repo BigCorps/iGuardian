@@ -1,17 +1,20 @@
-# Static Validation — 0.1.6
+# Static validation — 0.1.7
 
-Generated from the tested 0.1.5 source set.
+Generated from the physically tested 0.1.6 R2 source package.
 
-- `app/src/main/java/com/bigcorps/guardian/GuardianApplication.kt`: brace_delta=0; paren_delta=0
-- `app/src/main/java/com/bigcorps/guardian/MainActivity.kt`: brace_delta=0; paren_delta=0
-- `app/src/main/java/com/bigcorps/guardian/core/DiagnosticsGenerator.kt`: brace_delta=0; paren_delta=0
-- `app/src/main/java/com/bigcorps/guardian/core/GuardianDatabase.kt`: brace_delta=0; paren_delta=0
-- `app/src/main/java/com/bigcorps/guardian/core/GuardianJobService.kt`: brace_delta=0; paren_delta=0
-- `app/src/main/java/com/bigcorps/guardian/core/GuardianPrivacyOverride.kt`: brace_delta=0; paren_delta=0
-- `app/src/main/java/com/bigcorps/guardian/core/GuardianScheduler.kt`: brace_delta=0; paren_delta=0
-- `app/src/main/java/com/bigcorps/guardian/core/Preferences.kt`: brace_delta=0; paren_delta=0
-- `app/src/main/java/com/bigcorps/guardian/core/ReportGenerator.kt`: brace_delta=0; paren_delta=0
-- `app/src/main/java/com/bigcorps/guardian/core/SystemSurfaceClassifier.kt`: brace_delta=0; paren_delta=0
-- `app/src/main/java/com/bigcorps/guardian/core/TimelineNormalizer.kt`: brace_delta=0; paren_delta=0
-- `app/src/main/java/com/bigcorps/guardian/core/UsageCollector.kt`: brace_delta=0; paren_delta=0
-- `app/src/test/java/com/bigcorps/guardian/core/TimelineNormalizerTest.kt`: brace_delta=0; paren_delta=0
+- `app/src/main/java/com/bigcorps/guardian/GuardianApplication.kt`: braces=0; parens=0
+- `app/src/main/java/com/bigcorps/guardian/MainActivity.kt`: braces=0; parens=0
+- `app/src/main/java/com/bigcorps/guardian/core/DiagnosticsGenerator.kt`: braces=0; parens=0
+- `app/src/main/java/com/bigcorps/guardian/core/GuardianDatabase.kt`: braces=0; parens=0
+- `app/src/main/java/com/bigcorps/guardian/core/GuardianJobService.kt`: braces=0; parens=0
+- `app/src/main/java/com/bigcorps/guardian/core/GuardianPrivacyOverride.kt`: braces=0; parens=0
+- `app/src/main/java/com/bigcorps/guardian/core/GuardianRescheduleReceiver.kt`: braces=0; parens=0
+- `app/src/main/java/com/bigcorps/guardian/core/GuardianScheduler.kt`: braces=0; parens=0
+- `app/src/main/java/com/bigcorps/guardian/core/LocalQuestionEngine.kt`: braces=0; parens=0
+- `app/src/main/java/com/bigcorps/guardian/core/Preferences.kt`: braces=0; parens=0
+- `app/src/main/java/com/bigcorps/guardian/core/ReportGenerator.kt`: braces=0; parens=0
+- `app/src/main/java/com/bigcorps/guardian/core/SystemSurfaceClassifier.kt`: braces=0; parens=0
+- `app/src/main/java/com/bigcorps/guardian/core/TimelineNormalizer.kt`: braces=0; parens=0
+- `app/src/main/java/com/bigcorps/guardian/core/UsageCollector.kt`: braces=0; parens=0
+- `app/src/test/java/com/bigcorps/guardian/core/LocalQuestionIntentParserTest.kt`: braces=0; parens=0
+- `app/src/test/java/com/bigcorps/guardian/core/TimelineNormalizerTest.kt`: braces=0; parens=0
