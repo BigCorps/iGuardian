@@ -1,40 +1,44 @@
 {
   "project_codename": "Guardian",
-  "version": "0.1.10",
+  "version": "0.1.11",
   "platform": "android",
   "phase": 2,
-  "phase_name": "Local Intelligence validation + report precision",
+  "phase_name": "Local Intelligence v4 flexible ranges",
   "schema_version": 3,
-  "diagnostic_schema_version": 8,
+  "diagnostic_schema_version": 9,
   "database_version": 5,
   "repository": "BigCorps/iGuardian",
   "backend": "none",
   "internet_permission": false,
   "dev_application_id": "com.bigcorps.guardian.dev",
   "last_physically_validated_build": {
-    "version": "0.1.9",
-    "version_code": 10,
-    "generated_at": "2026-09-25T18:27:04.564-03:00",
+    "version": "0.1.10",
+    "version_code": 11,
+    "generated_at": "2026-09-25T22:43:58.259-03:00",
     "today_coverage_percent": 99.4,
-    "snapshot_24h_coverage_percent": 99.3,
     "privacy_timeline_result": "passed",
     "workmanager": {
       "logic_version": 5,
-      "unique_work_present": true,
-      "worker_run_count": 5,
-      "worker_success_count": 5,
+      "worker_run_count": 9,
+      "worker_success_count": 9,
       "worker_retry_count": 0,
       "worker_failure_count": 0,
-      "worker_stopped_count": 0,
-      "exact_periodicity": "not guaranteed",
-      "product_decision": "accepted as best-effort with retrospective catch-up"
+      "worker_stopped_count": 0
+    },
+    "local_intelligence_self_check": {
+      "overall": "failed_due_to_compare_plan_semantics",
+      "summary_today": true,
+      "top_last_24h": true,
+      "insights_today": true,
+      "compare_today_yesterday": false
     }
   },
-  "implemented_in_0_1_10": [
-    "report schema v3 millisecond precision",
-    "runtime Local Intelligence self-check",
-    "WorkManager recent-start cadence telemetry",
-    "explicit best-effort background semantics"
+  "implemented_in_0_1_11": [
+    "comparison reference-period parser fix",
+    "rolling custom hour periods",
+    "rolling custom day periods",
+    "expanded runtime self-check",
+    "millisecond-aware local answers"
   ],
-  "next_task": "Install 0.1.10 over 0.1.9, leave 2-3h if convenient, export daily+diagnostic JSON."
+  "next_task": "Install 0.1.11 over 0.1.10; test custom ranges; leave 60-90m if convenient; export daily+diagnostic JSON."
 }

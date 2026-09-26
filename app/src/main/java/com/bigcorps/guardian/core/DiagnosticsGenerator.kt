@@ -38,7 +38,7 @@ class DiagnosticsGenerator(private val context: Context) {
         }
 
         return JSONObject().apply {
-            put("diagnostic_schema", 8)
+            put("diagnostic_schema", 9)
             put("generated_at", iso(System.currentTimeMillis()))
 
             put(
@@ -458,11 +458,13 @@ class DiagnosticsGenerator(private val context: Context) {
                     put("background_catch_up_collection", true)
                     put("workmanager_version", GuardianScheduler.WORKMANAGER_VERSION)
                     put("local_question_engine", true)
-                    put("local_question_engine_version", 3)
+                    put("local_question_engine_version", 4)
                     put("local_question_period_today", true)
                     put("local_question_period_yesterday", true)
                     put("local_question_period_last_24_hours", true)
                     put("local_question_period_last_7_days", true)
+                    put("local_question_custom_rolling_hours", true)
+                    put("local_question_custom_rolling_days", true)
                     put("local_question_compare_today_yesterday", true)
                     put("local_question_deterministic_insights", true)
                     put("local_question_persists_queries", false)

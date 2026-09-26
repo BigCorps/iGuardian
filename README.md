@@ -1,56 +1,82 @@
-# Guardian DEV — Android 0.1.10
+# Guardian DEV — Android 0.1.11
 
-## 0.1.9 result
+## 0.1.10 validation result
 
-The core Android data/privacy path remains stable.
+The 0.1.10 long round ran for more than three hours and validated:
 
-Confirmed on the physical Xiaomi/Android 16 test device:
-- 0.1.9 / versionCode 10;
-- Usage Access and history preserved;
-- no INTERNET permission;
-- no QUERY_ALL_PACKAGES;
+- version 0.1.10 / versionCode 11;
+- report schema v3;
+- millisecond precision;
+- no INTERNET or QUERY_ALL_PACKAGES;
 - WorkManager unique periodic work still present;
-- same unique work UUID retained;
-- 5 Worker runs / 5 successful results;
-- 0 retry / 0 failure / 0 stopped Worker;
+- same unique work UUID;
+- 9 cumulative Worker runs;
+- 9 successes;
+- 0 retry;
+- 0 failure;
+- 0 stopped Worker;
 - current WorkInfo ENQUEUED;
-- prior BOOT_COMPLETED signal preserved;
-- today coverage 99.4%;
-- rolling 24h diagnostic coverage 99.3%;
-- full JSON analysis found no timeline overlaps;
-- full JSON analysis found no identity on PRIVATE/SYSTEM;
-- Photo Picker and Xiaomi App Finder no longer appear as APP.
+- data/privacy pipeline still clean.
 
-## Background decision
+The recorded Worker intervals remain irregular. This is expected for best-effort WorkManager scheduling on the tested Xiaomi device. Retrospective UsageStats catch-up remains the continuity mechanism.
 
-The visible Worker starts show that Android/Xiaomi may defer a 30-minute periodic request substantially.
+## Self-check finding
 
-Guardian therefore treats WorkManager as best-effort maintenance, not an exact timer. UsageStats collection catches up retrospectively from the stored cursor whenever a Worker or the app runs. Exact timing is not a Phase 2 blocker.
+The 0.1.10 runtime self-check passed:
+- summary today;
+- top last 24h;
+- insights today.
 
-## Report schema v3
+Only `compare_today_yesterday` failed.
 
-0.1.10 adds millisecond precision while keeping seconds/minutes for compatibility.
+The comparison engine itself was not the failing part. The parser saw the word `ontem` and labeled the plan as YESTERDAY, while the self-check expected TODAY as the comparison reference. The answer route already bypassed that period for comparison.
 
-New fields:
-- timeline `duration_milliseconds`;
-- app `foreground_milliseconds`;
-- summary millisecond totals;
-- tracking effective/recorded/unclassified milliseconds.
+0.1.11 fixes the plan semantics: comparison is explicitly a two-period intent with TODAY as the reference period.
 
-Coverage is calculated directly from milliseconds. Sub-second transitions no longer look like unexplained `0s` entries.
+## Local Intelligence v4
 
-## Local Intelligence runtime self-check
+New flexible rolling periods:
 
-The engine remains v3. Diagnostic schema v8 now runs fixed built-in local checks for summary today, top 5 last 24h, insights today and today-vs-yesterday comparison.
+- last N hours, 1–720;
+- last N days, 1–90.
 
-Only check IDs and pass/fail are exported. User-entered questions remain non-persistent.
+Examples:
+- `Top 5 das últimas 6 horas`
+- `Insights dos últimos 3 dias`
+- `Quanto tempo usei o Chrome Dev nas últimas 2 horas?`
+- `Qual a cobertura das últimas 12 horas?`
 
-## WorkManager cadence telemetry
+Existing fixed periods remain:
+- today;
+- yesterday;
+- last 24 hours;
+- last 7 days.
 
-Scheduling behavior is unchanged. New diagnostics keep recent Worker start timestamps, intervals between starts and age of last Worker finish.
+The runtime self-check now also verifies:
+- custom 6-hour period;
+- custom 3-day period;
+- comparison semantics.
 
-## Next test
+Questions remain local and are never persisted.
 
-Install 0.1.10 over 0.1.9. No reboot is required.
+## Background
 
-Use the phone normally and leave Guardian installed for 2–3 hours if convenient, then export daily + diagnostic JSON.
+No WorkManager scheduling behavior was changed in 0.1.11.
+
+That is deliberate: the current architecture is stable and duplicate-safe. Background exact periodicity is not a product guarantee.
+
+## Next combined test
+
+Install 0.1.11 directly over 0.1.10.
+
+Test:
+1. `Top 5 das últimas 6 horas`
+2. `Insights dos últimos 3 dias`
+3. `Quanto tempo usei o Chrome Dev nas últimas 2 horas?`
+4. `Compare hoje com ontem`
+
+Use normally for at least 60–90 minutes if convenient.
+
+Then export daily + diagnostic JSON.
+
+The diagnostic self-check should now be fully green and will validate custom rolling periods without storing any user query.

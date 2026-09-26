@@ -1,4 +1,6 @@
-# Static validation — 0.1.10
+# Static validation — 0.1.11
+
+Base: physically validated Android 0.1.10 package.
 
 - `app/src/main/java/com/bigcorps/guardian/GuardianApplication.kt`: braces=0; parens=0
 - `app/src/main/java/com/bigcorps/guardian/MainActivity.kt`: braces=0; parens=0

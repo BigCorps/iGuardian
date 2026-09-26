@@ -242,7 +242,7 @@ class MainActivity : Activity() {
             card().apply {
                 addView(
                     textView(
-                        "Inteligência local v3 • auto-teste local • sem internet",
+                        "Inteligência local v4 • períodos flexíveis • sem internet",
                         12f,
                         true,
                         PRIMARY
@@ -308,7 +308,7 @@ class MainActivity : Activity() {
 
                 localQuestionAnswer =
                     textView(
-                        "Exemplos: hoje • ontem • últimas 24h • 7 dias • top 5 • comparação • insights.",
+                        "Exemplos: hoje • ontem • últimas 6h • 24h • últimos 3 dias • comparação • insights.",
                         13f,
                         false,
                         TEXT_MUTED

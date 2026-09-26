@@ -1,7 +1,10 @@
-# Guardian Android 0.1.10
+# Guardian Android 0.1.11
 
-WorkManager behavior is deliberately unchanged. This build validates report precision, runtime intelligence self-check, longer cadence telemetry and another update/privacy regression.
+This build fixes the single 0.1.10 self-check failure and advances Local Intelligence.
 
-Do not uninstall 0.1.9.
+No scheduler change.
 
-Expected artifact: `guardian-android-0.1.10-fixed-signed-debug`.
+Expected artifact:
+guardian-android-0.1.11-fixed-signed-debug
+
+Install over 0.1.10. Do not uninstall.

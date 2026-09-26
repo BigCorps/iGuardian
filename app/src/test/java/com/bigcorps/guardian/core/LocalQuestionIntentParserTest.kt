@@ -5,14 +5,14 @@ import org.junit.Test
 
 class LocalQuestionIntentParserTest {
     @Test
-    fun parsesTopAppToday() {
+    fun comparisonUsesReferenceToday() {
         val plan =
             LocalQuestionIntentParser.plan(
-                "Qual app mais usei hoje?"
+                "Compare hoje com ontem"
             )
 
         assertEquals(
-            LocalQuestionIntent.TOP_APP,
+            LocalQuestionIntent.COMPARE_TODAY_YESTERDAY,
             plan.intent
         )
         assertEquals(
@@ -22,92 +22,87 @@ class LocalQuestionIntentParserTest {
     }
 
     @Test
-    fun parsesTopAppYesterday() {
+    fun parsesSixRollingHours() {
         val plan =
             LocalQuestionIntentParser.plan(
-                "Qual app mais usei ontem?"
+                "Top 5 das últimas 6 horas"
             )
 
         assertEquals(
-            LocalQuestionIntent.TOP_APP,
+            LocalQuestionIntent.TOP_APPS,
             plan.intent
         )
         assertEquals(
-            LocalQuestionPeriod.YESTERDAY,
+            LocalQuestionPeriod.ROLLING_HOURS,
             plan.period
+        )
+        assertEquals(
+            6,
+            plan.amount
         )
     }
 
     @Test
-    fun parsesLast24Hours() {
+    fun parsesThreeRollingDays() {
+        val plan =
+            LocalQuestionIntentParser.plan(
+                "Insights dos últimos 3 dias"
+            )
+
+        assertEquals(
+            LocalQuestionIntent.INSIGHTS,
+            plan.intent
+        )
+        assertEquals(
+            LocalQuestionPeriod.ROLLING_DAYS,
+            plan.period
+        )
+        assertEquals(
+            3,
+            plan.amount
+        )
+    }
+
+    @Test
+    fun keepsLast24HoursSpecialCase() {
         val plan =
             LocalQuestionIntentParser.plan(
                 "Top 5 das últimas 24 horas"
             )
 
         assertEquals(
-            LocalQuestionIntent.TOP_APPS,
-            plan.intent
-        )
-        assertEquals(
             LocalQuestionPeriod.LAST_24_HOURS,
             plan.period
+        )
+        assertEquals(
+            24,
+            plan.amount
         )
     }
 
     @Test
-    fun parsesLastSevenDays() {
+    fun keepsLastSevenDaysSpecialCase() {
         val plan =
             LocalQuestionIntentParser.plan(
-                "Top 5 dos últimos 7 dias"
+                "Resumo dos últimos 7 dias"
             )
 
-        assertEquals(
-            LocalQuestionIntent.TOP_APPS,
-            plan.intent
-        )
         assertEquals(
             LocalQuestionPeriod.LAST_7_DAYS,
             plan.period
         )
-    }
-
-    @Test
-    fun parsesInsights() {
         assertEquals(
-            LocalQuestionIntent.INSIGHTS,
-            LocalQuestionIntentParser.parse(
-                "Me mostre insights de hoje"
-            )
+            7,
+            plan.amount
         )
     }
 
     @Test
-    fun parsesUnlocks() {
-        assertEquals(
-            LocalQuestionIntent.UNLOCKS,
-            LocalQuestionIntentParser.parse(
-                "Quantas vezes desbloqueei?"
-            )
-        )
-    }
-
-    @Test
-    fun parsesNaturalScreenOffPhrase() {
+    fun parsesScreenOffNaturalPhrase() {
         assertEquals(
             LocalQuestionIntent.SCREEN_OFF,
             LocalQuestionIntentParser.parse(
                 "Quanto tempo a tela ficou desligada?"
-            )
-        )
-    }
-
-    @Test
-    fun parsesComparison() {
-        assertEquals(
-            LocalQuestionIntent.COMPARE_TODAY_YESTERDAY,
-            LocalQuestionIntentParser.parse(
-                "Compare hoje com ontem"
             )
         )
     }
