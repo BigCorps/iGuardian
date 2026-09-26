@@ -20,6 +20,8 @@ enum class LocalQuestionIntent {
     INSIGHTS,
     COMPARE_TODAY_YESTERDAY,
     COMPARE_LAST_24H_PREVIOUS_24H,
+    COMPARE_LAST_7D_PREVIOUS_7D,
+    COMPARE_CALENDAR_PERIODS,
     HELP
 }
 
@@ -45,7 +47,9 @@ data class LocalQuestionPlan(
     val period: LocalQuestionPeriod,
     val amount: Int = 0,
     val calendarStart: LocalCalendarDate? = null,
-    val calendarEnd: LocalCalendarDate? = null
+    val calendarEnd: LocalCalendarDate? = null,
+    val comparisonCalendarStart: LocalCalendarDate? = null,
+    val comparisonCalendarEnd: LocalCalendarDate? = null
 )
 
 object LocalQuestionIntentParser {
@@ -86,6 +90,57 @@ object LocalQuestionIntentParser {
     fun plan(raw: String): LocalQuestionPlan {
         val q = normalize(raw)
 
+        val calendarDates =
+            calendarDateRegex
+                .findAll(raw)
+                .mapNotNull {
+                    match ->
+                    parseCalendarDate(
+                        match
+                    )
+                }
+                .take(4)
+                .toList()
+
+        val compareWord =
+            q.contains("compare") ||
+                q.contains("comparar")
+
+        if (
+            compareWord &&
+            calendarDates.size >= 2
+        ) {
+            return if (
+                calendarDates.size >= 4
+            ) {
+                LocalQuestionPlan(
+                    intent =
+                        LocalQuestionIntent.COMPARE_CALENDAR_PERIODS,
+                    period =
+                        LocalQuestionPeriod.CALENDAR_RANGE,
+                    calendarStart =
+                        calendarDates[0],
+                    calendarEnd =
+                        calendarDates[1],
+                    comparisonCalendarStart =
+                        calendarDates[2],
+                    comparisonCalendarEnd =
+                        calendarDates[3]
+                )
+            } else {
+                LocalQuestionPlan(
+                    intent =
+                        LocalQuestionIntent.COMPARE_CALENDAR_PERIODS,
+                    period =
+                        LocalQuestionPeriod.CALENDAR_DAY,
+                    calendarStart =
+                        calendarDates[0],
+                    comparisonCalendarStart =
+                        calendarDates[1]
+                )
+            }
+        }
+
         val compareTodayYesterday =
             q.contains("compare hoje com ontem") ||
                 q.contains("comparar hoje com ontem") ||
@@ -110,8 +165,7 @@ object LocalQuestionIntentParser {
                         q.contains("anterior")
                     ) &&
                 (
-                    q.contains("compare") ||
-                        q.contains("comparar") ||
+                    compareWord ||
                         q.contains("tendencia") ||
                         q.contains("mudou")
                     )
@@ -127,17 +181,31 @@ object LocalQuestionIntentParser {
             )
         }
 
-        val calendarDates =
-            calendarDateRegex
-                .findAll(raw)
-                .mapNotNull {
-                    match ->
-                    parseCalendarDate(
-                        match
+        val compareLast7 =
+            (
+                q.contains("7 dias") ||
+                    q.contains("sete dias")
+                ) &&
+                (
+                    q.contains("anteriores") ||
+                        q.contains("anterior")
+                    ) &&
+                (
+                    compareWord ||
+                        q.contains("tendencia") ||
+                        q.contains("mudou")
                     )
-                }
-                .take(2)
-                .toList()
+
+        if (compareLast7) {
+            return LocalQuestionPlan(
+                intent =
+                    LocalQuestionIntent.COMPARE_LAST_7D_PREVIOUS_7D,
+                period =
+                    LocalQuestionPeriod.LAST_7_DAYS,
+                amount =
+                    7
+            )
+        }
 
         val periodPlan =
             when {
@@ -481,6 +549,27 @@ class LocalQuestionEngine(
             )
         }
 
+        if (
+            plan.intent ==
+            LocalQuestionIntent
+                .COMPARE_LAST_7D_PREVIOUS_7D
+        ) {
+            return compareLast7Days(
+                nowMs
+            )
+        }
+
+        if (
+            plan.intent ==
+            LocalQuestionIntent
+                .COMPARE_CALENDAR_PERIODS
+        ) {
+            return compareCalendarPeriods(
+                plan,
+                nowMs
+            )
+        }
+
         val range =
             runCatching {
                 rangeFor(
@@ -710,6 +799,19 @@ class LocalQuestionEngine(
             LocalQuestionIntent
                 .COMPARE_LAST_24H_PREVIOUS_24H ->
                 compareLast24Hours(
+                    nowMs
+                )
+
+            LocalQuestionIntent
+                .COMPARE_LAST_7D_PREVIOUS_7D ->
+                compareLast7Days(
+                    nowMs
+                )
+
+            LocalQuestionIntent
+                .COMPARE_CALENDAR_PERIODS ->
+                compareCalendarPeriods(
+                    plan,
                     nowMs
                 )
         }
@@ -1096,6 +1198,326 @@ class LocalQuestionEngine(
                     } no período anterior."
         )
     }
+
+    private fun compareLast7Days(
+        nowMs: Long
+    ): LocalQuestionAnswer {
+        val currentStart =
+            nowMs -
+                7L *
+                24L *
+                60L *
+                60L *
+                1000L
+
+        val previousStart =
+            currentStart -
+                7L *
+                24L *
+                60L *
+                60L *
+                1000L
+
+        val current =
+            ReportGenerator(
+                context
+            ).periodJson(
+                currentStart,
+                nowMs
+            )
+
+        val previous =
+            ReportGenerator(
+                context
+            ).periodJson(
+                previousStart,
+                currentStart
+            )
+
+        return comparisonAnswer(
+            intent =
+                LocalQuestionIntent.COMPARE_LAST_7D_PREVIOUS_7D,
+            period =
+                LocalQuestionPeriod.LAST_7_DAYS,
+            currentLabel =
+                "Últimos 7 dias",
+            previousLabel =
+                "7 dias anteriores",
+            current =
+                current,
+            previous =
+                previous
+        )
+    }
+
+    private fun compareCalendarPeriods(
+        plan: LocalQuestionPlan,
+        nowMs: Long
+    ): LocalQuestionAnswer {
+        val firstStart =
+            plan.calendarStart
+                ?: return LocalQuestionAnswer(
+                    plan.intent,
+                    plan.period,
+                    "Não consegui interpretar o primeiro período."
+                )
+
+        val secondStart =
+            plan.comparisonCalendarStart
+                ?: return LocalQuestionAnswer(
+                    plan.intent,
+                    plan.period,
+                    "Não consegui interpretar o segundo período."
+                )
+
+        val firstRange =
+            calendarRange(
+                firstStart,
+                plan.calendarEnd,
+                nowMs
+            )
+
+        val secondRange =
+            calendarRange(
+                secondStart,
+                plan.comparisonCalendarEnd,
+                nowMs
+            )
+
+        if (
+            firstRange.endMs <=
+            firstRange.startMs ||
+            secondRange.endMs <=
+            secondRange.startMs
+        ) {
+            return LocalQuestionAnswer(
+                plan.intent,
+                plan.period,
+                "Um dos períodos solicitados ainda não possui tempo acompanhável."
+            )
+        }
+
+        val first =
+            ReportGenerator(
+                context
+            ).periodJson(
+                firstRange.startMs,
+                firstRange.endMs
+            )
+
+        val second =
+            ReportGenerator(
+                context
+            ).periodJson(
+                secondRange.startMs,
+                secondRange.endMs
+            )
+
+        return comparisonAnswer(
+            intent =
+                LocalQuestionIntent.COMPARE_CALENDAR_PERIODS,
+            period =
+                plan.period,
+            currentLabel =
+                calendarPeriodLabel(
+                    secondStart,
+                    plan.comparisonCalendarEnd
+                ),
+            previousLabel =
+                calendarPeriodLabel(
+                    firstStart,
+                    plan.calendarEnd
+                ),
+            current =
+                second,
+            previous =
+                first
+        )
+    }
+
+    private fun calendarRange(
+        startDate: LocalCalendarDate,
+        endDate: LocalCalendarDate?,
+        nowMs: Long
+    ): Range {
+        var start =
+            calendarStartMs(
+                startDate,
+                nowMs
+            )
+
+        var endStart =
+            calendarStartMs(
+                endDate
+                    ?: startDate,
+                nowMs
+            )
+
+        if (
+            endStart <
+            start
+        ) {
+            val temporary =
+                start
+            start =
+                endStart
+            endStart =
+                temporary
+        }
+
+        return Range(
+            start,
+            minOf(
+                nextDayStart(
+                    endStart
+                ),
+                nowMs
+            )
+        )
+    }
+
+    private fun comparisonAnswer(
+        intent: LocalQuestionIntent,
+        period: LocalQuestionPeriod,
+        currentLabel: String,
+        previousLabel: String,
+        current: JSONObject,
+        previous: JSONObject
+    ): LocalQuestionAnswer {
+        val currentSummary =
+            current.getJSONObject(
+                "summary"
+            )
+
+        val previousSummary =
+            previous.getJSONObject(
+                "summary"
+            )
+
+        val currentTracking =
+            current.getJSONObject(
+                "tracking"
+            )
+
+        val previousTracking =
+            previous.getJSONObject(
+                "tracking"
+            )
+
+        val currentApps =
+            current.getJSONArray(
+                "apps"
+            )
+
+        val previousApps =
+            previous.getJSONArray(
+                "apps"
+            )
+
+        val currentMs =
+            summaryMilliseconds(
+                currentSummary,
+                "app_usage"
+            )
+
+        val previousMs =
+            summaryMilliseconds(
+                previousSummary,
+                "app_usage"
+            )
+
+        val difference =
+            currentMs -
+                previousMs
+
+        val differenceText =
+            when {
+                difference > 0L ->
+                    "${
+                        durationMillisecondsLabel(
+                            difference
+                        )
+                    } a mais"
+
+                difference < 0L ->
+                    "${
+                        durationMillisecondsLabel(
+                            -difference
+                        )
+                    } a menos"
+
+                else ->
+                    "o mesmo tempo registrado"
+            }
+
+        return LocalQuestionAnswer(
+            intent =
+                intent,
+            period =
+                period,
+            text =
+                "$currentLabel: ${
+                    durationMillisecondsLabel(
+                        currentMs
+                    )
+                } em apps; $previousLabel: ${
+                    durationMillisecondsLabel(
+                        previousMs
+                    )
+                }. Diferença: $differenceText. " +
+                    "Mais usado: ${
+                        topAppCompact(
+                            currentApps
+                        )
+                    } agora e ${
+                        topAppCompact(
+                            previousApps
+                        )
+                    } antes. " +
+                    "Desbloqueios: ${
+                        currentSummary.optInt(
+                            "unlock_count",
+                            0
+                        )
+                    } vs ${
+                        previousSummary.optInt(
+                            "unlock_count",
+                            0
+                        )
+                    }. Cobertura: ${
+                        coverageLabel(
+                            currentTracking
+                        )
+                    } vs ${
+                        coverageLabel(
+                            previousTracking
+                        )
+                    }."
+        )
+    }
+
+    private fun calendarPeriodLabel(
+        start: LocalCalendarDate,
+        end: LocalCalendarDate?
+    ): String =
+        if (
+            end ==
+            null
+        ) {
+            calendarDateLabel(
+                start
+            )
+        } else {
+            "${
+                calendarDateLabel(
+                    start
+                )
+            } a ${
+                calendarDateLabel(
+                    end
+                )
+            }"
+        }
 
     private fun insightsAnswer(
         plan: LocalQuestionPlan,
@@ -1878,7 +2300,7 @@ class LocalQuestionEngine(
 
     private fun helpText():
         String =
-        "Tente: “Resumo de 25/09”, “Top 5 de 25/09/2026”, “Insights de 24/09 a 26/09”, “Top 5 das últimas 6 horas”, “Quanto tempo usei o Chrome Dev nas últimas 2 horas?”, “Compare hoje com ontem” ou “Compare as últimas 24 horas com as 24 anteriores”. Perguntas não são salvas."
+        "Tente: “Resumo de 25/09”, “Insights de 24/09 a 26/09”, “Compare 24/09 com 25/09”, “Compare 22/09 a 23/09 com 24/09 a 25/09”, “Compare as últimas 24 horas com as 24 anteriores” ou “Compare os últimos 7 dias com os 7 anteriores”. Perguntas não são salvas."
 
     private fun startOfDay(
         nowMs: Long

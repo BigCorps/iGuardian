@@ -109,6 +109,19 @@ object LocalIntelligenceSelfCheck {
                     LocalQuestionIntent.COMPARE_LAST_24H_PREVIOUS_24H,
                     LocalQuestionPeriod.LAST_24_HOURS,
                     24
+                ),
+                Expected(
+                    "compare_last_7d",
+                    "Compare os últimos 7 dias com os 7 anteriores",
+                    LocalQuestionIntent.COMPARE_LAST_7D_PREVIOUS_7D,
+                    LocalQuestionPeriod.LAST_7_DAYS,
+                    7
+                ),
+                Expected(
+                    "compare_calendar_day",
+                    "Compare $yesterday com $today",
+                    LocalQuestionIntent.COMPARE_CALENDAR_PERIODS,
+                    LocalQuestionPeriod.CALENDAR_DAY
                 )
             )
 

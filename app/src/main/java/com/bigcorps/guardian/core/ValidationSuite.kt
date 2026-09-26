@@ -10,6 +10,7 @@ object ValidationSuite {
     private const val PASS = "PASS"
     private const val WARN = "WARN"
     private const val FAIL = "FAIL"
+    private const val SUITE_VERSION = 2
 
     fun run(
         context: Context,
@@ -34,6 +35,7 @@ object ValidationSuite {
         validateTimeline(daily, ::add)
         validateAppAggregates(daily, ::add)
         validateLocalIntelligence(diagnostic, ::add)
+        validateProductCapabilities(diagnostic, ::add)
         validateBackground(diagnostic, ::add)
         validateCoverage(daily, ::add)
 
@@ -50,7 +52,7 @@ object ValidationSuite {
         }
 
         return JSONObject().apply {
-            put("suite_version", 1)
+            put("suite_version", SUITE_VERSION)
             put("critical_passed", failCount == 0)
             put("manual_test_required", failCount > 0)
             put("pass_count", passCount)
@@ -258,6 +260,60 @@ object ValidationSuite {
                 "local_intelligence_self_check",
                 FAIL,
                 "passed=$passed;user_query_content_stored=$storesUserQuery"
+            )
+        }
+    }
+
+    private fun validateProductCapabilities(
+        diagnostic: JSONObject,
+        add: (String, String, String) -> Unit
+    ) {
+        val capabilities =
+            diagnostic.getJSONObject(
+                "capabilities"
+            )
+
+        val engineVersion =
+            capabilities.optInt(
+                "local_question_engine_version",
+                0
+            )
+
+        val required =
+            listOf(
+                "local_question_calendar_day",
+                "local_question_calendar_range",
+                "local_question_compare_today_yesterday",
+                "local_question_compare_last_24h_previous_24h",
+                "local_question_compare_last_7d_previous_7d",
+                "local_question_compare_calendar_periods",
+                "automatic_local_insight_cards",
+                "validation_pack_export"
+            )
+
+        val missing =
+            required.filter {
+                !capabilities.optBoolean(
+                    it,
+                    false
+                )
+            }
+
+        if (
+            engineVersion >=
+            6 &&
+            missing.isEmpty()
+        ) {
+            add(
+                "product_capabilities_v6",
+                PASS,
+                "Engine v$engineVersion com datas, ranges e tendências 24h/7d/calendário."
+            )
+        } else {
+            add(
+                "product_capabilities_v6",
+                FAIL,
+                "engine=$engineVersion;missing=${missing.joinToString(",")}"
             )
         }
     }

@@ -1,9 +1,10 @@
-# Guardian Android 0.1.12 — AutoTest Bundle
+# Guardian Android 0.1.13 — Trends AutoTest
 
-Use this ZIP instead of the earlier 0.1.12 calendar-trends ZIP.
+Install over 0.1.12. Do not uninstall.
 
-Version remains 0.1.12 / versionCode 13.
+No manual question-by-question validation.
 
-After install: no need to test each question; use normally 60–90 minutes; export `pacote de validação`; send that single JSON.
+Use normally, then export only the recommended validation pack.
 
-Expected artifact: guardian-android-0.1.12-fixed-signed-debug
+Expected Actions artifact:
+guardian-android-0.1.13-fixed-signed-debug

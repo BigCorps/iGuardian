@@ -1,12 +1,15 @@
 # Changelog
 
-## 0.1.12 — 2026-09-26 — AutoTest Bundle
-- versionCode 13 / versionName 0.1.12 unchanged because prior 0.1.12 was not uploaded.
-- Diagnostic schema v11.
-- Calendar day/range questions.
-- Last 24h vs previous 24h factual trend.
-- Automatic local insight/trend cards.
-- ValidationSuite v1.
-- One-file validation pack export.
-- Report v3 now retains sub-second APP aggregates for exact aggregate consistency.
-- No scheduler, permission, network, cloud or external-AI expansion.
+## 0.1.13 — 2026-09-26
+
+- versionCode 14 / versionName 0.1.13.
+- Diagnostic schema v12.
+- Validation pack schema v2.
+- ValidationSuite v2.
+- Local Intelligence v6.
+- Added last 7d vs previous 7d comparison.
+- Added calendar day-vs-day comparison.
+- Added calendar range-vs-range comparison.
+- Added automatic 7-day trend.
+- Added product capability regression validation.
+- No scheduler, permission, network or backend change.

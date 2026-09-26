@@ -1,9 +1,21 @@
-# Local Intelligence v5 — AutoTest Bundle
+# Local Intelligence v6 — 0.1.13
 
-All processing remains deterministic, local and non-persistent.
+Local, deterministic, offline and non-persistent.
 
-Supported periods: today, yesterday, last 24h, last 7d, rolling N hours/days, calendar day and calendar range.
+Existing:
+- today/yesterday
+- last 24h/7d
+- rolling N hours/days
+- calendar day/range
+- deterministic insights
+- today vs yesterday
+- last 24h vs previous 24h
 
-Comparisons: today vs yesterday; last 24h vs previous 24h.
+New:
+- last 7d vs previous 7d
+- calendar day vs calendar day
+- calendar range vs calendar range
 
-The UI now generates automatic fixed insight/trend cards. Runtime self-check and ValidationSuite use only fixed internal prompts; user-entered query text is never persisted.
+Automatic cards show today, 24h trend and 7d trend.
+
+User questions remain non-persistent.

@@ -45,6 +45,7 @@ class MainActivity : Activity() {
     private lateinit var localQuestionButton: Button
     private lateinit var automaticInsightText: TextView
     private lateinit var automaticTrendText: TextView
+    private lateinit var automaticWeeklyTrendText: TextView
     @Volatile
     private var exportInProgress = false
 
@@ -274,6 +275,18 @@ class MainActivity : Activity() {
                     }
 
                 addView(automaticTrendText)
+
+                automaticWeeklyTrendText =
+                    textView(
+                        "",
+                        13f,
+                        false,
+                        TEXT_MUTED
+                    ).apply {
+                        setPadding(0, dp(10), 0, 0)
+                    }
+
+                addView(automaticWeeklyTrendText)
             }
         )
 
@@ -287,7 +300,7 @@ class MainActivity : Activity() {
             card().apply {
                 addView(
                     textView(
-                        "Inteligência local v5 • datas + tendências • auto-testada • sem internet",
+                        "Inteligência local v6 • comparações avançadas • auto-testada • sem internet",
                         12f,
                         true,
                         PRIMARY
@@ -353,7 +366,7 @@ class MainActivity : Activity() {
 
                 localQuestionAnswer =
                     textView(
-                        "Exemplos: 25/09 • 24/09 a 26/09 • últimas 6h • comparação 24h • insights.",
+                        "Exemplos: compare datas • compare ranges • tendência 24h • tendência 7d • insights.",
                         13f,
                         false,
                         TEXT_MUTED
@@ -437,7 +450,7 @@ class MainActivity : Activity() {
             appendLine("✓ Inteligência local com auto-teste")
             appendLine("✓ Auto-validação de privacidade, timeline e totais")
             appendLine("✓ Pacote único de validação")
-            appendLine("✓ Insights automáticos sem pergunta manual")
+            appendLine("✓ Insights automáticos: hoje, tendência 24h e 7d")
             appendLine("✓ Relatório com precisão em milissegundos")
             appendLine("— Domínios: ainda não")
             appendLine("— Guia anônima: schema pronto; detecção ainda não")
@@ -543,12 +556,20 @@ class MainActivity : Activity() {
                         "Compare as últimas 24 horas com as 24 anteriores"
                     ).text
 
+                val weeklyTrend =
+                    engine.answer(
+                        "Compare os últimos 7 dias com os 7 anteriores"
+                    ).text
+
                 runOnUiThread {
                     automaticInsightText.text =
                         insight
 
                     automaticTrendText.text =
                         trend
+
+                    automaticWeeklyTrendText.text =
+                        weeklyTrend
                 }
             } catch (_: Throwable) {
                 runOnUiThread {
@@ -556,6 +577,9 @@ class MainActivity : Activity() {
                         "Insights automáticos temporariamente indisponíveis."
 
                     automaticTrendText.text =
+                        ""
+
+                    automaticWeeklyTrendText.text =
                         ""
                 }
             }

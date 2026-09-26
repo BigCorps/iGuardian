@@ -142,4 +142,83 @@ class LocalQuestionIntentParserTest {
             )
         )
     }
+    @Test
+    fun comparisonLastSevenDaysIsSpecialIntent() {
+        val plan =
+            LocalQuestionIntentParser.plan(
+                "Compare os últimos 7 dias com os 7 anteriores"
+            )
+
+        assertEquals(
+            LocalQuestionIntent.COMPARE_LAST_7D_PREVIOUS_7D,
+            plan.intent
+        )
+        assertEquals(
+            LocalQuestionPeriod.LAST_7_DAYS,
+            plan.period
+        )
+        assertEquals(
+            7,
+            plan.amount
+        )
+    }
+
+    @Test
+    fun comparesTwoCalendarDays() {
+        val plan =
+            LocalQuestionIntentParser.plan(
+                "Compare 24/09 com 25/09"
+            )
+
+        assertEquals(
+            LocalQuestionIntent.COMPARE_CALENDAR_PERIODS,
+            plan.intent
+        )
+        assertEquals(
+            LocalQuestionPeriod.CALENDAR_DAY,
+            plan.period
+        )
+        assertEquals(
+            24,
+            plan.calendarStart?.day
+        )
+        assertEquals(
+            25,
+            plan.comparisonCalendarStart?.day
+        )
+    }
+
+    @Test
+    fun comparesTwoCalendarRanges() {
+        val plan =
+            LocalQuestionIntentParser.plan(
+                "Compare 22/09 a 23/09 com 24/09 a 25/09"
+            )
+
+        assertEquals(
+            LocalQuestionIntent.COMPARE_CALENDAR_PERIODS,
+            plan.intent
+        )
+        assertEquals(
+            LocalQuestionPeriod.CALENDAR_RANGE,
+            plan.period
+        )
+        assertEquals(
+            22,
+            plan.calendarStart?.day
+        )
+        assertEquals(
+            23,
+            plan.calendarEnd?.day
+        )
+        assertEquals(
+            24,
+            plan.comparisonCalendarStart?.day
+        )
+        assertEquals(
+            25,
+            plan.comparisonCalendarEnd?.day
+        )
+    }
+
 }

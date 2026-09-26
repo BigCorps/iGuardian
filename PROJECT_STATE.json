@@ -1,62 +1,47 @@
 {
   "project_codename": "Guardian",
-  "version": "0.1.12",
+  "version": "0.1.13",
   "platform": "android",
   "phase": 2,
-  "phase_name": "Local Intelligence v5 + AutoTest Bundle",
+  "phase_name": "Local Intelligence v6 + trend AutoTest",
   "schema_version": 3,
-  "diagnostic_schema_version": 11,
+  "diagnostic_schema_version": 12,
   "database_version": 5,
+  "validation_pack_schema": 2,
+  "validation_suite_version": 2,
   "repository": "BigCorps/iGuardian",
   "backend": "none",
   "internet_permission": false,
   "dev_application_id": "com.bigcorps.guardian.dev",
   "last_physically_validated_build": {
-    "version": "0.1.11",
-    "version_code": 12,
-    "generated_at": "2026-09-26T08:39:01.812-03:00",
-    "today_coverage_percent": 99.8,
-    "snapshot_24h_coverage_percent": 99.3,
-    "privacy_timeline_result": "passed",
+    "version": "0.1.12",
+    "version_code": 13,
+    "generated_at": "2026-09-26T11:27:33.824-03:00",
+    "validation": {
+      "critical_passed": true,
+      "manual_test_required": false,
+      "pass_count": 8,
+      "warning_count": 0,
+      "fail_count": 0,
+      "coverage_percent": 99.7
+    },
     "workmanager": {
-      "logic_version": 5,
-      "worker_run_count": 27,
-      "worker_success_count": 27,
+      "worker_run_count": 29,
+      "worker_success_count": 29,
       "worker_retry_count": 0,
       "worker_failure_count": 0,
       "worker_stopped_count": 0,
-      "recent_cadence_seconds": [
-        1837,
-        1837,
-        1867,
-        1807,
-        1837,
-        1807,
-        1807,
-        1867,
-        1837,
-        1836,
-        2196
-      ]
+      "unique_active_work": 1
     },
-    "local_intelligence_self_check": {
-      "passed": true,
-      "summary_today": true,
-      "top_last_24h": true,
-      "top_last_6h": true,
-      "insights_last_3d": true,
-      "compare_today_yesterday": true
-    }
+    "local_intelligence_self_check": "passed"
   },
-  "implemented_in_0_1_12": [
-    "calendar day questions",
-    "calendar date range questions",
-    "last 24h vs previous 24h comparison",
-    "automatic local insight/trend cards",
-    "ValidationSuite v1",
-    "one-file validation pack",
-    "runtime privacy/timeline/report/WorkManager checks",
-    "sub-second APP aggregate consistency"
+  "implemented_in_0_1_13": [
+    "last 7d vs previous 7d comparison",
+    "calendar day vs day comparison",
+    "calendar range vs range comparison",
+    "automatic 7-day trend card",
+    "ValidationSuite v2 product capability check",
+    "validation pack schema v2"
   ],
-  "next_task": "Install 0.1.12 over 0.1.11, use normally 60-90m, export only guardian-validacao JSON; manual tests only if manual_test_required=true."
+  "next_task": "Install 0.1.13 over 0.1.12; no manual feature tests; use 60-90m and export one guardian-validacao JSON."
 }

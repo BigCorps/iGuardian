@@ -1,11 +1,30 @@
 # Guardian Roadmap
 
 ## Phase 1 — Android Foundation
-Validated on primary Xiaomi Android 16. WorkManager remains best-effort with retrospective catch-up.
+Approved on primary Xiaomi/Android 16 device.
 
 ## Phase 2 — Local Intelligence — ACTIVE
-Validated: today/yesterday, rolling periods, deterministic insights, report-v3 precision, runtime self-check.
+Validated through 0.1.12:
+- rolling/calendar periods
+- deterministic insights
+- report v3 precision
+- one-file AutoTest
+- automatic insight cards
 
-0.1.12 AutoTest Bundle adds calendar dates/ranges, 24h trend, automatic insight cards, comprehensive runtime validation and one-file validation export.
+0.1.13:
+- 7d trend
+- calendar period comparisons
+- three automatic local insight/trend blocks
+- AutoTest Suite v2
 
-Next after validation: richer local daily/weekly insight cards, multi-day trends, selected-range comparisons and optional sanitized handoff for complex questions.
+Next:
+- richer local insight dashboard
+- per-app trend deltas
+- selectable period cards
+- optional sanitized handoff for complex questions
+
+## Phase 3 — Android hardening / Store
+Additional OEMs, timezone/date changes, final brand/applicationId/signing/AAB.
+
+## Phase 4 — Windows
+Same privacy contract with Windows-native collector.

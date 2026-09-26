@@ -7,7 +7,7 @@ import java.util.Date
 import java.util.Locale
 
 object ValidationPackGenerator {
-    const val PACK_SCHEMA = 1
+    const val PACK_SCHEMA = 2
 
     fun generate(context: Context): JSONObject {
         val daily = ReportGenerator(context).todayJson()
@@ -21,6 +21,10 @@ object ValidationPackGenerator {
             put(
                 "trend_last_24h",
                 engine.answer("Compare as últimas 24 horas com as 24 anteriores").text
+            )
+            put(
+                "trend_last_7d",
+                engine.answer("Compare os últimos 7 dias com os 7 anteriores").text
             )
             put("generated_from_fixed_internal_prompts", true)
             put("user_query_content_stored", false)
