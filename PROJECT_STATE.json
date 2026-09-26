@@ -1,47 +1,45 @@
 {
   "project_codename": "Guardian",
-  "version": "0.1.13",
+  "version": "0.1.14",
   "platform": "android",
   "phase": 2,
-  "phase_name": "Local Intelligence v6 + trend AutoTest",
-  "schema_version": 3,
-  "diagnostic_schema_version": 12,
-  "database_version": 5,
-  "validation_pack_schema": 2,
-  "validation_suite_version": 2,
+  "phase_name": "History-aware Local Intelligence + AutoTest v3",
+  "schema_version": 4,
+  "diagnostic_schema_version": 13,
+  "database_version": 6,
+  "validation_pack_schema": 3,
+  "validation_suite_version": 3,
   "repository": "BigCorps/iGuardian",
   "backend": "none",
   "internet_permission": false,
   "dev_application_id": "com.bigcorps.guardian.dev",
   "last_physically_validated_build": {
-    "version": "0.1.12",
-    "version_code": 13,
-    "generated_at": "2026-09-26T11:27:33.824-03:00",
+    "version": "0.1.13",
+    "version_code": 14,
+    "generated_at": "2026-09-26T14:48:28.870-03:00",
     "validation": {
       "critical_passed": true,
       "manual_test_required": false,
-      "pass_count": 8,
+      "pass_count": 9,
       "warning_count": 0,
       "fail_count": 0,
-      "coverage_percent": 99.7
+      "coverage_percent": 99.6
     },
     "workmanager": {
-      "worker_run_count": 29,
-      "worker_success_count": 29,
+      "worker_run_count": 30,
+      "worker_success_count": 30,
       "worker_retry_count": 0,
       "worker_failure_count": 0,
-      "worker_stopped_count": 0,
-      "unique_active_work": 1
+      "worker_stopped_count": 0
     },
-    "local_intelligence_self_check": "passed"
+    "observation": "7d trend exposed incomplete-history comparison; collector itself passed"
   },
-  "implemented_in_0_1_13": [
-    "last 7d vs previous 7d comparison",
-    "calendar day vs day comparison",
-    "calendar range vs range comparison",
-    "automatic 7-day trend card",
-    "ValidationSuite v2 product capability check",
-    "validation pack schema v2"
+  "implemented_in_0_1_14": [
+    "report v4 history availability",
+    "history-aware comparison guard",
+    "dynamic comparison AutoTest",
+    "Downloads UI system classification and DB repair",
+    "system-surface exclusion AutoTest"
   ],
-  "next_task": "Install 0.1.13 over 0.1.12; no manual feature tests; use 60-90m and export one guardian-validacao JSON."
+  "next_task": "Install over 0.1.13; no manual feature tests; use 60-90m and export one validation pack."
 }

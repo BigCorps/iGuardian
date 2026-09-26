@@ -1,10 +1,9 @@
-# Guardian Android 0.1.13 — Trends AutoTest
+# Guardian 0.1.14
 
-Install over 0.1.12. Do not uninstall.
+Install over 0.1.13. Do not uninstall.
 
-No manual question-by-question validation.
+No manual question-by-question test.
+Send only the recommended validation-pack JSON.
 
-Use normally, then export only the recommended validation pack.
-
-Expected Actions artifact:
-guardian-android-0.1.13-fixed-signed-debug
+Expected artifact:
+guardian-android-0.1.14-fixed-signed-debug

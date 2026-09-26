@@ -1,21 +1,11 @@
-# Local Intelligence v6 — 0.1.13
+# Local Intelligence v7 — 0.1.14
 
-Local, deterministic, offline and non-persistent.
+Comparisons are now history-aware.
 
-Existing:
-- today/yesterday
-- last 24h/7d
-- rolling N hours/days
-- calendar day/range
-- deterministic insights
-- today vs yesterday
-- last 24h vs previous 24h
+A numeric comparison is returned only when both requested periods have enough
+historical availability (>=99%) and classification coverage (>=90%).
 
-New:
-- last 7d vs previous 7d
-- calendar day vs calendar day
-- calendar range vs calendar range
+Otherwise Guardian reports that history is insufficient rather than treating
+missing pre-install history as zero usage.
 
-Automatic cards show today, 24h trend and 7d trend.
-
-User questions remain non-persistent.
+All processing remains local and user questions are not persisted.

@@ -38,7 +38,7 @@ class DiagnosticsGenerator(private val context: Context) {
         }
 
         return JSONObject().apply {
-            put("diagnostic_schema", 12)
+            put("diagnostic_schema", 13)
             put("generated_at", iso(System.currentTimeMillis()))
 
             put(
@@ -446,11 +446,12 @@ class DiagnosticsGenerator(private val context: Context) {
                     )
                     put("user_switch_runtime_signal", true)
                     put("system_surface_separation", true)
+                    put("system_surface_classifier_version", 4)
                     put("timeline_overlap_resolution", true)
                     put("serialized_collection", true)
                     put("process_start_scheduler_guard", false)
                     put("millisecond_summary_aggregation", true)
-                    put("report_schema_version", 3)
+                    put("report_schema_version", 4)
                     put("chained_one_shot_scheduler", false)
                     put("workmanager_background", true)
                     put("workmanager_unique_periodic", true)
@@ -458,7 +459,7 @@ class DiagnosticsGenerator(private val context: Context) {
                     put("background_catch_up_collection", true)
                     put("workmanager_version", GuardianScheduler.WORKMANAGER_VERSION)
                     put("local_question_engine", true)
-                    put("local_question_engine_version", 6)
+                    put("local_question_engine_version", 7)
                     put("local_question_period_today", true)
                     put("local_question_period_yesterday", true)
                     put("local_question_period_last_24_hours", true)
@@ -471,11 +472,12 @@ class DiagnosticsGenerator(private val context: Context) {
                     put("local_question_compare_last_24h_previous_24h", true)
                     put("local_question_compare_last_7d_previous_7d", true)
                     put("local_question_compare_calendar_periods", true)
+                    put("local_question_history_readiness_guard", true)
                     put("local_question_deterministic_insights", true)
                     put("local_question_persists_queries", false)
                     put("automatic_local_insight_cards", true)
                     put("validation_pack_export", true)
-                    put("validation_suite_version", 2)
+                    put("validation_suite_version", 3)
                     put("browser_domains", false)
                     put("anonymous_browser_detection", false)
                     put("anonymous_browser_schema_ready", true)

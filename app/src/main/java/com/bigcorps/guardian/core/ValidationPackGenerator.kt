@@ -7,7 +7,7 @@ import java.util.Date
 import java.util.Locale
 
 object ValidationPackGenerator {
-    const val PACK_SCHEMA = 2
+    const val PACK_SCHEMA = 3
 
     fun generate(context: Context): JSONObject {
         val daily = ReportGenerator(context).todayJson()
@@ -30,6 +30,66 @@ object ValidationPackGenerator {
             put("user_query_content_stored", false)
         }
 
+        val dayMs =
+            24L *
+                60L *
+                60L *
+                1000L
+
+        fun availability(
+            start: Long,
+            end: Long
+        ): Double =
+            ReportGenerator(
+                context
+            ).periodJson(
+                start,
+                end
+            )
+                .getJSONObject(
+                    "tracking"
+                )
+                .optDouble(
+                    "history_availability_percent",
+                    0.0
+                )
+
+        val dataMaturity =
+            JSONObject().apply {
+                put(
+                    "current_24h_history_percent",
+                    availability(
+                        System.currentTimeMillis() - dayMs,
+                        System.currentTimeMillis()
+                    )
+                )
+                put(
+                    "previous_24h_history_percent",
+                    availability(
+                        System.currentTimeMillis() - 2L * dayMs,
+                        System.currentTimeMillis() - dayMs
+                    )
+                )
+                put(
+                    "current_7d_history_percent",
+                    availability(
+                        System.currentTimeMillis() - 7L * dayMs,
+                        System.currentTimeMillis()
+                    )
+                )
+                put(
+                    "previous_7d_history_percent",
+                    availability(
+                        System.currentTimeMillis() - 14L * dayMs,
+                        System.currentTimeMillis() - 7L * dayMs
+                    )
+                )
+                put(
+                    "comparison_min_history_percent",
+                    HistoryReadiness.MIN_HISTORY_PERCENT
+                )
+            }
+
         return JSONObject().apply {
             put("validation_pack_schema", PACK_SCHEMA)
             put(
@@ -41,6 +101,7 @@ object ValidationPackGenerator {
             )
             put("validation", validation)
             put("auto_insights", autoInsights)
+            put("data_maturity", dataMaturity)
             put("daily_report", daily)
             put("diagnostic", diagnostic)
         }

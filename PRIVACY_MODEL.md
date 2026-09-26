@@ -1,9 +1,10 @@
-# Privacy Model — Guardian 0.1.13
+# Privacy Model — Guardian 0.1.14
 
-No permission or collection expansion.
+No permission expansion.
 
-All comparisons operate only on sanitized local report data.
+History availability is timing metadata only.
 
-PRIVATE and SYSTEM remain identity-free.
-User questions remain memory-only and are not exported/transmitted.
-Automatic trend cards use fixed internal prompts.
+Downloads UI joins other technical Android surfaces as SYSTEM before
+storage; historical migrated rows have package/name removed.
+
+No domains, URLs, content, keyboard, screen capture or network transport.

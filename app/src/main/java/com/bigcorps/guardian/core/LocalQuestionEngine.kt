@@ -1122,6 +1122,57 @@ class LocalQuestionEngine(
                 "apps"
             )
 
+        val currentHistory =
+            currentTracking.optDouble(
+                "history_availability_percent",
+                100.0
+            )
+
+        val previousHistory =
+            previousTracking.optDouble(
+                "history_availability_percent",
+                100.0
+            )
+
+        val currentCoverage =
+            currentTracking.optDouble(
+                "coverage_percent",
+                0.0
+            )
+
+        val previousCoverage =
+            previousTracking.optDouble(
+                "coverage_percent",
+                0.0
+            )
+
+        if (
+            !HistoryReadiness.canCompare(
+                currentHistory,
+                previousHistory,
+                currentCoverage,
+                previousCoverage
+            )
+        ) {
+            return LocalQuestionAnswer(
+                intent =
+                    intent,
+                period =
+                    period,
+                text =
+                    "Histórico insuficiente para comparar $currentLabel com $previousLabel com segurança. " +
+                        "Disponibilidade do histórico: ${
+                            percentLabel(
+                                currentHistory
+                            )
+                        } vs ${
+                            percentLabel(
+                                previousHistory
+                            )
+                        }. O Guardian evita calcular uma diferença quando um dos períodos está incompleto."
+            )
+        }
+
         val currentMs =
             summaryMilliseconds(
                 currentSummary,
@@ -1764,6 +1815,51 @@ class LocalQuestionEngine(
             yesterday.getJSONObject(
                 "tracking"
             )
+
+        val todayHistory =
+            todayTracking.optDouble(
+                "history_availability_percent",
+                100.0
+            )
+
+        val yesterdayHistory =
+            yesterdayTracking.optDouble(
+                "history_availability_percent",
+                100.0
+            )
+
+        if (
+            !HistoryReadiness.canCompare(
+                todayHistory,
+                yesterdayHistory,
+                todayTracking.optDouble(
+                    "coverage_percent",
+                    0.0
+                ),
+                yesterdayTracking.optDouble(
+                    "coverage_percent",
+                    0.0
+                )
+            )
+        ) {
+            return LocalQuestionAnswer(
+                intent =
+                    LocalQuestionIntent.COMPARE_TODAY_YESTERDAY,
+                period =
+                    LocalQuestionPeriod.TODAY,
+                text =
+                    "Histórico insuficiente para comparar hoje com ontem com segurança. " +
+                        "Disponibilidade do histórico: ${
+                            percentLabel(
+                                todayHistory
+                            )
+                        } vs ${
+                            percentLabel(
+                                yesterdayHistory
+                            )
+                        }."
+            )
+        }
 
         val todayMs =
             summaryMilliseconds(

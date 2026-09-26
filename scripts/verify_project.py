@@ -89,6 +89,7 @@ required_sources = [
     "app/src/main/java/com/bigcorps/guardian/core/ValidationSuite.kt",
     "app/src/main/java/com/bigcorps/guardian/core/ValidationPackGenerator.kt",
     "app/src/main/java/com/bigcorps/guardian/core/LocalIntelligenceSelfCheck.kt",
+    "app/src/main/java/com/bigcorps/guardian/core/HistoryReadiness.kt",
 ]
 
 for name in required_sources:
@@ -116,6 +117,7 @@ print("- no AccessibilityService")
 print("- WorkManager background architecture present")
 print("- comprehensive local validation suite present")
 print("- one-file validation pack generator present")
+print("- history-readiness guard source present")
 print("- no legacy direct GuardianJobService in app manifest")
 print("- no signing private key committed")
 print("- handoff documentation present")

@@ -1,17 +1,8 @@
-# Store Compliance Design Notes — 0.1.13
+# Store Compliance — 0.1.14
 
-No permission expansion.
+No new permission or network capability.
 
-Still:
-- no INTERNET
-- no AccessibilityService
-- no VPN
-- no screen/media/input capture
-- no notification/message contents
-- no QUERY_ALL_PACKAGES
-- explicit Usage Access
-- privacy-before-storage
-- offline/non-persistent intelligence
-- WorkManager best-effort background
+Still no INTERNET, QUERY_ALL_PACKAGES, AccessibilityService, VPN,
+screen/input/content capture or notification-content access.
 
-New trend features are local arithmetic over sanitized history only.
+History-maturity logic improves accuracy without collecting new content.

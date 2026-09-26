@@ -300,7 +300,7 @@ class MainActivity : Activity() {
             card().apply {
                 addView(
                     textView(
-                        "Inteligência local v6 • comparações avançadas • auto-testada • sem internet",
+                        "Inteligência local v7 • tendências só com histórico suficiente • sem internet",
                         12f,
                         true,
                         PRIMARY
@@ -450,7 +450,7 @@ class MainActivity : Activity() {
             appendLine("✓ Inteligência local com auto-teste")
             appendLine("✓ Auto-validação de privacidade, timeline e totais")
             appendLine("✓ Pacote único de validação")
-            appendLine("✓ Insights automáticos: hoje, tendência 24h e 7d")
+            appendLine("✓ Insights automáticos com proteção contra histórico incompleto")
             appendLine("✓ Relatório com precisão em milissegundos")
             appendLine("— Domínios: ainda não")
             appendLine("— Guia anônima: schema pronto; detecção ainda não")

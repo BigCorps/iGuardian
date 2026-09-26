@@ -84,9 +84,23 @@ class ReportGenerator(private val context: Context) {
             )
         }
 
+        val requestedPeriodMilliseconds =
+            (endMs - startMs).coerceAtLeast(0L)
+
         val effectiveStart = effectiveTrackingStart(startMs, endMs)
         val effectivePeriodMilliseconds =
             (endMs - effectiveStart).coerceAtLeast(0L)
+
+        val historyAvailabilityPercent =
+            if (requestedPeriodMilliseconds > 0L) {
+                round(
+                    effectivePeriodMilliseconds.toDouble() *
+                        1000.0 /
+                        requestedPeriodMilliseconds.toDouble()
+                ) / 10.0
+            } else {
+                0.0
+            }
 
         val recordedMilliseconds =
             summary.appMilliseconds +
@@ -114,7 +128,7 @@ class ReportGenerator(private val context: Context) {
             }
 
         return JSONObject().apply {
-            put("schema_version", 3)
+            put("schema_version", 4)
             put(
                 "date",
                 SimpleDateFormat("yyyy-MM-dd", Locale.US).format(Date(startMs))
@@ -133,6 +147,11 @@ class ReportGenerator(private val context: Context) {
                             ?: JSONObject.NULL
                     )
                     put("effective_period_start", iso(effectiveStart))
+                    put("requested_period_milliseconds", requestedPeriodMilliseconds)
+                    put("requested_period_seconds", requestedPeriodMilliseconds / 1000L)
+                    put("history_available_milliseconds", effectivePeriodMilliseconds)
+                    put("history_available_seconds", effectivePeriodMilliseconds / 1000L)
+                    put("history_availability_percent", historyAvailabilityPercent)
                     put("effective_period_milliseconds", effectivePeriodMilliseconds)
                     put("effective_period_seconds", effectivePeriodSeconds)
                     put("recorded_milliseconds", recordedMilliseconds)
@@ -189,6 +208,7 @@ class ReportGenerator(private val context: Context) {
                             "runtime_best_effort"
                     )
                     put("duration_precision", "milliseconds+seconds")
+                    put("history_availability_tracking", true)
                     put("session_definition", "normalized_foreground_intervals")
                     put("system_surface_separation", true)
                     put("browser_domains", false)

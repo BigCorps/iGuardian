@@ -1,5 +1,8 @@
-# Static validation — 0.1.13
+# Static validation — 0.1.14
 
+Base: physically validated 0.1.13 package.
+
+Checks:
 - `app/src/main/java/com/bigcorps/guardian/GuardianApplication.kt`: braces=0; parens=0
 - `app/src/main/java/com/bigcorps/guardian/MainActivity.kt`: braces=0; parens=0
 - `app/src/main/java/com/bigcorps/guardian/core/DiagnosticsGenerator.kt`: braces=0; parens=0
@@ -9,6 +12,7 @@
 - `app/src/main/java/com/bigcorps/guardian/core/GuardianRescheduleReceiver.kt`: braces=0; parens=0
 - `app/src/main/java/com/bigcorps/guardian/core/GuardianScheduler.kt`: braces=0; parens=0
 - `app/src/main/java/com/bigcorps/guardian/core/GuardianWorker.kt`: braces=0; parens=0
+- `app/src/main/java/com/bigcorps/guardian/core/HistoryReadiness.kt`: braces=0; parens=0
 - `app/src/main/java/com/bigcorps/guardian/core/LocalIntelligenceSelfCheck.kt`: braces=0; parens=0
 - `app/src/main/java/com/bigcorps/guardian/core/LocalQuestionEngine.kt`: braces=0; parens=0
 - `app/src/main/java/com/bigcorps/guardian/core/Preferences.kt`: braces=0; parens=0
@@ -18,5 +22,6 @@
 - `app/src/main/java/com/bigcorps/guardian/core/UsageCollector.kt`: braces=0; parens=0
 - `app/src/main/java/com/bigcorps/guardian/core/ValidationPackGenerator.kt`: braces=0; parens=0
 - `app/src/main/java/com/bigcorps/guardian/core/ValidationSuite.kt`: braces=0; parens=0
+- `app/src/test/java/com/bigcorps/guardian/core/HistoryReadinessTest.kt`: braces=0; parens=0
 - `app/src/test/java/com/bigcorps/guardian/core/LocalQuestionIntentParserTest.kt`: braces=0; parens=0
 - `app/src/test/java/com/bigcorps/guardian/core/TimelineNormalizerTest.kt`: braces=0; parens=0

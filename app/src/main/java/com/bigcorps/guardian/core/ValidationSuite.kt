@@ -10,7 +10,7 @@ object ValidationSuite {
     private const val PASS = "PASS"
     private const val WARN = "WARN"
     private const val FAIL = "FAIL"
-    private const val SUITE_VERSION = 2
+    private const val SUITE_VERSION = 3
 
     fun run(
         context: Context,
@@ -31,11 +31,14 @@ object ValidationSuite {
 
         validatePermissions(diagnostic, ::add)
         validateReportSchema(daily, ::add)
+        validateHistoryAvailability(daily, ::add)
         validateReportTotals(daily, ::add)
         validateTimeline(daily, ::add)
         validateAppAggregates(daily, ::add)
         validateLocalIntelligence(diagnostic, ::add)
         validateProductCapabilities(diagnostic, ::add)
+        validateComparisonHistoryGuard(context, ::add)
+        validateSystemSurfaceExclusion(daily, ::add)
         validateBackground(diagnostic, ::add)
         validateCoverage(daily, ::add)
 
@@ -98,13 +101,92 @@ object ValidationSuite {
         val hasMs = timeline.length() == 0 ||
             timeline.getJSONObject(0).has("duration_milliseconds")
 
-        if (schema == 3 && precision == "milliseconds" && hasMs) {
-            add("report_schema_v3", PASS, "Schema v3 e precisão em milissegundos ativos.")
+        val historyAvailability =
+            tracking.has(
+                "history_availability_percent"
+            )
+
+        if (
+            schema == 4 &&
+            precision == "milliseconds" &&
+            hasMs &&
+            historyAvailability
+        ) {
+            add(
+                "report_schema_v4",
+                PASS,
+                "Schema v4, milissegundos e disponibilidade de histórico ativos."
+            )
         } else {
             add(
-                "report_schema_v3",
+                "report_schema_v4",
                 FAIL,
-                "schema=$schema;precision=$precision;duration_ms=$hasMs"
+                "schema=$schema;precision=$precision;duration_ms=$hasMs;history_availability=$historyAvailability"
+            )
+        }
+    }
+
+    private fun validateHistoryAvailability(
+        daily: JSONObject,
+        add: (String, String, String) -> Unit
+    ) {
+        val tracking =
+            daily.getJSONObject(
+                "tracking"
+            )
+
+        val requested =
+            tracking.optLong(
+                "requested_period_milliseconds",
+                -1L
+            )
+
+        val available =
+            tracking.optLong(
+                "history_available_milliseconds",
+                -1L
+            )
+
+        val percent =
+            tracking.optDouble(
+                "history_availability_percent",
+                -1.0
+            )
+
+        val expected =
+            if (
+                requested > 0L
+            ) {
+                kotlin.math.round(
+                    available.toDouble() *
+                        1000.0 /
+                        requested.toDouble()
+                ) /
+                    10.0
+            } else {
+                0.0
+            }
+
+        if (
+            requested >=
+            0L &&
+            available in 0L..requested &&
+            kotlin.math.abs(
+                expected -
+                    percent
+            ) <=
+            0.1
+        ) {
+            add(
+                "history_availability_math",
+                PASS,
+                "Disponibilidade do histórico fecha com o período solicitado."
+            )
+        } else {
+            add(
+                "history_availability_math",
+                FAIL,
+                "requested=$requested;available=$available;percent=$percent;expected=$expected"
             )
         }
     }
@@ -287,6 +369,7 @@ object ValidationSuite {
                 "local_question_compare_last_24h_previous_24h",
                 "local_question_compare_last_7d_previous_7d",
                 "local_question_compare_calendar_periods",
+                "local_question_history_readiness_guard",
                 "automatic_local_insight_cards",
                 "validation_pack_export"
             )
@@ -301,19 +384,221 @@ object ValidationSuite {
 
         if (
             engineVersion >=
-            6 &&
+            7 &&
             missing.isEmpty()
         ) {
             add(
-                "product_capabilities_v6",
+                "product_capabilities_v7",
                 PASS,
-                "Engine v$engineVersion com datas, ranges e tendências 24h/7d/calendário."
+                "Engine v$engineVersion com comparações protegidas por maturidade do histórico."
             )
         } else {
             add(
-                "product_capabilities_v6",
+                "product_capabilities_v7",
                 FAIL,
                 "engine=$engineVersion;missing=${missing.joinToString(",")}"
+            )
+        }
+    }
+
+    private fun validateComparisonHistoryGuard(
+        context: Context,
+        add: (String, String, String) -> Unit
+    ) {
+        val now =
+            System.currentTimeMillis()
+
+        fun report(
+            start: Long,
+            end: Long
+        ): JSONObject =
+            ReportGenerator(
+                context
+            ).periodJson(
+                start,
+                end
+            )
+
+        val day =
+            24L *
+                60L *
+                60L *
+                1000L
+
+        val current24 =
+            report(
+                now - day,
+                now
+            )
+
+        val previous24 =
+            report(
+                now - 2L * day,
+                now - day
+            )
+
+        val current7 =
+            report(
+                now - 7L * day,
+                now
+            )
+
+        val previous7 =
+            report(
+                now - 14L * day,
+                now - 7L * day
+            )
+
+        fun ready(
+            first: JSONObject,
+            second: JSONObject
+        ): Boolean {
+            val a =
+                first.getJSONObject(
+                    "tracking"
+                )
+
+            val b =
+                second.getJSONObject(
+                    "tracking"
+                )
+
+            return HistoryReadiness.canCompare(
+                a.optDouble(
+                    "history_availability_percent",
+                    0.0
+                ),
+                b.optDouble(
+                    "history_availability_percent",
+                    0.0
+                ),
+                a.optDouble(
+                    "coverage_percent",
+                    0.0
+                ),
+                b.optDouble(
+                    "coverage_percent",
+                    0.0
+                )
+            )
+        }
+
+        val answer24 =
+            LocalQuestionEngine(
+                context
+            ).answer(
+                "Compare as últimas 24 horas com as 24 anteriores",
+                now
+            ).text
+
+        val answer7 =
+            LocalQuestionEngine(
+                context
+            ).answer(
+                "Compare os últimos 7 dias com os 7 anteriores",
+                now
+            ).text
+
+        val guard24 =
+            answer24.contains(
+                "Histórico insuficiente"
+            )
+
+        val guard7 =
+            answer7.contains(
+                "Histórico insuficiente"
+            )
+
+        val expected24 =
+            !ready(
+                current24,
+                previous24
+            )
+
+        val expected7 =
+            !ready(
+                current7,
+                previous7
+            )
+
+        if (
+            guard24 ==
+            expected24 &&
+            guard7 ==
+            expected7
+        ) {
+            add(
+                "comparison_history_guard",
+                PASS,
+                "Comparações 24h/7d bloqueiam deltas quando o histórico solicitado ainda está incompleto."
+            )
+        } else {
+            add(
+                "comparison_history_guard",
+                FAIL,
+                "guard24=$guard24;expected24=$expected24;guard7=$guard7;expected7=$expected7"
+            )
+        }
+    }
+
+    private fun validateSystemSurfaceExclusion(
+        daily: JSONObject,
+        add: (String, String, String) -> Unit
+    ) {
+        val blocked =
+            setOf(
+                "com.android.documentsui",
+                "com.google.android.documentsui",
+                "com.google.android.photopicker",
+                "com.mi.appfinder",
+                "com.android.providers.downloads.ui",
+                "com.android.packageinstaller",
+                "com.google.android.packageinstaller",
+                "com.miui.global.packageinstaller"
+            )
+
+        val apps =
+            daily.getJSONArray(
+                "apps"
+            )
+
+        val found =
+            mutableListOf<String>()
+
+        for (
+            index in
+            0 until apps.length()
+        ) {
+            val pkg =
+                apps.getJSONObject(
+                    index
+                )
+                    .optString(
+                        "package"
+                    )
+
+            if (
+                pkg in
+                blocked
+            ) {
+                found +=
+                    pkg
+            }
+        }
+
+        if (
+            found.isEmpty()
+        ) {
+            add(
+                "system_surface_exclusion",
+                PASS,
+                "Superfícies técnicas conhecidas não aparecem como APP."
+            )
+        } else {
+            add(
+                "system_surface_exclusion",
+                FAIL,
+                "found=${found.joinToString(",")}"
             )
         }
     }

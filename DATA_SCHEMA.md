@@ -1,9 +1,9 @@
-# Data Schema — report v3 / DB v5 / diagnostic v12 / validation-pack v2
+# Data Schema — report v4 / DB v6 / diagnostic v13 / validation-pack v3
 
-No timeline schema change.
+Report v4 adds requested-period vs history-availability fields while retaining
+all v3 millisecond/second fields.
 
-Diagnostic v12 adds Local Intelligence v6 comparison capabilities.
+DB v6 migrates known Android Downloads UI APP rows to SYSTEM and clears
+identity.
 
-Validation pack v2 adds automatic 7-day trend and AutoTest Suite v2 results.
-
-No query-history table, cloud storage or network transport.
+Validation pack v3 adds data_maturity percentages.
