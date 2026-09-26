@@ -43,6 +43,8 @@ class MainActivity : Activity() {
     private lateinit var localQuestionInput: EditText
     private lateinit var localQuestionAnswer: TextView
     private lateinit var localQuestionButton: Button
+    private lateinit var automaticInsightText: TextView
+    private lateinit var automaticTrendText: TextView
     @Volatile
     private var exportInProgress = false
 
@@ -234,6 +236,49 @@ class MainActivity : Activity() {
 
         root.addView(
             sectionTitle(
+                "Insights automáticos"
+            )
+        )
+
+        root.addView(
+            card().apply {
+                addView(
+                    textView(
+                        "Calculados localmente • sem pergunta manual",
+                        12f,
+                        true,
+                        PRIMARY
+                    )
+                )
+
+                automaticInsightText =
+                    textView(
+                        "Calculando insights locais…",
+                        13f,
+                        false,
+                        TEXT_MUTED
+                    ).apply {
+                        setPadding(0, dp(8), 0, 0)
+                    }
+
+                addView(automaticInsightText)
+
+                automaticTrendText =
+                    textView(
+                        "",
+                        13f,
+                        false,
+                        TEXT_MUTED
+                    ).apply {
+                        setPadding(0, dp(10), 0, 0)
+                    }
+
+                addView(automaticTrendText)
+            }
+        )
+
+        root.addView(
+            sectionTitle(
                 "Perguntar ao Guardian"
             )
         )
@@ -242,7 +287,7 @@ class MainActivity : Activity() {
             card().apply {
                 addView(
                     textView(
-                        "Inteligência local v4 • períodos flexíveis • sem internet",
+                        "Inteligência local v5 • datas + tendências • auto-testada • sem internet",
                         12f,
                         true,
                         PRIMARY
@@ -308,7 +353,7 @@ class MainActivity : Activity() {
 
                 localQuestionAnswer =
                     textView(
-                        "Exemplos: hoje • ontem • últimas 6h • 24h • últimos 3 dias • comparação • insights.",
+                        "Exemplos: 25/09 • 24/09 a 26/09 • últimas 6h • comparação 24h • insights.",
                         13f,
                         false,
                         TEXT_MUTED
@@ -343,9 +388,17 @@ class MainActivity : Activity() {
             )
 
             addView(
+                primaryButton(
+                    "Exportar pacote de validação (recomendado)"
+                ) {
+                    exportValidationPack()
+                }.apply { topMargin(12) }
+            )
+
+            addView(
                 outlineButton("Exportar JSON do dia") {
                     exportFresh(false)
-                }.apply { topMargin(12) }
+                }.apply { topMargin(10) }
             )
 
             addView(
@@ -382,6 +435,9 @@ class MainActivity : Activity() {
             appendLine("✓ Coleta serializada")
             appendLine("✓ WorkManager best-effort + catch-up")
             appendLine("✓ Inteligência local com auto-teste")
+            appendLine("✓ Auto-validação de privacidade, timeline e totais")
+            appendLine("✓ Pacote único de validação")
+            appendLine("✓ Insights automáticos sem pergunta manual")
             appendLine("✓ Relatório com precisão em milissegundos")
             appendLine("— Domínios: ainda não")
             appendLine("— Guia anônima: schema pronto; detecção ainda não")
@@ -459,6 +515,51 @@ class MainActivity : Activity() {
                     }
                 }.trim()
             }
+
+        updateAutomaticInsights()
+    }
+
+    private fun updateAutomaticInsights() {
+        automaticInsightText.text =
+            "Calculando insights locais…"
+
+        automaticTrendText.text =
+            ""
+
+        Thread {
+            try {
+                val engine =
+                    LocalQuestionEngine(
+                        applicationContext
+                    )
+
+                val insight =
+                    engine.answer(
+                        "Insights de hoje"
+                    ).text
+
+                val trend =
+                    engine.answer(
+                        "Compare as últimas 24 horas com as 24 anteriores"
+                    ).text
+
+                runOnUiThread {
+                    automaticInsightText.text =
+                        insight
+
+                    automaticTrendText.text =
+                        trend
+                }
+            } catch (_: Throwable) {
+                runOnUiThread {
+                    automaticInsightText.text =
+                        "Insights automáticos temporariamente indisponíveis."
+
+                    automaticTrendText.text =
+                        ""
+                }
+            }
+        }.start()
     }
 
     private fun durationLabel(seconds: Long): String {
@@ -577,6 +678,98 @@ class MainActivity : Activity() {
                 Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS)
             )
         }
+    }
+
+    private fun exportValidationPack() {
+        if (exportInProgress) {
+            Toast.makeText(
+                this,
+                "Uma exportação já está em andamento.",
+                Toast.LENGTH_SHORT
+            ).show()
+            return
+        }
+
+        exportInProgress = true
+        statusText.text = "Executando auto-testes e preparando pacote…"
+
+        Thread {
+            try {
+                UsageCollector(applicationContext).collect()
+
+                val contents =
+                    ValidationPackGenerator
+                        .generate(applicationContext)
+                        .toString(2)
+
+                val filename =
+                    "guardian-validacao-${
+                        SimpleDateFormat(
+                            "yyyyMMdd-HHmmss",
+                            Locale.US
+                        ).format(Date())
+                    }.json"
+
+                if (contents.isBlank()) {
+                    throw IOException("generated_validation_pack_empty")
+                }
+
+                val storage = ExportStorage(applicationContext)
+
+                if (storage.supportsDirectDownloads()) {
+                    val saved = storage.saveToDownloads(filename, contents)
+
+                    runCatching {
+                        GuardianDatabase(applicationContext).logTechnical(
+                            "VALIDATION_EXPORT_OK",
+                            "bytes=${saved.bytes}"
+                        )
+                    }
+
+                    runOnUiThread {
+                        exportInProgress = false
+                        updateSummary()
+                        showSavedDialog(saved)
+                    }
+                } else {
+                    val pending = pendingExportFile()
+                    pending.writeText(contents, Charsets.UTF_8)
+
+                    if (pending.length() <= 0L) {
+                        throw IOException("pending_validation_export_empty")
+                    }
+
+                    getSharedPreferences(EXPORT_PREFS, MODE_PRIVATE)
+                        .edit()
+                        .putString(EXPORT_FILENAME, filename)
+                        .apply()
+
+                    runOnUiThread {
+                        requestLegacySave(filename)
+                    }
+                }
+            } catch (t: Throwable) {
+                runCatching {
+                    GuardianDatabase(applicationContext).logTechnical(
+                        "VALIDATION_EXPORT_ERROR",
+                        t::class.java.simpleName
+                    )
+                }
+
+                runOnUiThread {
+                    exportInProgress = false
+                    refresh(false)
+
+                    Toast.makeText(
+                        this,
+                        "Não foi possível gerar o pacote de validação: ${
+                            t.message ?: t::class.java.simpleName
+                        }",
+                        Toast.LENGTH_LONG
+                    ).show()
+                }
+            }
+        }.start()
     }
 
     private fun exportFresh(diagnostic: Boolean) {

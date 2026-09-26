@@ -1,6 +1,4 @@
-# Static validation — 0.1.11
-
-Base: physically validated Android 0.1.10 package.
+# Static validation — 0.1.12 AutoTest Bundle
 
 - `app/src/main/java/com/bigcorps/guardian/GuardianApplication.kt`: braces=0; parens=0
 - `app/src/main/java/com/bigcorps/guardian/MainActivity.kt`: braces=0; parens=0
@@ -18,5 +16,7 @@ Base: physically validated Android 0.1.10 package.
 - `app/src/main/java/com/bigcorps/guardian/core/SystemSurfaceClassifier.kt`: braces=0; parens=0
 - `app/src/main/java/com/bigcorps/guardian/core/TimelineNormalizer.kt`: braces=0; parens=0
 - `app/src/main/java/com/bigcorps/guardian/core/UsageCollector.kt`: braces=0; parens=0
+- `app/src/main/java/com/bigcorps/guardian/core/ValidationPackGenerator.kt`: braces=0; parens=0
+- `app/src/main/java/com/bigcorps/guardian/core/ValidationSuite.kt`: braces=0; parens=0
 - `app/src/test/java/com/bigcorps/guardian/core/LocalQuestionIntentParserTest.kt`: braces=0; parens=0
 - `app/src/test/java/com/bigcorps/guardian/core/TimelineNormalizerTest.kt`: braces=0; parens=0

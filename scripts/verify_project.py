@@ -85,6 +85,16 @@ for name in required_docs:
     if not (root / name).exists():
         errors.append(f"Missing required project handoff file: {name}")
 
+required_sources = [
+    "app/src/main/java/com/bigcorps/guardian/core/ValidationSuite.kt",
+    "app/src/main/java/com/bigcorps/guardian/core/ValidationPackGenerator.kt",
+    "app/src/main/java/com/bigcorps/guardian/core/LocalIntelligenceSelfCheck.kt",
+]
+
+for name in required_sources:
+    if not (root / name).exists():
+        errors.append(f"Missing required validation source: {name}")
+
 secret_suffixes = {".jks", ".keystore", ".p12", ".pfx"}
 for path in root.rglob("*"):
     if path.is_file() and path.suffix.lower() in secret_suffixes:
@@ -104,6 +114,8 @@ print("- no INTERNET permission")
 print("- no QUERY_ALL_PACKAGES")
 print("- no AccessibilityService")
 print("- WorkManager background architecture present")
+print("- comprehensive local validation suite present")
+print("- one-file validation pack generator present")
 print("- no legacy direct GuardianJobService in app manifest")
 print("- no signing private key committed")
 print("- handoff documentation present")

@@ -1,30 +1,7 @@
-# Validation — Android 0.1.11
+# Validation — Android 0.1.12 AutoTest Bundle
 
-## 0.1.10 physical result
-PASS:
-- report schema v3;
-- millisecond fields;
-- today coverage 99.4%;
-- unique WorkManager present;
-- 9 Worker runs / 9 successes;
-- retry/failure/stopped = 0;
-- no privacy/timeline regression.
+CI validates project/privacy invariants, unit tests, Android compilation and fixed signing.
 
-Runtime intelligence self-check:
-- summary_today PASS
-- top_last_24h PASS
-- insights_today PASS
-- compare_today_yesterday FAIL
+Runtime ValidationSuite v1 validates permissions, report schema/precision, report arithmetic, timeline privacy/overlap/duration, app aggregates, Local Intelligence self-check, WorkManager uniqueness/health and tracking coverage.
 
-Root cause:
-parser selected YESTERDAY because the comparison phrase contains `ontem`; the comparison answer route itself already handles both periods.
-
-## 0.1.11 acceptance
-- diagnostic schema 9;
-- engine version 4;
-- self-check overall PASS;
-- custom rolling hours true;
-- custom rolling days true;
-- comparison check PASS;
-- WorkManager remains unique/healthy;
-- privacy invariants unchanged.
+Default user validation becomes: install -> use normally -> export one validation pack.

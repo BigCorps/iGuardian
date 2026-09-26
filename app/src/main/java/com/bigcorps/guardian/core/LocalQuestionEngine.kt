@@ -19,6 +19,7 @@ enum class LocalQuestionIntent {
     COVERAGE,
     INSIGHTS,
     COMPARE_TODAY_YESTERDAY,
+    COMPARE_LAST_24H_PREVIOUS_24H,
     HELP
 }
 
@@ -28,13 +29,23 @@ enum class LocalQuestionPeriod {
     LAST_24_HOURS,
     LAST_7_DAYS,
     ROLLING_HOURS,
-    ROLLING_DAYS
+    ROLLING_DAYS,
+    CALENDAR_DAY,
+    CALENDAR_RANGE
 }
+
+data class LocalCalendarDate(
+    val day: Int,
+    val month: Int,
+    val year: Int? = null
+)
 
 data class LocalQuestionPlan(
     val intent: LocalQuestionIntent,
     val period: LocalQuestionPeriod,
-    val amount: Int = 0
+    val amount: Int = 0,
+    val calendarStart: LocalCalendarDate? = null,
+    val calendarEnd: LocalCalendarDate? = null
 )
 
 object LocalQuestionIntentParser {
@@ -46,6 +57,11 @@ object LocalQuestionIntentParser {
     private val rollingDaysRegex =
         Regex(
             """(?:ultimos|ultimas)\s+(\d{1,2})\s*(?:dia|dias)\b"""
+        )
+
+    private val calendarDateRegex =
+        Regex(
+            """(?<!\d)(\d{1,2})[/-](\d{1,2})(?:[/-](\d{2,4}))?(?!\d)"""
         )
 
     fun normalize(value: String): String {
@@ -70,15 +86,12 @@ object LocalQuestionIntentParser {
     fun plan(raw: String): LocalQuestionPlan {
         val q = normalize(raw)
 
-        val isCompare =
-            q.contains("compare") ||
-                q.contains("comparar") ||
-                q.contains("hoje ou ontem") ||
-                q.contains("hoje com ontem")
+        val compareTodayYesterday =
+            q.contains("compare hoje com ontem") ||
+                q.contains("comparar hoje com ontem") ||
+                q.contains("hoje ou ontem")
 
-        // Comparison is a two-period intent. TODAY is the reference period
-        // rather than allowing the word "ontem" to relabel the whole plan.
-        if (isCompare) {
+        if (compareTodayYesterday) {
             return LocalQuestionPlan(
                 intent =
                     LocalQuestionIntent.COMPARE_TODAY_YESTERDAY,
@@ -87,8 +100,74 @@ object LocalQuestionIntentParser {
             )
         }
 
+        val compareLast24 =
+            (
+                q.contains("24 horas") ||
+                    q.contains("24h")
+                ) &&
+                (
+                    q.contains("anteriores") ||
+                        q.contains("anterior")
+                    ) &&
+                (
+                    q.contains("compare") ||
+                        q.contains("comparar") ||
+                        q.contains("tendencia") ||
+                        q.contains("mudou")
+                    )
+
+        if (compareLast24) {
+            return LocalQuestionPlan(
+                intent =
+                    LocalQuestionIntent.COMPARE_LAST_24H_PREVIOUS_24H,
+                period =
+                    LocalQuestionPeriod.LAST_24_HOURS,
+                amount =
+                    24
+            )
+        }
+
+        val calendarDates =
+            calendarDateRegex
+                .findAll(raw)
+                .mapNotNull {
+                    match ->
+                    parseCalendarDate(
+                        match
+                    )
+                }
+                .take(2)
+                .toList()
+
         val periodPlan =
-            parsePeriod(q)
+            when {
+                calendarDates.size >= 2 ->
+                    LocalQuestionPlan(
+                        intent =
+                            LocalQuestionIntent.HELP,
+                        period =
+                            LocalQuestionPeriod.CALENDAR_RANGE,
+                        calendarStart =
+                            calendarDates[0],
+                        calendarEnd =
+                            calendarDates[1]
+                    )
+
+                calendarDates.size == 1 ->
+                    LocalQuestionPlan(
+                        intent =
+                            LocalQuestionIntent.HELP,
+                        period =
+                            LocalQuestionPeriod.CALENDAR_DAY,
+                        calendarStart =
+                            calendarDates[0]
+                    )
+
+                else ->
+                    parseRollingPeriod(
+                        q
+                    )
+            }
 
         val intent =
             when {
@@ -163,53 +242,164 @@ object LocalQuestionIntentParser {
                     q.contains("o que fiz ontem") ->
                     LocalQuestionIntent.SUMMARY
 
+                periodPlan.period ==
+                    LocalQuestionPeriod.CALENDAR_DAY ||
+                    periodPlan.period ==
+                    LocalQuestionPeriod.CALENDAR_RANGE ->
+                    LocalQuestionIntent.SUMMARY
+
                 else ->
                     LocalQuestionIntent.HELP
             }
 
-        return LocalQuestionPlan(
-            intent = intent,
-            period = periodPlan.first,
-            amount = periodPlan.second
+        return periodPlan.copy(
+            intent =
+                intent
         )
     }
 
-    private fun parsePeriod(
+    private fun parseCalendarDate(
+        match: MatchResult
+    ): LocalCalendarDate? {
+        val day =
+            match.groupValues
+                .getOrNull(1)
+                ?.toIntOrNull()
+                ?: return null
+
+        val month =
+            match.groupValues
+                .getOrNull(2)
+                ?.toIntOrNull()
+                ?: return null
+
+        val rawYear =
+            match.groupValues
+                .getOrNull(3)
+                .orEmpty()
+
+        val year =
+            when {
+                rawYear.isBlank() ->
+                    null
+
+                rawYear.length == 2 ->
+                    2000 +
+                        (
+                            rawYear.toIntOrNull()
+                                ?: return null
+                            )
+
+                else ->
+                    rawYear.toIntOrNull()
+            }
+
+        if (
+            day !in 1..31 ||
+            month !in 1..12
+        ) {
+            return null
+        }
+
+        return LocalCalendarDate(
+            day =
+                day,
+            month =
+                month,
+            year =
+                year
+        )
+    }
+
+    private fun parseRollingPeriod(
         q: String
-    ): Pair<LocalQuestionPeriod, Int> {
-        if (q.contains("ontem")) {
-            return LocalQuestionPeriod.YESTERDAY to 0
+    ): LocalQuestionPlan {
+        if (
+            q.contains("ontem")
+        ) {
+            return LocalQuestionPlan(
+                intent =
+                    LocalQuestionIntent.HELP,
+                period =
+                    LocalQuestionPeriod.YESTERDAY
+            )
         }
 
         val hours =
-            rollingHoursRegex.find(q)
+            rollingHoursRegex
+                .find(q)
                 ?.groupValues
                 ?.getOrNull(1)
                 ?.toIntOrNull()
 
-        if (hours != null) {
-            if (hours == 24) {
-                return LocalQuestionPeriod.LAST_24_HOURS to 24
+        if (
+            hours != null
+        ) {
+            if (
+                hours ==
+                24
+            ) {
+                return LocalQuestionPlan(
+                    intent =
+                        LocalQuestionIntent.HELP,
+                    period =
+                        LocalQuestionPeriod.LAST_24_HOURS,
+                    amount =
+                        24
+                )
             }
 
-            if (hours in 1..720) {
-                return LocalQuestionPeriod.ROLLING_HOURS to hours
+            if (
+                hours in
+                1..720
+            ) {
+                return LocalQuestionPlan(
+                    intent =
+                        LocalQuestionIntent.HELP,
+                    period =
+                        LocalQuestionPeriod.ROLLING_HOURS,
+                    amount =
+                        hours
+                )
             }
         }
 
         val days =
-            rollingDaysRegex.find(q)
+            rollingDaysRegex
+                .find(q)
                 ?.groupValues
                 ?.getOrNull(1)
                 ?.toIntOrNull()
 
-        if (days != null) {
-            if (days == 7) {
-                return LocalQuestionPeriod.LAST_7_DAYS to 7
+        if (
+            days != null
+        ) {
+            if (
+                days ==
+                7
+            ) {
+                return LocalQuestionPlan(
+                    intent =
+                        LocalQuestionIntent.HELP,
+                    period =
+                        LocalQuestionPeriod.LAST_7_DAYS,
+                    amount =
+                        7
+                )
             }
 
-            if (days in 1..90) {
-                return LocalQuestionPeriod.ROLLING_DAYS to days
+            if (
+                days in
+                1..90
+            ) {
+                return LocalQuestionPlan(
+                    intent =
+                        LocalQuestionIntent.HELP,
+                    period =
+                        LocalQuestionPeriod.ROLLING_DAYS,
+                    amount =
+                        days
+                )
             }
         }
 
@@ -217,7 +407,14 @@ object LocalQuestionIntentParser {
             q.contains("24h") ||
             q.contains("24 horas")
         ) {
-            return LocalQuestionPeriod.LAST_24_HOURS to 24
+            return LocalQuestionPlan(
+                intent =
+                    LocalQuestionIntent.HELP,
+                period =
+                    LocalQuestionPeriod.LAST_24_HOURS,
+                amount =
+                    24
+            )
         }
 
         if (
@@ -225,10 +422,22 @@ object LocalQuestionIntentParser {
             q.contains("ultima semana") ||
             q.contains("essa semana")
         ) {
-            return LocalQuestionPeriod.LAST_7_DAYS to 7
+            return LocalQuestionPlan(
+                intent =
+                    LocalQuestionIntent.HELP,
+                period =
+                    LocalQuestionPeriod.LAST_7_DAYS,
+                amount =
+                    7
+            )
         }
 
-        return LocalQuestionPeriod.TODAY to 0
+        return LocalQuestionPlan(
+            intent =
+                LocalQuestionIntent.HELP,
+            period =
+                LocalQuestionPeriod.TODAY
+        )
     }
 }
 
@@ -243,35 +452,95 @@ class LocalQuestionEngine(
 ) {
     fun answer(
         question: String,
-        nowMs: Long = System.currentTimeMillis()
+        nowMs: Long =
+            System.currentTimeMillis()
     ): LocalQuestionAnswer {
         val plan =
-            LocalQuestionIntentParser.plan(question)
+            LocalQuestionIntentParser
+                .plan(
+                    question
+                )
 
         if (
             plan.intent ==
-            LocalQuestionIntent.COMPARE_TODAY_YESTERDAY
+            LocalQuestionIntent
+                .COMPARE_TODAY_YESTERDAY
         ) {
-            return compareTodayYesterday(nowMs)
+            return compareTodayYesterday(
+                nowMs
+            )
+        }
+
+        if (
+            plan.intent ==
+            LocalQuestionIntent
+                .COMPARE_LAST_24H_PREVIOUS_24H
+        ) {
+            return compareLast24Hours(
+                nowMs
+            )
         }
 
         val range =
-            rangeFor(plan, nowMs)
+            runCatching {
+                rangeFor(
+                    plan,
+                    nowMs
+                )
+            }
+                .getOrElse {
+                    return LocalQuestionAnswer(
+                        intent =
+                            plan.intent,
+                        period =
+                            plan.period,
+                        text =
+                            "Não consegui interpretar essa data. Use, por exemplo, 25/09 ou 25/09/2026."
+                    )
+                }
+
+        if (
+            range.endMs <=
+            range.startMs
+        ) {
+            return LocalQuestionAnswer(
+                intent =
+                    plan.intent,
+                period =
+                    plan.period,
+                text =
+                    "O período solicitado ainda não possui tempo acompanhável."
+            )
+        }
 
         val report =
-            ReportGenerator(context).periodJson(
+            ReportGenerator(
+                context
+            ).periodJson(
                 range.startMs,
                 range.endMs
             )
 
         val summary =
-            report.getJSONObject("summary")
+            report.getJSONObject(
+                "summary"
+            )
+
         val tracking =
-            report.getJSONObject("tracking")
+            report.getJSONObject(
+                "tracking"
+            )
+
         val apps =
-            report.getJSONArray("apps")
+            report.getJSONArray(
+                "apps"
+            )
+
         val normalized =
-            LocalQuestionIntentParser.normalize(question)
+            LocalQuestionIntentParser
+                .normalize(
+                    question
+                )
 
         val matchingApp =
             findNamedApp(
@@ -286,7 +555,9 @@ class LocalQuestionEngine(
                 "usei",
                 "ficou"
             ).any {
-                normalized.contains(it)
+                normalized.contains(
+                    it
+                )
             }
 
         if (
@@ -300,21 +571,26 @@ class LocalQuestionEngine(
                     plan.period,
                 text =
                     "${periodLabel(plan)}: ${
-                        matchingApp.getString("name")
+                        matchingApp.getString(
+                            "name"
+                        )
                     } ficou registrado por ${
                         durationMillisecondsLabel(
                             matchingApp.optLong(
                                 "foreground_milliseconds",
                                 matchingApp.getLong(
                                     "foreground_seconds"
-                                ) * 1000L
+                                ) *
+                                    1000L
                             )
                         )
                     } em primeiro plano."
             )
         }
 
-        return when (plan.intent) {
+        return when (
+            plan.intent
+        ) {
             LocalQuestionIntent.SUMMARY ->
                 summaryAnswer(
                     plan,
@@ -368,7 +644,9 @@ class LocalQuestionEngine(
                     plan.intent,
                     plan.period,
                     "${periodLabel(plan)}: foram detectados ${
-                        summary.getInt("unlock_count")
+                        summary.getInt(
+                            "unlock_count"
+                        )
                     } desbloqueios."
                 )
 
@@ -423,8 +701,17 @@ class LocalQuestionEngine(
                     helpText()
                 )
 
-            LocalQuestionIntent.COMPARE_TODAY_YESTERDAY ->
-                compareTodayYesterday(nowMs)
+            LocalQuestionIntent
+                .COMPARE_TODAY_YESTERDAY ->
+                compareTodayYesterday(
+                    nowMs
+                )
+
+            LocalQuestionIntent
+                .COMPARE_LAST_24H_PREVIOUS_24H ->
+                compareLast24Hours(
+                    nowMs
+                )
         }
     }
 
@@ -438,9 +725,13 @@ class LocalQuestionEngine(
         nowMs: Long
     ): Range {
         val todayStart =
-            startOfDay(nowMs)
+            startOfDay(
+                nowMs
+            )
 
-        return when (plan.period) {
+        return when (
+            plan.period
+        ) {
             LocalQuestionPeriod.TODAY ->
                 Range(
                     todayStart,
@@ -449,10 +740,12 @@ class LocalQuestionEngine(
 
             LocalQuestionPeriod.YESTERDAY -> {
                 val yesterdayStart =
-                    Calendar.getInstance()
+                    Calendar
+                        .getInstance()
                         .apply {
                             timeInMillis =
                                 todayStart
+
                             add(
                                 Calendar.DAY_OF_YEAR,
                                 -1
@@ -517,7 +810,291 @@ class LocalQuestionEngine(
                         1000L,
                     nowMs
                 )
+
+            LocalQuestionPeriod.CALENDAR_DAY -> {
+                val start =
+                    calendarStartMs(
+                        plan.calendarStart
+                            ?: error(
+                                "missing calendar day"
+                            ),
+                        nowMs
+                    )
+
+                val end =
+                    minOf(
+                        nextDayStart(
+                            start
+                        ),
+                        nowMs
+                    )
+
+                Range(
+                    start,
+                    end
+                )
+            }
+
+            LocalQuestionPeriod.CALENDAR_RANGE -> {
+                var first =
+                    calendarStartMs(
+                        plan.calendarStart
+                            ?: error(
+                                "missing calendar range start"
+                            ),
+                        nowMs
+                    )
+
+                var second =
+                    calendarStartMs(
+                        plan.calendarEnd
+                            ?: error(
+                                "missing calendar range end"
+                            ),
+                        nowMs
+                    )
+
+                if (
+                    second <
+                    first
+                ) {
+                    val temp =
+                        first
+                    first =
+                        second
+                    second =
+                        temp
+                }
+
+                Range(
+                    first,
+                    minOf(
+                        nextDayStart(
+                            second
+                        ),
+                        nowMs
+                    )
+                )
+            }
         }
+    }
+
+    private fun calendarStartMs(
+        value: LocalCalendarDate,
+        nowMs: Long
+    ): Long {
+        val now =
+            Calendar
+                .getInstance()
+                .apply {
+                    timeInMillis =
+                        nowMs
+                }
+
+        val resolvedYear =
+            value.year
+                ?: now.get(
+                    Calendar.YEAR
+                )
+
+        val calendar =
+            Calendar
+                .getInstance()
+                .apply {
+                    isLenient =
+                        false
+
+                    clear()
+
+                    set(
+                        Calendar.YEAR,
+                        resolvedYear
+                    )
+                    set(
+                        Calendar.MONTH,
+                        value.month -
+                            1
+                    )
+                    set(
+                        Calendar.DAY_OF_MONTH,
+                        value.day
+                    )
+                    set(
+                        Calendar.HOUR_OF_DAY,
+                        0
+                    )
+                    set(
+                        Calendar.MINUTE,
+                        0
+                    )
+                    set(
+                        Calendar.SECOND,
+                        0
+                    )
+                    set(
+                        Calendar.MILLISECOND,
+                        0
+                    )
+                }
+
+        return calendar
+            .timeInMillis
+    }
+
+    private fun nextDayStart(
+        startMs: Long
+    ): Long =
+        Calendar
+            .getInstance()
+            .apply {
+                timeInMillis =
+                    startMs
+
+                add(
+                    Calendar.DAY_OF_YEAR,
+                    1
+                )
+            }
+            .timeInMillis
+
+    private fun compareLast24Hours(
+        nowMs: Long
+    ): LocalQuestionAnswer {
+        val currentStart =
+            nowMs -
+                24L *
+                60L *
+                60L *
+                1000L
+
+        val previousStart =
+            currentStart -
+                24L *
+                60L *
+                60L *
+                1000L
+
+        val current =
+            ReportGenerator(
+                context
+            ).periodJson(
+                currentStart,
+                nowMs
+            )
+
+        val previous =
+            ReportGenerator(
+                context
+            ).periodJson(
+                previousStart,
+                currentStart
+            )
+
+        val currentSummary =
+            current.getJSONObject(
+                "summary"
+            )
+
+        val previousSummary =
+            previous.getJSONObject(
+                "summary"
+            )
+
+        val currentTracking =
+            current.getJSONObject(
+                "tracking"
+            )
+
+        val previousTracking =
+            previous.getJSONObject(
+                "tracking"
+            )
+
+        val currentApps =
+            current.getJSONArray(
+                "apps"
+            )
+
+        val previousApps =
+            previous.getJSONArray(
+                "apps"
+            )
+
+        val currentMs =
+            summaryMilliseconds(
+                currentSummary,
+                "app_usage"
+            )
+
+        val previousMs =
+            summaryMilliseconds(
+                previousSummary,
+                "app_usage"
+            )
+
+        val difference =
+            currentMs -
+                previousMs
+
+        val differenceText =
+            when {
+                difference >
+                    0L ->
+                    "${
+                        durationMillisecondsLabel(
+                            difference
+                        )
+                    } a mais nas últimas 24h"
+
+                difference <
+                    0L ->
+                    "${
+                        durationMillisecondsLabel(
+                            -difference
+                        )
+                    } a menos nas últimas 24h"
+
+                else ->
+                    "o mesmo tempo registrado"
+            }
+
+        val currentTop =
+            topAppCompact(
+                currentApps
+            )
+
+        val previousTop =
+            topAppCompact(
+                previousApps
+            )
+
+        return LocalQuestionAnswer(
+            intent =
+                LocalQuestionIntent
+                    .COMPARE_LAST_24H_PREVIOUS_24H,
+            period =
+                LocalQuestionPeriod.LAST_24_HOURS,
+            text =
+                "Últimas 24h: ${
+                    durationMillisecondsLabel(
+                        currentMs
+                    )
+                } em apps; 24h anteriores: ${
+                    durationMillisecondsLabel(
+                        previousMs
+                    )
+                }. Diferença: $differenceText. " +
+                    "Mais usado agora: $currentTop. Antes: $previousTop. " +
+                    "Cobertura: ${
+                        coverageLabel(
+                            currentTracking
+                        )
+                    } agora e ${
+                        coverageLabel(
+                            previousTracking
+                        )
+                    } no período anterior."
+        )
     }
 
     private fun insightsAnswer(
@@ -525,13 +1102,24 @@ class LocalQuestionEngine(
         report: JSONObject
     ): LocalQuestionAnswer {
         val summary =
-            report.getJSONObject("summary")
+            report.getJSONObject(
+                "summary"
+            )
+
         val tracking =
-            report.getJSONObject("tracking")
+            report.getJSONObject(
+                "tracking"
+            )
+
         val apps =
-            report.getJSONArray("apps")
+            report.getJSONArray(
+                "apps"
+            )
+
         val timeline =
-            report.getJSONArray("timeline")
+            report.getJSONArray(
+                "timeline"
+            )
 
         val appUsageMs =
             summaryMilliseconds(
@@ -541,18 +1129,23 @@ class LocalQuestionEngine(
 
         val topLine =
             if (
-                apps.length() > 0 &&
-                appUsageMs > 0L
+                apps.length() >
+                0 &&
+                appUsageMs >
+                0L
             ) {
                 val top =
-                    apps.getJSONObject(0)
+                    apps.getJSONObject(
+                        0
+                    )
 
                 val topMs =
                     top.optLong(
                         "foreground_milliseconds",
                         top.getLong(
                             "foreground_seconds"
-                        ) * 1000L
+                        ) *
+                            1000L
                     )
 
                 val share =
@@ -561,9 +1154,13 @@ class LocalQuestionEngine(
                         appUsageMs.toDouble()
 
                 "• ${
-                    top.getString("name")
+                    top.getString(
+                        "name"
+                    )
                 } liderou o tempo em apps: ${
-                    durationMillisecondsLabel(topMs)
+                    durationMillisecondsLabel(
+                        topMs
+                    )
                 } (${percentLabel(share)} do uso de apps)."
             } else {
                 "• Ainda não há uso de apps suficiente para destacar um líder."
@@ -571,8 +1168,10 @@ class LocalQuestionEngine(
 
         var longestScreenOffMs =
             0L
+
         var longestAppMs =
             0L
+
         var longestAppName:
             String? =
             null
@@ -582,7 +1181,9 @@ class LocalQuestionEngine(
             0 until timeline.length()
         ) {
             val item =
-                timeline.getJSONObject(index)
+                timeline.getJSONObject(
+                    index
+                )
 
             val durationMs =
                 item.optLong(
@@ -590,11 +1191,14 @@ class LocalQuestionEngine(
                     item.optLong(
                         "duration_seconds",
                         0L
-                    ) * 1000L
+                    ) *
+                        1000L
                 )
 
             when (
-                item.optString("type")
+                item.optString(
+                    "type"
+                )
             ) {
                 "SCREEN_OFF" -> {
                     if (
@@ -613,6 +1217,7 @@ class LocalQuestionEngine(
                     ) {
                         longestAppMs =
                             durationMs
+
                         longestAppName =
                             item.optString(
                                 "name",
@@ -625,8 +1230,10 @@ class LocalQuestionEngine(
 
         val appLine =
             if (
-                longestAppMs > 0L &&
-                !longestAppName.isNullOrBlank()
+                longestAppMs >
+                0L &&
+                !longestAppName
+                    .isNullOrBlank()
             ) {
                 "• Maior intervalo contínuo de app registrado: $longestAppName por ${
                     durationMillisecondsLabel(
@@ -639,7 +1246,8 @@ class LocalQuestionEngine(
 
         val screenLine =
             if (
-                longestScreenOffMs > 0L
+                longestScreenOffMs >
+                0L
             ) {
                 "• Maior período contínuo com a tela desligada: ${
                     durationMillisecondsLabel(
@@ -661,7 +1269,9 @@ class LocalQuestionEngine(
                     "$appLine\n" +
                     "$screenLine\n" +
                     "• Cobertura do período: ${
-                        coverageLabel(tracking)
+                        coverageLabel(
+                            tracking
+                        )
                     }."
         )
     }
@@ -690,6 +1300,7 @@ class LocalQuestionEngine(
                 todayPlan,
                 nowMs
             )
+
         val yesterdayRange =
             rangeFor(
                 yesterdayPlan,
@@ -697,53 +1308,72 @@ class LocalQuestionEngine(
             )
 
         val today =
-            ReportGenerator(context).periodJson(
+            ReportGenerator(
+                context
+            ).periodJson(
                 todayRange.startMs,
                 todayRange.endMs
             )
+
         val yesterday =
-            ReportGenerator(context).periodJson(
+            ReportGenerator(
+                context
+            ).periodJson(
                 yesterdayRange.startMs,
                 yesterdayRange.endMs
             )
 
         val todaySummary =
-            today.getJSONObject("summary")
+            today.getJSONObject(
+                "summary"
+            )
+
         val yesterdaySummary =
-            yesterday.getJSONObject("summary")
+            yesterday.getJSONObject(
+                "summary"
+            )
+
         val todayTracking =
-            today.getJSONObject("tracking")
+            today.getJSONObject(
+                "tracking"
+            )
+
         val yesterdayTracking =
-            yesterday.getJSONObject("tracking")
+            yesterday.getJSONObject(
+                "tracking"
+            )
 
         val todayMs =
             summaryMilliseconds(
                 todaySummary,
                 "app_usage"
             )
+
         val yesterdayMs =
             summaryMilliseconds(
                 yesterdaySummary,
                 "app_usage"
             )
 
-        val differenceMs =
+        val difference =
             todayMs -
                 yesterdayMs
 
         val differenceText =
             when {
-                differenceMs > 0L ->
+                difference >
+                    0L ->
                     "${
                         durationMillisecondsLabel(
-                            differenceMs
+                            difference
                         )
                     } a mais hoje"
 
-                differenceMs < 0L ->
+                difference <
+                    0L ->
                     "${
                         durationMillisecondsLabel(
-                            -differenceMs
+                            -difference
                         )
                     } a menos hoje"
 
@@ -753,14 +1383,19 @@ class LocalQuestionEngine(
 
         return LocalQuestionAnswer(
             intent =
-                LocalQuestionIntent.COMPARE_TODAY_YESTERDAY,
+                LocalQuestionIntent
+                    .COMPARE_TODAY_YESTERDAY,
             period =
                 LocalQuestionPeriod.TODAY,
             text =
                 "Hoje há ${
-                    durationMillisecondsLabel(todayMs)
+                    durationMillisecondsLabel(
+                        todayMs
+                    )
                 } em apps; ontem, ${
-                    durationMillisecondsLabel(yesterdayMs)
+                    durationMillisecondsLabel(
+                        yesterdayMs
+                    )
                 }. Diferença: $differenceText. " +
                     "Período acompanhado: hoje ${
                         trackingDurationLabel(
@@ -781,26 +1416,9 @@ class LocalQuestionEngine(
         apps: JSONArray
     ): LocalQuestionAnswer {
         val top =
-            if (apps.length() > 0) {
-                val first =
-                    apps.getJSONObject(0)
-
-                val firstMs =
-                    first.optLong(
-                        "foreground_milliseconds",
-                        first.getLong(
-                            "foreground_seconds"
-                        ) * 1000L
-                    )
-
-                "${
-                    first.getString("name")
-                } (${
-                    durationMillisecondsLabel(firstMs)
-                })"
-            } else {
-                "nenhum app com tempo suficiente"
-            }
+            topAppCompact(
+                apps
+            )
 
         return LocalQuestionAnswer(
             intent =
@@ -834,7 +1452,9 @@ class LocalQuestionEngine(
                         "unlock_count"
                     )
                 } desbloqueios. Mais usado: $top. Cobertura ${
-                    coverageLabel(tracking)
+                    coverageLabel(
+                        tracking
+                    )
                 }."
         )
     }
@@ -843,7 +1463,10 @@ class LocalQuestionEngine(
         plan: LocalQuestionPlan,
         apps: JSONArray
     ): LocalQuestionAnswer {
-        if (apps.length() == 0) {
+        if (
+            apps.length() ==
+            0
+        ) {
             return LocalQuestionAnswer(
                 LocalQuestionIntent.TOP_APP,
                 plan.period,
@@ -852,23 +1475,30 @@ class LocalQuestionEngine(
         }
 
         val first =
-            apps.getJSONObject(0)
+            apps.getJSONObject(
+                0
+            )
 
         val firstMs =
             first.optLong(
                 "foreground_milliseconds",
                 first.getLong(
                     "foreground_seconds"
-                ) * 1000L
+                ) *
+                    1000L
             )
 
         return LocalQuestionAnswer(
             LocalQuestionIntent.TOP_APP,
             plan.period,
             "${periodLabel(plan)}: o app mais usado é ${
-                first.getString("name")
+                first.getString(
+                    "name"
+                )
             }, com ${
-                durationMillisecondsLabel(firstMs)
+                durationMillisecondsLabel(
+                    firstMs
+                )
             }."
         )
     }
@@ -877,7 +1507,10 @@ class LocalQuestionEngine(
         plan: LocalQuestionPlan,
         apps: JSONArray
     ): LocalQuestionAnswer {
-        if (apps.length() == 0) {
+        if (
+            apps.length() ==
+            0
+        ) {
             return LocalQuestionAnswer(
                 LocalQuestionIntent.TOP_APPS,
                 plan.period,
@@ -890,29 +1523,39 @@ class LocalQuestionEngine(
                 5,
                 apps.length()
             )
+
         val lines =
-            mutableListOf<String>()
+            mutableListOf<
+                String
+                >()
 
         for (
             index in
             0 until count
         ) {
             val item =
-                apps.getJSONObject(index)
+                apps.getJSONObject(
+                    index
+                )
 
             val millis =
                 item.optLong(
                     "foreground_milliseconds",
                     item.getLong(
                         "foreground_seconds"
-                    ) * 1000L
+                    ) *
+                        1000L
                 )
 
             lines +=
                 "${index + 1}. ${
-                    item.getString("name")
+                    item.getString(
+                        "name"
+                    )
                 } — ${
-                    durationMillisecondsLabel(millis)
+                    durationMillisecondsLabel(
+                        millis
+                    )
                 }"
         }
 
@@ -920,9 +1563,46 @@ class LocalQuestionEngine(
             LocalQuestionIntent.TOP_APPS,
             plan.period,
             "${periodLabel(plan)} — mais usados:\n${
-                lines.joinToString("\n")
+                lines.joinToString(
+                    "\n"
+                )
             }"
         )
+    }
+
+    private fun topAppCompact(
+        apps: JSONArray
+    ): String {
+        if (
+            apps.length() ==
+            0
+        ) {
+            return "nenhum app com tempo suficiente"
+        }
+
+        val first =
+            apps.getJSONObject(
+                0
+            )
+
+        val millis =
+            first.optLong(
+                "foreground_milliseconds",
+                first.getLong(
+                    "foreground_seconds"
+                ) *
+                    1000L
+            )
+
+        return "${
+            first.getString(
+                "name"
+            )
+        } (${
+            durationMillisecondsLabel(
+                millis
+            )
+        })"
     }
 
     private fun coverageAnswer(
@@ -930,11 +1610,17 @@ class LocalQuestionEngine(
         tracking: JSONObject
     ): String =
         "${periodLabel(plan)}: cobertura ${
-            coverageLabel(tracking)
+            coverageLabel(
+                tracking
+            )
         }, com ${
-            unclassifiedDurationLabel(tracking)
+            unclassifiedDurationLabel(
+                tracking
+            )
         } não classificados em ${
-            trackingDurationLabel(tracking)
+            trackingDurationLabel(
+                tracking
+            )
         } efetivamente acompanhados."
 
     private fun summaryMilliseconds(
@@ -952,7 +1638,8 @@ class LocalQuestionEngine(
         } else {
             summary.getLong(
                 "${keyPrefix}_seconds"
-            ) * 1000L
+            ) *
+                1000L
         }
 
     private fun trackingDurationLabel(
@@ -1035,15 +1722,24 @@ class LocalQuestionEngine(
             0 until apps.length()
         ) {
             val item =
-                apps.getJSONObject(index)
-            val label =
-                LocalQuestionIntentParser.normalize(
-                    item.getString("name")
+                apps.getJSONObject(
+                    index
                 )
 
-            if (label.isNotBlank()) {
+            val label =
+                LocalQuestionIntentParser
+                    .normalize(
+                        item.getString(
+                            "name"
+                        )
+                    )
+
+            if (
+                label.isNotBlank()
+            ) {
                 candidates +=
-                    label to item
+                    label to
+                    item
             }
         }
 
@@ -1052,9 +1748,10 @@ class LocalQuestionEngine(
                 it.first.length
             }
             .firstOrNull {
-                normalizedQuestion.contains(
-                    it.first
-                )
+                normalizedQuestion
+                    .contains(
+                        it.first
+                    )
             }
             ?.second
     }
@@ -1062,49 +1759,136 @@ class LocalQuestionEngine(
     private fun periodLabel(
         plan: LocalQuestionPlan
     ): String =
-        when (plan.period) {
+        when (
+            plan.period
+        ) {
             LocalQuestionPeriod.TODAY ->
                 "Hoje"
+
             LocalQuestionPeriod.YESTERDAY ->
                 "Ontem"
+
             LocalQuestionPeriod.LAST_24_HOURS ->
                 "Nas últimas 24 horas"
+
             LocalQuestionPeriod.LAST_7_DAYS ->
                 "Nos últimos 7 dias"
+
             LocalQuestionPeriod.ROLLING_HOURS ->
                 "Nas últimas ${plan.amount} horas"
+
             LocalQuestionPeriod.ROLLING_DAYS ->
                 "Nos últimos ${plan.amount} dias"
+
+            LocalQuestionPeriod.CALENDAR_DAY ->
+                "Em ${
+                    calendarDateLabel(
+                        plan.calendarStart
+                    )
+                }"
+
+            LocalQuestionPeriod.CALENDAR_RANGE ->
+                "De ${
+                    calendarDateLabel(
+                        plan.calendarStart
+                    )
+                } a ${
+                    calendarDateLabel(
+                        plan.calendarEnd
+                    )
+                }"
         }
 
     private fun periodLabelLower(
         plan: LocalQuestionPlan
     ): String =
-        when (plan.period) {
+        when (
+            plan.period
+        ) {
             LocalQuestionPeriod.TODAY ->
                 "hoje"
+
             LocalQuestionPeriod.YESTERDAY ->
                 "ontem"
+
             LocalQuestionPeriod.LAST_24_HOURS ->
                 "últimas 24 horas"
+
             LocalQuestionPeriod.LAST_7_DAYS ->
                 "últimos 7 dias"
+
             LocalQuestionPeriod.ROLLING_HOURS ->
                 "últimas ${plan.amount} horas"
+
             LocalQuestionPeriod.ROLLING_DAYS ->
                 "últimos ${plan.amount} dias"
+
+            LocalQuestionPeriod.CALENDAR_DAY ->
+                calendarDateLabel(
+                    plan.calendarStart
+                )
+
+            LocalQuestionPeriod.CALENDAR_RANGE ->
+                "${
+                    calendarDateLabel(
+                        plan.calendarStart
+                    )
+                } a ${
+                    calendarDateLabel(
+                        plan.calendarEnd
+                    )
+                }"
         }
 
-    private fun helpText(): String =
-        "Tente: “Resumo de hoje”, “Top 5 das últimas 6 horas”, “Insights dos últimos 3 dias”, “Quanto tempo usei o Chrome Dev nas últimas 2 horas?”, “Compare hoje com ontem” ou “Qual a cobertura das últimas 24 horas?”. Perguntas não são salvas."
+    private fun calendarDateLabel(
+        value: LocalCalendarDate?
+    ): String {
+        if (
+            value ==
+            null
+        ) {
+            return "data"
+        }
+
+        val day =
+            value.day
+                .toString()
+                .padStart(
+                    2,
+                    '0'
+                )
+
+        val month =
+            value.month
+                .toString()
+                .padStart(
+                    2,
+                    '0'
+                )
+
+        return if (
+            value.year !=
+            null
+        ) {
+            "$day/$month/${value.year}"
+        } else {
+            "$day/$month"
+        }
+    }
+
+    private fun helpText():
+        String =
+        "Tente: “Resumo de 25/09”, “Top 5 de 25/09/2026”, “Insights de 24/09 a 26/09”, “Top 5 das últimas 6 horas”, “Quanto tempo usei o Chrome Dev nas últimas 2 horas?”, “Compare hoje com ontem” ou “Compare as últimas 24 horas com as 24 anteriores”. Perguntas não são salvas."
 
     private fun startOfDay(
         nowMs: Long
     ): Long =
-        Calendar.getInstance()
+        Calendar
+            .getInstance()
             .apply {
                 timeInMillis =
                     nowMs
+
                 set(
                     Calendar.HOUR_OF_DAY,
                     0
@@ -1135,18 +1919,25 @@ class LocalQuestionEngine(
     private fun durationLabel(
         seconds: Long
     ): String {
-        if (seconds < 60L) {
+        if (
+            seconds <
+            60L
+        ) {
             return "${seconds}s"
         }
 
         val minutes =
             seconds /
                 60L
+
         val remainingSeconds =
             seconds %
                 60L
 
-        if (minutes < 60L) {
+        if (
+            minutes <
+            60L
+        ) {
             return if (
                 remainingSeconds ==
                 0L
@@ -1160,6 +1951,7 @@ class LocalQuestionEngine(
         val hours =
             minutes /
                 60L
+
         val remainingMinutes =
             minutes %
                 60L

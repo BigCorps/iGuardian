@@ -1,13 +1,5 @@
-# Privacy Model — Guardian 0.1.11
+# Privacy Model — Guardian 0.1.12 AutoTest Bundle
 
-No privacy expansion.
+No privacy/permission expansion. Validation inspects already-sanitized local report/diagnostic data and never attempts to reconstruct PRIVATE/SYSTEM identity.
 
-Flexible periods only change local date-range calculations over already-sanitized data.
-
-User questions:
-- remain in memory;
-- are not stored;
-- are not transmitted;
-- are not included in diagnostics.
-
-PRIVATE/SYSTEM identities remain unavailable to the question engine.
+Automatic insight cards and tests use fixed internal prompts. User-entered questions remain memory-only and are not stored/transmitted.

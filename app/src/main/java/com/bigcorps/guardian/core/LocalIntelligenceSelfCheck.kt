@@ -3,6 +3,10 @@ package com.bigcorps.guardian.core
 import android.content.Context
 import org.json.JSONArray
 import org.json.JSONObject
+import java.text.SimpleDateFormat
+import java.util.Calendar
+import java.util.Date
+import java.util.Locale
 
 object LocalIntelligenceSelfCheck {
     private data class Expected(
@@ -15,8 +19,43 @@ object LocalIntelligenceSelfCheck {
 
     fun run(
         context: Context,
-        nowMs: Long = System.currentTimeMillis()
+        nowMs: Long =
+            System.currentTimeMillis()
     ): JSONObject {
+        val format =
+            SimpleDateFormat(
+                "dd/MM/yyyy",
+                Locale.US
+            )
+
+        val yesterdayMs =
+            Calendar
+                .getInstance()
+                .apply {
+                    timeInMillis =
+                        nowMs
+
+                    add(
+                        Calendar.DAY_OF_YEAR,
+                        -1
+                    )
+                }
+                .timeInMillis
+
+        val yesterday =
+            format.format(
+                Date(
+                    yesterdayMs
+                )
+            )
+
+        val today =
+            format.format(
+                Date(
+                    nowMs
+                )
+            )
+
         val expected =
             listOf(
                 Expected(
@@ -47,10 +86,29 @@ object LocalIntelligenceSelfCheck {
                     3
                 ),
                 Expected(
+                    "calendar_day",
+                    "Resumo de $yesterday",
+                    LocalQuestionIntent.SUMMARY,
+                    LocalQuestionPeriod.CALENDAR_DAY
+                ),
+                Expected(
+                    "calendar_range",
+                    "Insights de $yesterday a $today",
+                    LocalQuestionIntent.INSIGHTS,
+                    LocalQuestionPeriod.CALENDAR_RANGE
+                ),
+                Expected(
                     "compare_today_yesterday",
                     "Compare hoje com ontem",
                     LocalQuestionIntent.COMPARE_TODAY_YESTERDAY,
                     LocalQuestionPeriod.TODAY
+                ),
+                Expected(
+                    "compare_last_24h",
+                    "Compare as últimas 24 horas com as 24 anteriores",
+                    LocalQuestionIntent.COMPARE_LAST_24H_PREVIOUS_24H,
+                    LocalQuestionPeriod.LAST_24_HOURS,
+                    24
                 )
             )
 
@@ -63,9 +121,10 @@ object LocalIntelligenceSelfCheck {
         expected.forEach {
             item ->
             val plan =
-                LocalQuestionIntentParser.plan(
-                    item.question
-                )
+                LocalQuestionIntentParser
+                    .plan(
+                        item.question
+                    )
 
             val answer =
                 runCatching {
@@ -79,8 +138,10 @@ object LocalIntelligenceSelfCheck {
                     .getOrNull()
 
             val amountPassed =
-                item.amount == 0 ||
-                    plan.amount == item.amount
+                item.amount ==
+                    0 ||
+                    plan.amount ==
+                    item.amount
 
             val itemPassed =
                 plan.intent ==
@@ -105,6 +166,7 @@ object LocalIntelligenceSelfCheck {
                         "check",
                         item.id
                     )
+
                     put(
                         "passed",
                         itemPassed
@@ -118,10 +180,12 @@ object LocalIntelligenceSelfCheck {
                 "passed",
                 passed
             )
+
             put(
                 "checks",
                 checks
             )
+
             put(
                 "user_query_content_stored",
                 false

@@ -260,8 +260,7 @@ class ReportGenerator(private val context: Context) {
         val topApps = appMap.mapNotNull { (pkg, agg) ->
             val seconds = agg.millis / 1000L
 
-            // Do not show zero-second transition artifacts as "used apps".
-            if (seconds <= 0L) {
+            if (agg.millis <= 0L) {
                 null
             } else {
                 AppAggregate(
@@ -272,7 +271,7 @@ class ReportGenerator(private val context: Context) {
                     sessions = agg.sessions
                 )
             }
-        }.sortedByDescending { it.seconds }
+        }.sortedByDescending { it.milliseconds }
 
         return Summary(
             appMilliseconds = appMs,

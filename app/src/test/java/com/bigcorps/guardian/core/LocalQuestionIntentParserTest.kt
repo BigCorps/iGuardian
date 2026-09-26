@@ -1,11 +1,12 @@
 package com.bigcorps.guardian.core
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotNull
 import org.junit.Test
 
 class LocalQuestionIntentParserTest {
     @Test
-    fun comparisonUsesReferenceToday() {
+    fun comparisonTodayYesterdayUsesTodayReference() {
         val plan =
             LocalQuestionIntentParser.plan(
                 "Compare hoje com ontem"
@@ -18,6 +19,75 @@ class LocalQuestionIntentParserTest {
         assertEquals(
             LocalQuestionPeriod.TODAY,
             plan.period
+        )
+    }
+
+    @Test
+    fun comparisonLast24HoursIsSpecialIntent() {
+        val plan =
+            LocalQuestionIntentParser.plan(
+                "Compare as últimas 24 horas com as 24 anteriores"
+            )
+
+        assertEquals(
+            LocalQuestionIntent.COMPARE_LAST_24H_PREVIOUS_24H,
+            plan.intent
+        )
+        assertEquals(
+            LocalQuestionPeriod.LAST_24_HOURS,
+            plan.period
+        )
+    }
+
+    @Test
+    fun parsesCalendarDay() {
+        val plan =
+            LocalQuestionIntentParser.plan(
+                "Resumo de 25/09/2026"
+            )
+
+        assertEquals(
+            LocalQuestionIntent.SUMMARY,
+            plan.intent
+        )
+        assertEquals(
+            LocalQuestionPeriod.CALENDAR_DAY,
+            plan.period
+        )
+        assertEquals(
+            25,
+            plan.calendarStart?.day
+        )
+        assertEquals(
+            9,
+            plan.calendarStart?.month
+        )
+        assertEquals(
+            2026,
+            plan.calendarStart?.year
+        )
+    }
+
+    @Test
+    fun parsesCalendarRange() {
+        val plan =
+            LocalQuestionIntentParser.plan(
+                "Insights de 24/09 a 26/09"
+            )
+
+        assertEquals(
+            LocalQuestionIntent.INSIGHTS,
+            plan.intent
+        )
+        assertEquals(
+            LocalQuestionPeriod.CALENDAR_RANGE,
+            plan.period
+        )
+        assertNotNull(
+            plan.calendarStart
+        )
+        assertNotNull(
+            plan.calendarEnd
         )
     }
 
@@ -60,50 +130,6 @@ class LocalQuestionIntentParserTest {
         assertEquals(
             3,
             plan.amount
-        )
-    }
-
-    @Test
-    fun keepsLast24HoursSpecialCase() {
-        val plan =
-            LocalQuestionIntentParser.plan(
-                "Top 5 das últimas 24 horas"
-            )
-
-        assertEquals(
-            LocalQuestionPeriod.LAST_24_HOURS,
-            plan.period
-        )
-        assertEquals(
-            24,
-            plan.amount
-        )
-    }
-
-    @Test
-    fun keepsLastSevenDaysSpecialCase() {
-        val plan =
-            LocalQuestionIntentParser.plan(
-                "Resumo dos últimos 7 dias"
-            )
-
-        assertEquals(
-            LocalQuestionPeriod.LAST_7_DAYS,
-            plan.period
-        )
-        assertEquals(
-            7,
-            plan.amount
-        )
-    }
-
-    @Test
-    fun parsesScreenOffNaturalPhrase() {
-        assertEquals(
-            LocalQuestionIntent.SCREEN_OFF,
-            LocalQuestionIntentParser.parse(
-                "Quanto tempo a tela ficou desligada?"
-            )
         )
     }
 

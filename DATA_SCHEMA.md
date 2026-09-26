@@ -1,7 +1,7 @@
-# Data Schema — report v3 / DB v5 / diagnostic v9
+# Data Schema — report v3 / DB v5 / diagnostic v11 / validation pack v1
 
-Report schema remains v3 with millisecond precision.
+Report v3 retains millisecond precision and compatibility seconds/minutes. Sub-second APP aggregates are retained in apps[].
 
-Diagnostic v9 adds Local Intelligence v4 capability flags for flexible rolling hours/days.
+Diagnostic v11 advertises Local Intelligence v5, automatic insight cards and validation-pack capability.
 
-No new persistent query/history table is added.
+Validation pack v1 contains `validation`, `auto_insights`, `daily_report` and `diagnostic`.
