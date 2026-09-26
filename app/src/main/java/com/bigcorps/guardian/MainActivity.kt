@@ -46,6 +46,8 @@ class MainActivity : Activity() {
     private lateinit var automaticInsightText: TextView
     private lateinit var automaticTrendText: TextView
     private lateinit var automaticWeeklyTrendText: TextView
+    private lateinit var automaticAppTrend24Text: TextView
+    private lateinit var automaticAppTrend7Text: TextView
     @Volatile
     private var exportInProgress = false
 
@@ -287,6 +289,60 @@ class MainActivity : Activity() {
                     }
 
                 addView(automaticWeeklyTrendText)
+
+                addView(
+                    textView(
+                        "Tendências por aplicativo",
+                        13f,
+                        true,
+                        TEXT_PRIMARY
+                    ).apply {
+                        setPadding(
+                            0,
+                            dp(14),
+                            0,
+                            0
+                        )
+                    }
+                )
+
+                automaticAppTrend24Text =
+                    textView(
+                        "",
+                        13f,
+                        false,
+                        TEXT_MUTED
+                    ).apply {
+                        setPadding(
+                            0,
+                            dp(8),
+                            0,
+                            0
+                        )
+                    }
+
+                addView(
+                    automaticAppTrend24Text
+                )
+
+                automaticAppTrend7Text =
+                    textView(
+                        "",
+                        13f,
+                        false,
+                        TEXT_MUTED
+                    ).apply {
+                        setPadding(
+                            0,
+                            dp(8),
+                            0,
+                            0
+                        )
+                    }
+
+                addView(
+                    automaticAppTrend7Text
+                )
             }
         )
 
@@ -300,7 +356,7 @@ class MainActivity : Activity() {
             card().apply {
                 addView(
                     textView(
-                        "Inteligência local v8 • tendências só com histórico suficiente • sem internet",
+                        "Inteligência local v8 • tendências gerais e por app • sem internet",
                         12f,
                         true,
                         PRIMARY
@@ -561,6 +617,21 @@ class MainActivity : Activity() {
                         "Compare os últimos 7 dias com os 7 anteriores"
                     ).text
 
+                val appTrendEngine =
+                    AppTrendEngine(
+                        applicationContext
+                    )
+
+                val appTrend24 =
+                    appTrendEngine.summaryText(
+                        AppTrendPeriod.LAST_24_HOURS
+                    )
+
+                val appTrend7 =
+                    appTrendEngine.summaryText(
+                        AppTrendPeriod.LAST_7_DAYS
+                    )
+
                 runOnUiThread {
                     automaticInsightText.text =
                         insight
@@ -570,6 +641,12 @@ class MainActivity : Activity() {
 
                     automaticWeeklyTrendText.text =
                         weeklyTrend
+
+                    automaticAppTrend24Text.text =
+                        appTrend24
+
+                    automaticAppTrend7Text.text =
+                        appTrend7
                 }
             } catch (_: Throwable) {
                 runOnUiThread {
@@ -580,6 +657,12 @@ class MainActivity : Activity() {
                         ""
 
                     automaticWeeklyTrendText.text =
+                        ""
+
+                    automaticAppTrend24Text.text =
+                        ""
+
+                    automaticAppTrend7Text.text =
                         ""
                 }
             }

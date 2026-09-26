@@ -1,7 +1,10 @@
-# Static validation — 0.1.15
+# Static validation — 0.1.16
+
+Action #39 targeted compile-symbol audit included.
 
 - `app/src/main/java/com/bigcorps/guardian/GuardianApplication.kt`: braces=0; parens=0
 - `app/src/main/java/com/bigcorps/guardian/MainActivity.kt`: braces=0; parens=0
+- `app/src/main/java/com/bigcorps/guardian/core/AppTrendEngine.kt`: braces=0; parens=0
 - `app/src/main/java/com/bigcorps/guardian/core/DiagnosticsGenerator.kt`: braces=0; parens=0
 - `app/src/main/java/com/bigcorps/guardian/core/GuardianDatabase.kt`: braces=0; parens=0
 - `app/src/main/java/com/bigcorps/guardian/core/GuardianJobService.kt`: braces=0; parens=0

@@ -52,4 +52,25 @@ class HistoryReadinessTest {
         )
     }
 
+    @Test
+    fun readinessBoundaryRequiresNinetyNinePercentHistory() {
+        assertFalse(
+            HistoryReadiness.canCompare(
+                98.9,
+                100.0,
+                99.0,
+                99.0
+            )
+        )
+
+        assertTrue(
+            HistoryReadiness.canCompare(
+                99.0,
+                99.0,
+                90.0,
+                90.0
+            )
+        )
+    }
+
 }

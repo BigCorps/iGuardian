@@ -1,15 +1,12 @@
-# Data Schema — report v4 / DB v7 / diagnostic v14 / validation-pack v4
+# Data Schema — report v4 / DB v7 / diagnostic v15 / validation-pack v5
 
 Report schema remains v4.
+DB remains v7.
 
-DB v7:
-- historical `com.miui.android.fashiongallery` APP intervals -> SYSTEM
-- package/name removed
+Diagnostic v15 adds AppTrendEngine capability/version.
 
-Diagnostic v14:
-- Local Intelligence v8
-- SystemSurfaceClassifier v5
-- ValidationSuite v4
-- all-comparison history-readiness capability
+Validation pack v5 adds:
+- app_trends.last_24h
+- app_trends.last_7d
 
-Validation pack v4 keeps one-file validation.
+Each trend contains readiness/history/coverage and deterministic deltas.

@@ -1,77 +1,77 @@
-# Guardian DEV — Android 0.1.15 — Complete History Guard
+# Guardian DEV — Android 0.1.16 — App Trends AutoTest
 
-## 0.1.14 physical result
+This build intentionally supersedes the failed 0.1.15 build.
 
-The 0.1.14 validation pack proved that the automated validation strategy is
-working: it caught one real semantic regression without manual reproduction.
+## Action #39 fix
 
-Result:
-- 11 PASS
-- 0 WARN
-- 1 FAIL
-- only failure: `comparison_history_guard`
+The 0.1.15 source accidentally left generic placeholders (`intent`, `period`,
+`currentLabel`, `previousLabel`) inside the dedicated 24-hour comparison
+method. Kotlin compilation therefore failed before tests could run.
 
-24h behaved correctly:
-- current 24h history availability: 100.0%
-- previous 24h: 92.0%
-- Guardian blocked the comparison.
+0.1.16 fixes that exact method and keeps the generic history guard only in
+the generic comparison path.
 
-7d did not:
-- current 7d availability: 27.4%
-- previous 7d: 0.0%
-- Guardian still produced a numeric delta.
+## Product advance in the same build
 
-Root cause:
-the 24h and today/yesterday methods had explicit maturity guards, while the
-generic comparison path used by 7d/calendar comparisons did not.
+### Per-app trend engine v1
 
-## 0.1.15
-
-### Local Intelligence v8
-
-History readiness is now enforced centrally on the generic comparison path.
-
-This protects:
+The Guardian can now compare application usage between:
+- last 24h vs previous 24h
 - last 7d vs previous 7d
-- calendar day vs calendar day
-- calendar range vs calendar range
 
-The engine refuses a delta until both compared periods have:
-- >= 99% requested-history availability
-- >= 90% classified-data coverage
+It reports only meaningful changes of at least 1 minute.
 
-### AutoTest Suite v4
+When history is mature it can show up to:
+- top 3 increases
+- top 3 decreases
 
-The history-guard check now validates:
+When history is incomplete it shows `histórico insuficiente` instead of
+inventing a delta.
+
+### Automatic dashboard
+
+The existing automatic insights card now also shows per-app trends for:
 - 24h
 - 7d
-- calendar comparison using dates guaranteed to precede tracking start
 
-A single validation pack remains sufficient.
+No manual question is required.
 
-### System cleanup
+### AutoTest Suite v5
 
-`com.miui.android.fashiongallery` is the Xiaomi lock-screen Wallpaper Carousel.
-It is now classified as SYSTEM rather than APP.
+The suite now validates the app-trend engine itself:
+- readiness must match report history/coverage
+- incomplete trends must contain no deltas
+- increases must be positive
+- decreases must be negative
+- ordering must be deterministic
 
-DB v7 repairs already stored rows and removes their identity.
+### Validation pack v5
 
-### Unchanged
+The one-file validation export now includes:
+- `app_trends.last_24h`
+- `app_trends.last_7d`
 
+with readiness, history percentages, coverage and app deltas.
+
+## Existing protections kept
+
+- history guard across 24h/7d/calendar comparisons
+- report schema v4
+- DB v7 system cleanup
+- Xiaomi Wallpaper Carousel classified as SYSTEM
 - no INTERNET
 - no QUERY_ALL_PACKAGES
 - no backend/cloud
-- WorkManager scheduling unchanged
-- report schema remains v4
+- WorkManager unchanged
 
-## Test
+## Test flow
 
-Install directly over 0.1.14.
+Upload this package.
 
-No manual question testing is needed.
+After GitHub Actions passes, install directly over 0.1.14.
+There is no 0.1.15 APK to install because its Action failed.
 
-Use normally for ~60–90 minutes and export one
+Use normally for ~60–90 minutes and export only the recommended
 `guardian-validacao-*.json`.
 
-Expected result:
-`critical_passed=true` and `manual_test_required=false`.
+No question-by-question testing is required.

@@ -13,7 +13,7 @@ object ValidationSuite {
     private const val PASS = "PASS"
     private const val WARN = "WARN"
     private const val FAIL = "FAIL"
-    private const val SUITE_VERSION = 4
+    private const val SUITE_VERSION = 5
 
     fun run(
         context: Context,
@@ -41,6 +41,7 @@ object ValidationSuite {
         validateLocalIntelligence(diagnostic, ::add)
         validateProductCapabilities(diagnostic, ::add)
         validateComparisonHistoryGuard(context, ::add)
+        validateAppTrendEngine(context, ::add)
         validateSystemSurfaceExclusion(daily, ::add)
         validateBackground(diagnostic, ::add)
         validateCoverage(daily, ::add)
@@ -599,6 +600,171 @@ object ValidationSuite {
                 "comparison_history_guard",
                 FAIL,
                 "guard24=$guard24;expected24=$expected24;guard7=$guard7;expected7=$expected7;guard_calendar=$guardCalendar"
+            )
+        }
+    }
+
+    private fun validateAppTrendEngine(
+        context: Context,
+        add: (String, String, String) -> Unit
+    ) {
+        val engine =
+            AppTrendEngine(
+                context
+            )
+
+        val now =
+            System.currentTimeMillis()
+
+        fun expectedReady(
+            durationMs: Long
+        ): Boolean {
+            val generator =
+                ReportGenerator(
+                    context
+                )
+
+            val current =
+                generator.periodJson(
+                    now - durationMs,
+                    now
+                )
+                    .getJSONObject(
+                        "tracking"
+                    )
+
+            val previous =
+                generator.periodJson(
+                    now - 2L * durationMs,
+                    now - durationMs
+                )
+                    .getJSONObject(
+                        "tracking"
+                    )
+
+            return HistoryReadiness.canCompare(
+                current.optDouble(
+                    "history_availability_percent",
+                    0.0
+                ),
+                previous.optDouble(
+                    "history_availability_percent",
+                    0.0
+                ),
+                current.optDouble(
+                    "coverage_percent",
+                    0.0
+                ),
+                previous.optDouble(
+                    "coverage_percent",
+                    0.0
+                )
+            )
+        }
+
+        val dayMs =
+            24L *
+                60L *
+                60L *
+                1000L
+
+        val result24 =
+            engine.analyze(
+                AppTrendPeriod.LAST_24_HOURS,
+                now
+            )
+
+        val result7 =
+            engine.analyze(
+                AppTrendPeriod.LAST_7_DAYS,
+                now
+            )
+
+        fun orderingValid(
+            result: AppTrendResult
+        ): Boolean {
+            if (
+                !result.ready
+            ) {
+                return result.increases.isEmpty() &&
+                    result.decreases.isEmpty() &&
+                    result.changedAppsCount == 0
+            }
+
+            val positive =
+                result.increases.all {
+                    it.deltaMilliseconds >
+                        0L
+                }
+
+            val negative =
+                result.decreases.all {
+                    it.deltaMilliseconds <
+                        0L
+                }
+
+            val increasesSorted =
+                result.increases
+                    .zipWithNext()
+                    .all {
+                        (a, b) ->
+                        a.deltaMilliseconds >=
+                            b.deltaMilliseconds
+                    }
+
+            val decreasesSorted =
+                result.decreases
+                    .zipWithNext()
+                    .all {
+                        (a, b) ->
+                        a.deltaMilliseconds <=
+                            b.deltaMilliseconds
+                    }
+
+            return positive &&
+                negative &&
+                increasesSorted &&
+                decreasesSorted &&
+                result.changedAppsCount ==
+                    result.increases.size +
+                    result.decreases.size
+        }
+
+        val expected24 =
+            expectedReady(
+                dayMs
+            )
+
+        val expected7 =
+            expectedReady(
+                7L * dayMs
+            )
+
+        val pass =
+            result24.ready ==
+                expected24 &&
+                result7.ready ==
+                    expected7 &&
+                orderingValid(
+                    result24
+                ) &&
+                orderingValid(
+                    result7
+                )
+
+        if (
+            pass
+        ) {
+            add(
+                "app_trend_engine_v1",
+                PASS,
+                "Tendências por app respeitam maturidade do histórico, sinal do delta e ordenação."
+            )
+        } else {
+            add(
+                "app_trend_engine_v1",
+                FAIL,
+                "ready24=${result24.ready};expected24=$expected24;ready7=${result7.ready};expected7=$expected7"
             )
         }
     }

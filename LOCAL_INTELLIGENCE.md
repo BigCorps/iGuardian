@@ -1,19 +1,22 @@
-# Local Intelligence v8 — 0.1.15
+# Local Intelligence v8 + App Trend Engine v1 — 0.1.16
 
-All comparison families are now history-maturity aware.
-
-Protected comparisons:
+## History-safe comparisons
 - today vs yesterday
 - last 24h vs previous 24h
 - last 7d vs previous 7d
-- calendar day vs day
-- calendar range vs range
+- calendar day/range comparisons
 
-Minimums:
-- 99% requested-history availability in both periods
-- 90% classified-data coverage in both periods
+## New per-app trend layer
 
-Incomplete periods return `Histórico insuficiente...` instead of a misleading
-numeric delta.
+AppTrendEngine compares sanitized APP aggregates across equivalent periods.
 
-Questions remain local and non-persistent.
+Supported:
+- last 24h vs previous 24h
+- last 7d vs previous 7d
+
+Rules:
+- requires HistoryReadiness
+- ignores deltas below 1 minute
+- top increases/decreases only
+- no behavioral score or judgment
+- no query persistence/network

@@ -1,8 +1,9 @@
-# Guardian Android 0.1.15
+# Guardian Android 0.1.16
 
-This build fixes the single AutoTest failure found by 0.1.14.
+This is not a small 0.1.15 correction package.
 
-No manual reproduction is needed.
+It fixes Action #39 and advances the next product stage in the same build:
+per-app trend analytics + automatic dashboard + AutoTest v5.
 
 Expected Actions artifact:
-guardian-android-0.1.15-fixed-signed-debug
+guardian-android-0.1.16-fixed-signed-debug

@@ -1,16 +1,14 @@
 # Changelog
 
-## 0.1.15 — 2026-09-26
+## 0.1.16 — 2026-09-26
 
-- versionCode 16 / versionName 0.1.15.
-- Diagnostic schema v14.
-- Validation pack schema v4.
-- ValidationSuite v4.
-- DB v7.
-- Local Intelligence v8.
-- SystemSurfaceClassifier v5.
-- Added history-readiness guard to generic 7d/calendar comparisons.
-- Added calendar history-guard AutoTest.
-- Reclassified Xiaomi Wallpaper Carousel as SYSTEM.
-- Historical Wallpaper Carousel rows are sanitized on DB migration.
+- versionCode 17 / versionName 0.1.16.
+- Fixed Action #39 24h comparison compile error.
+- Diagnostic schema v15.
+- Validation pack schema v5.
+- ValidationSuite v5.
+- Added AppTrendEngine v1.
+- Added automatic per-app 24h/7d trend cards.
+- Added runtime validation for trend readiness/sign/order.
+- Kept DB v7 and report schema v4.
 - No scheduler, permission, network or backend change.

@@ -1156,11 +1156,12 @@ class LocalQuestionEngine(
         ) {
             return LocalQuestionAnswer(
                 intent =
-                    intent,
+                    LocalQuestionIntent
+                        .COMPARE_LAST_24H_PREVIOUS_24H,
                 period =
-                    period,
+                    LocalQuestionPeriod.LAST_24_HOURS,
                 text =
-                    "Histórico insuficiente para comparar $currentLabel com $previousLabel com segurança. " +
+                    "Histórico insuficiente para comparar as últimas 24 horas com as 24 horas anteriores com segurança. " +
                         "Disponibilidade do histórico: ${
                             percentLabel(
                                 currentHistory
