@@ -5,17 +5,24 @@ Approved.
 
 ## Phase 2 — Local Intelligence / Insights — ACTIVE
 
-0.1.16 combines:
-- complete history guards
-- automatic per-app 24h/7d trends
-- AppTrendEngine runtime validation
-- one-file AutoTest evidence
+Validated through 0.1.16:
+- sanitized local timeline
+- report v4
+- mature-history comparisons
+- AppTrendEngine
+- one-file automated validation
+
+0.1.17:
+- selectable 24h/7d trend dashboard
+- per-app trend detail
+- TrendDashboardEngine AutoTest
+- dashboard evidence in validation pack
 
 Next after validation:
-- selectable dashboard periods
-- per-app detail view
-- richer daily/weekly cards
-- absolute custom-range trend UI
+- richer per-app detail screen
+- selectable custom comparison ranges
+- daily/weekly local summary cards
+- UI polish toward public beta
 
 ## Phase 3 — Android hardening / Store
 Additional OEMs, timezone/date changes, final branding/signing/AAB.

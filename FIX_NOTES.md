@@ -1,9 +1,9 @@
-# Guardian Android 0.1.16
+# Guardian Android 0.1.17
 
-This is not a small 0.1.15 correction package.
+0.1.16 fully passed runtime AutoTest.
 
-It fixes Action #39 and advances the next product stage in the same build:
-per-app trend analytics + automatic dashboard + AutoTest v5.
+0.1.17 advances the product instead of spending a build on maintenance:
+selectable trend periods + per-app detail + automated dashboard validation.
 
 Expected Actions artifact:
-guardian-android-0.1.16-fixed-signed-debug
+guardian-android-0.1.17-fixed-signed-debug

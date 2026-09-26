@@ -1,12 +1,18 @@
-# Data Schema — report v4 / DB v7 / diagnostic v15 / validation-pack v5
+# Data Schema — report v4 / DB v7 / diagnostic v16 / validation-pack v6
 
-Report schema remains v4.
-DB remains v7.
+No report or database schema change.
 
-Diagnostic v15 adds AppTrendEngine capability/version.
+Diagnostic v16 adds TrendDashboardEngine capabilities.
 
-Validation pack v5 adds:
-- app_trends.last_24h
-- app_trends.last_7d
+Validation pack v6 adds:
+- trend_dashboard.last_24h
+- trend_dashboard.last_7d
 
-Each trend contains readiness/history/coverage and deterministic deltas.
+Dashboard JSON includes:
+- readiness
+- history availability
+- coverage
+- general trend text
+- app trend text
+
+User-entered app detail queries are not persisted.

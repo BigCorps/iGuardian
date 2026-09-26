@@ -1,37 +1,38 @@
-# Validation — Android 0.1.16
+# Validation — Android 0.1.17
 
-## 0.1.14 physical result
+## 0.1.16 physical result
 
-11 PASS / 0 WARN / 1 FAIL.
-
-Only failure:
-`comparison_history_guard`
-because 7d generic comparisons were not yet history guarded.
-
-## 0.1.15 CI result
-
-Action #39 failed at compileDebugKotlin:
-- unresolved `intent`
-- unresolved `period`
-- unresolved `currentLabel`
-- unresolved `previousLabel`
-
-All were inside the dedicated 24h history-insufficient return path.
-
-No APK was produced.
-
-## 0.1.16 acceptance
-
-CI:
-- Kotlin compile PASS
-- unit tests PASS
-- signed APK PASS
-
-Runtime:
+PASS:
 - ValidationSuite v5
-- comparison_history_guard PASS
-- app_trend_engine_v1 PASS
-- system_surface_exclusion PASS
-- privacy/report arithmetic PASS
-- WorkManager remains healthy
+- 13 PASS / 0 WARN / 0 FAIL
+- manual_test_required=false
+- tracking coverage 99.4%
+- 1044 timeline intervals with no overlap/leak/bad duration
+- report arithmetic exact
+- app aggregate arithmetic exact
+- comparison history guard PASS
+- AppTrendEngine v1 PASS
+- system surface exclusion PASS
+- WorkManager PASS
+
+24h app trend:
+- ready=true
+- history 100% vs 100%
+- 16 meaningful changed apps
+
+7d app trend:
+- ready=false
+- history 29.2% vs 0%
+- zero deltas, as required
+
+## 0.1.17 acceptance
+
+- version 0.1.17 / code 18
+- diagnostic schema 16
+- validation suite v6
+- validation pack v6
+- TrendDashboardEngine v1
+- product_capabilities_v8 PASS
+- trend_dashboard_engine_v1 PASS
+- existing 0.1.16 checks remain green
 - manual_test_required=false expected

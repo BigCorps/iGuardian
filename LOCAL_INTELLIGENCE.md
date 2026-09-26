@@ -1,22 +1,27 @@
-# Local Intelligence v8 + App Trend Engine v1 — 0.1.16
+# Local Intelligence v8 + TrendDashboardEngine v1 — 0.1.17
 
-## History-safe comparisons
-- today vs yesterday
-- last 24h vs previous 24h
-- last 7d vs previous 7d
-- calendar day/range comparisons
+## Existing
+- deterministic local questions
+- calendar/rolling periods
+- mature-history comparisons
+- AppTrendEngine 24h/7d
 
-## New per-app trend layer
+## New dashboard layer
 
-AppTrendEngine compares sanitized APP aggregates across equivalent periods.
+Selectable periods:
+- last 24h
+- last 7d
 
-Supported:
-- last 24h vs previous 24h
-- last 7d vs previous 7d
+Dashboard content:
+- general trend
+- top app changes
+- per-app detail lookup
 
-Rules:
-- requires HistoryReadiness
-- ignores deltas below 1 minute
-- top increases/decreases only
-- no behavioral score or judgment
-- no query persistence/network
+Per-app detail reports:
+- current usage
+- previous usage
+- signed difference
+
+Every comparison reuses HistoryReadiness.
+
+No user query persistence, network or behavioral scoring.

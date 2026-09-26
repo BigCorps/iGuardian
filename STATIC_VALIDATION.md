@@ -1,27 +1,8 @@
-# Static validation — 0.1.16
+# Static validation — 0.1.17
 
-Action #39 targeted compile-symbol audit included.
-
-- `app/src/main/java/com/bigcorps/guardian/GuardianApplication.kt`: braces=0; parens=0
-- `app/src/main/java/com/bigcorps/guardian/MainActivity.kt`: braces=0; parens=0
-- `app/src/main/java/com/bigcorps/guardian/core/AppTrendEngine.kt`: braces=0; parens=0
-- `app/src/main/java/com/bigcorps/guardian/core/DiagnosticsGenerator.kt`: braces=0; parens=0
-- `app/src/main/java/com/bigcorps/guardian/core/GuardianDatabase.kt`: braces=0; parens=0
-- `app/src/main/java/com/bigcorps/guardian/core/GuardianJobService.kt`: braces=0; parens=0
-- `app/src/main/java/com/bigcorps/guardian/core/GuardianPrivacyOverride.kt`: braces=0; parens=0
-- `app/src/main/java/com/bigcorps/guardian/core/GuardianRescheduleReceiver.kt`: braces=0; parens=0
-- `app/src/main/java/com/bigcorps/guardian/core/GuardianScheduler.kt`: braces=0; parens=0
-- `app/src/main/java/com/bigcorps/guardian/core/GuardianWorker.kt`: braces=0; parens=0
-- `app/src/main/java/com/bigcorps/guardian/core/HistoryReadiness.kt`: braces=0; parens=0
-- `app/src/main/java/com/bigcorps/guardian/core/LocalIntelligenceSelfCheck.kt`: braces=0; parens=0
-- `app/src/main/java/com/bigcorps/guardian/core/LocalQuestionEngine.kt`: braces=0; parens=0
-- `app/src/main/java/com/bigcorps/guardian/core/Preferences.kt`: braces=0; parens=0
-- `app/src/main/java/com/bigcorps/guardian/core/ReportGenerator.kt`: braces=0; parens=0
-- `app/src/main/java/com/bigcorps/guardian/core/SystemSurfaceClassifier.kt`: braces=0; parens=0
-- `app/src/main/java/com/bigcorps/guardian/core/TimelineNormalizer.kt`: braces=0; parens=0
-- `app/src/main/java/com/bigcorps/guardian/core/UsageCollector.kt`: braces=0; parens=0
-- `app/src/main/java/com/bigcorps/guardian/core/ValidationPackGenerator.kt`: braces=0; parens=0
-- `app/src/main/java/com/bigcorps/guardian/core/ValidationSuite.kt`: braces=0; parens=0
-- `app/src/test/java/com/bigcorps/guardian/core/HistoryReadinessTest.kt`: braces=0; parens=0
-- `app/src/test/java/com/bigcorps/guardian/core/LocalQuestionIntentParserTest.kt`: braces=0; parens=0
-- `app/src/test/java/com/bigcorps/guardian/core/TimelineNormalizerTest.kt`: braces=0; parens=0
+- Kotlin brace/parenthesis structure: PASS
+- TrendDashboardEngine source present: PASS
+- Selectable 24h/7d UI source present: PASS
+- Per-app detail source present: PASS
+- ValidationSuite v6 dashboard check present: PASS
+- Diagnostic/validation-pack capability wiring: PASS

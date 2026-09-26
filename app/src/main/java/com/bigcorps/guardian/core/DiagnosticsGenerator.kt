@@ -38,7 +38,7 @@ class DiagnosticsGenerator(private val context: Context) {
         }
 
         return JSONObject().apply {
-            put("diagnostic_schema", 15)
+            put("diagnostic_schema", 16)
             put("generated_at", iso(System.currentTimeMillis()))
 
             put(
@@ -481,8 +481,12 @@ class DiagnosticsGenerator(private val context: Context) {
                     put("app_trend_engine_version", AppTrendEngine.VERSION)
                     put("app_trend_period_last_24h", true)
                     put("app_trend_period_last_7d", true)
+                    put("trend_dashboard_engine", true)
+                    put("trend_dashboard_engine_version", TrendDashboardEngine.VERSION)
+                    put("trend_dashboard_selectable_periods", true)
+                    put("trend_dashboard_app_detail", true)
                     put("validation_pack_export", true)
-                    put("validation_suite_version", 5)
+                    put("validation_suite_version", 6)
                     put("browser_domains", false)
                     put("anonymous_browser_detection", false)
                     put("anonymous_browser_schema_ready", true)

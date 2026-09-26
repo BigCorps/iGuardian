@@ -13,7 +13,7 @@ object ValidationSuite {
     private const val PASS = "PASS"
     private const val WARN = "WARN"
     private const val FAIL = "FAIL"
-    private const val SUITE_VERSION = 5
+    private const val SUITE_VERSION = 6
 
     fun run(
         context: Context,
@@ -42,6 +42,7 @@ object ValidationSuite {
         validateProductCapabilities(diagnostic, ::add)
         validateComparisonHistoryGuard(context, ::add)
         validateAppTrendEngine(context, ::add)
+        validateTrendDashboardEngine(context, ::add)
         validateSystemSurfaceExclusion(daily, ::add)
         validateBackground(diagnostic, ::add)
         validateCoverage(daily, ::add)
@@ -374,7 +375,12 @@ object ValidationSuite {
                 "local_question_compare_last_7d_previous_7d",
                 "local_question_compare_calendar_periods",
                 "local_question_history_readiness_guard",
+                "local_question_history_readiness_guard_all_comparisons",
                 "automatic_local_insight_cards",
+                "app_trend_engine",
+                "trend_dashboard_engine",
+                "trend_dashboard_selectable_periods",
+                "trend_dashboard_app_detail",
                 "validation_pack_export"
             )
 
@@ -388,17 +394,17 @@ object ValidationSuite {
 
         if (
             engineVersion >=
-            7 &&
+            8 &&
             missing.isEmpty()
         ) {
             add(
-                "product_capabilities_v7",
+                "product_capabilities_v8",
                 PASS,
-                "Engine v$engineVersion com comparações protegidas por maturidade do histórico."
+                "Engine v$engineVersion com comparações maduras, tendências por app e painel selecionável."
             )
         } else {
             add(
-                "product_capabilities_v7",
+                "product_capabilities_v8",
                 FAIL,
                 "engine=$engineVersion;missing=${missing.joinToString(",")}"
             )
@@ -765,6 +771,190 @@ object ValidationSuite {
                 "app_trend_engine_v1",
                 FAIL,
                 "ready24=${result24.ready};expected24=$expected24;ready7=${result7.ready};expected7=$expected7"
+            )
+        }
+    }
+
+    private fun validateTrendDashboardEngine(
+        context: Context,
+        add: (String, String, String) -> Unit
+    ) {
+        val dashboard =
+            TrendDashboardEngine(
+                context
+            )
+
+        val appTrend =
+            AppTrendEngine(
+                context
+            )
+
+        val now =
+            System.currentTimeMillis()
+
+        val snapshot24 =
+            dashboard.snapshot(
+                AppTrendPeriod.LAST_24_HOURS,
+                now
+            )
+
+        val snapshot7 =
+            dashboard.snapshot(
+                AppTrendPeriod.LAST_7_DAYS,
+                now
+            )
+
+        val app24 =
+            appTrend.analyze(
+                AppTrendPeriod.LAST_24_HOURS,
+                now
+            )
+
+        val app7 =
+            appTrend.analyze(
+                AppTrendPeriod.LAST_7_DAYS,
+                now
+            )
+
+        fun textMatchesReadiness(
+            snapshot: TrendDashboardSnapshot
+        ): Boolean {
+            val combined =
+                (
+                    snapshot.generalTrendText +
+                        " " +
+                        snapshot.appTrendText
+                    )
+                    .lowercase(
+                        Locale.ROOT
+                    )
+
+            return if (
+                snapshot.ready
+            ) {
+                combined.isNotBlank() &&
+                    !combined.contains(
+                        "histórico insuficiente"
+                    )
+            } else {
+                combined.contains(
+                    "histórico insuficiente"
+                )
+            }
+        }
+
+        fun detailValid(
+            period: AppTrendPeriod,
+            ready: Boolean,
+            durationMs: Long
+        ): Boolean {
+            val current =
+                ReportGenerator(
+                    context
+                ).periodJson(
+                    now - durationMs,
+                    now
+                )
+
+            val apps =
+                current.getJSONArray(
+                    "apps"
+                )
+
+            val name =
+                if (
+                    apps.length() >
+                    0
+                ) {
+                    apps.getJSONObject(
+                        0
+                    )
+                        .optString(
+                            "name",
+                            "App"
+                        )
+                } else {
+                    "App"
+                }
+
+            val detail =
+                dashboard.appDetailText(
+                    name,
+                    period,
+                    now
+                )
+
+            return if (
+                ready
+            ) {
+                if (
+                    apps.length() ==
+                    0
+                ) {
+                    detail.isNotBlank()
+                } else {
+                    detail.contains(
+                        name,
+                        ignoreCase =
+                            true
+                    ) &&
+                        !detail.contains(
+                            "Histórico insuficiente",
+                            ignoreCase =
+                                true
+                        )
+                }
+            } else {
+                detail.contains(
+                    "Histórico insuficiente",
+                    ignoreCase =
+                        true
+                )
+            }
+        }
+
+        val dayMs =
+            24L *
+                60L *
+                60L *
+                1000L
+
+        val pass =
+            snapshot24.ready ==
+                app24.ready &&
+                snapshot7.ready ==
+                    app7.ready &&
+                textMatchesReadiness(
+                    snapshot24
+                ) &&
+                textMatchesReadiness(
+                    snapshot7
+                ) &&
+                detailValid(
+                    AppTrendPeriod.LAST_24_HOURS,
+                    app24.ready,
+                    dayMs
+                ) &&
+                detailValid(
+                    AppTrendPeriod.LAST_7_DAYS,
+                    app7.ready,
+                    7L *
+                        dayMs
+                )
+
+        if (
+            pass
+        ) {
+            add(
+                "trend_dashboard_engine_v1",
+                PASS,
+                "Painel 24h/7d e detalhe por app respeitam maturidade do histórico e geram conteúdo coerente."
+            )
+        } else {
+            add(
+                "trend_dashboard_engine_v1",
+                FAIL,
+                "snapshot24=${snapshot24.ready};app24=${app24.ready};snapshot7=${snapshot7.ready};app7=${app7.ready}"
             )
         }
     }

@@ -7,7 +7,7 @@ import java.util.Date
 import java.util.Locale
 
 object ValidationPackGenerator {
-    const val PACK_SCHEMA = 5
+    const val PACK_SCHEMA = 6
 
     fun generate(context: Context): JSONObject {
         val daily = ReportGenerator(context).todayJson()
@@ -111,6 +111,27 @@ object ValidationPackGenerator {
                 )
             }
 
+        val trendDashboard =
+            TrendDashboardEngine(
+                context
+            )
+
+        val trendDashboardJson =
+            JSONObject().apply {
+                put(
+                    "last_24h",
+                    trendDashboard.asJson(
+                        AppTrendPeriod.LAST_24_HOURS
+                    )
+                )
+                put(
+                    "last_7d",
+                    trendDashboard.asJson(
+                        AppTrendPeriod.LAST_7_DAYS
+                    )
+                )
+            }
+
         return JSONObject().apply {
             put("validation_pack_schema", PACK_SCHEMA)
             put(
@@ -123,6 +144,7 @@ object ValidationPackGenerator {
             put("validation", validation)
             put("auto_insights", autoInsights)
             put("app_trends", appTrends)
+            put("trend_dashboard", trendDashboardJson)
             put("data_maturity", dataMaturity)
             put("daily_report", daily)
             put("diagnostic", diagnostic)

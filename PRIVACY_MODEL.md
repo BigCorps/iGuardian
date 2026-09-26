@@ -1,8 +1,10 @@
-# Privacy Model — Guardian 0.1.16
+# Privacy Model — Guardian 0.1.17
 
 No privacy expansion.
 
-Per-app trends operate only on already-sanitized APP aggregates.
-PRIVATE/SYSTEM identity remains unavailable.
+TrendDashboardEngine reads only sanitized report/app aggregates.
 
-No behavioral scoring, cloud transport or query persistence.
+Per-app detail is limited to normal APP identity.
+PRIVATE and SYSTEM identity remains unavailable.
+
+No cloud transport, external AI or persisted app-detail query.

@@ -1,42 +1,51 @@
 {
   "project_codename": "Guardian",
-  "version": "0.1.16",
+  "version": "0.1.17",
   "platform": "android",
   "phase": 2,
-  "phase_name": "History-safe per-app trend dashboard",
+  "phase_name": "Selectable trend dashboard + per-app detail",
   "schema_version": 4,
-  "diagnostic_schema_version": 15,
+  "diagnostic_schema_version": 16,
   "database_version": 7,
-  "validation_pack_schema": 5,
-  "validation_suite_version": 5,
+  "validation_pack_schema": 6,
+  "validation_suite_version": 6,
   "repository": "BigCorps/iGuardian",
   "backend": "none",
   "internet_permission": false,
   "dev_application_id": "com.bigcorps.guardian.dev",
-  "supersedes_failed_build": "0.1.15",
-  "failed_action": {
-    "run_number": 39,
-    "root_cause": "unresolved generic placeholders in dedicated compareLast24Hours history-guard branch"
-  },
   "last_physically_validated_build": {
-    "version": "0.1.14",
-    "version_code": 15,
-    "generated_at": "2026-09-26T16:45:58.425-03:00",
+    "version": "0.1.16",
+    "version_code": 17,
+    "generated_at": "2026-09-26T19:41:12.610-03:00",
     "validation": {
-      "pass_count": 11,
+      "critical_passed": true,
+      "manual_test_required": false,
+      "pass_count": 13,
       "warning_count": 0,
-      "fail_count": 1,
-      "failing_check": "comparison_history_guard"
+      "fail_count": 0,
+      "coverage_percent": 99.4
+    },
+    "workmanager": {
+      "worker_run_count": 37,
+      "worker_success_count": 37,
+      "worker_retry_count": 0,
+      "worker_failure_count": 0,
+      "worker_stopped_count": 0,
+      "unique_active_work": 1
+    },
+    "app_trends": {
+      "last_24h_ready": true,
+      "last_7d_ready": false,
+      "last_7d_history_percent": 29.2
     }
   },
-  "implemented_in_0_1_16": [
-    "Action #39 compile fix",
-    "generic history guard retained for 7d/calendar",
-    "AppTrendEngine v1",
-    "automatic 24h app trend card",
-    "automatic 7d app trend card",
-    "ValidationSuite v5 app trend checks",
-    "validation pack v5 app trend evidence"
+  "implemented_in_0_1_17": [
+    "TrendDashboardEngine v1",
+    "selectable 24h/7d trend dashboard",
+    "per-app trend detail lookup",
+    "ValidationSuite v6 dashboard tests",
+    "validation pack v6 dashboard evidence",
+    "product capabilities v8 contract"
   ],
-  "next_task": "Upload 0.1.16; verify Actions. If green, install over 0.1.14, use 60-90m, export one guardian-validacao JSON."
+  "next_task": "Upload 0.1.17 and verify Actions. If green, install over 0.1.16, use 60-90m and export one guardian-validacao JSON; no manual dashboard tests."
 }

@@ -48,6 +48,13 @@ class MainActivity : Activity() {
     private lateinit var automaticWeeklyTrendText: TextView
     private lateinit var automaticAppTrend24Text: TextView
     private lateinit var automaticAppTrend7Text: TextView
+    private lateinit var trendDashboardPeriodText: TextView
+    private lateinit var trendDashboardGeneralText: TextView
+    private lateinit var trendDashboardAppsText: TextView
+    private lateinit var trendDashboardAppInput: EditText
+    private lateinit var trendDashboardAppDetailText: TextView
+    private var trendDashboardPeriod =
+        AppTrendPeriod.LAST_24_HOURS
     @Volatile
     private var exportInProgress = false
 
@@ -348,6 +355,220 @@ class MainActivity : Activity() {
 
         root.addView(
             sectionTitle(
+                "Painel de tendências"
+            )
+        )
+
+        root.addView(
+            card().apply {
+                addView(
+                    textView(
+                        "Selecione um período • tudo calculado localmente",
+                        12f,
+                        true,
+                        PRIMARY
+                    )
+                )
+
+                val periodRow =
+                    LinearLayout(
+                        this@MainActivity
+                    ).apply {
+                        orientation =
+                            LinearLayout.HORIZONTAL
+
+                        gravity =
+                            Gravity.CENTER
+
+                        setPadding(
+                            0,
+                            dp(10),
+                            0,
+                            0
+                        )
+                    }
+
+                val button24 =
+                    outlineButton(
+                        "24 horas"
+                    ) {
+                        updateTrendDashboard(
+                            AppTrendPeriod.LAST_24_HOURS
+                        )
+                    }
+
+                val button7 =
+                    outlineButton(
+                        "7 dias"
+                    ) {
+                        updateTrendDashboard(
+                            AppTrendPeriod.LAST_7_DAYS
+                        )
+                    }
+
+                periodRow.addView(
+                    button24,
+                    LinearLayout.LayoutParams(
+                        0,
+                        ViewGroup.LayoutParams.WRAP_CONTENT,
+                        1f
+                    ).apply {
+                        marginEnd =
+                            dp(5)
+                    }
+                )
+
+                periodRow.addView(
+                    button7,
+                    LinearLayout.LayoutParams(
+                        0,
+                        ViewGroup.LayoutParams.WRAP_CONTENT,
+                        1f
+                    ).apply {
+                        marginStart =
+                            dp(5)
+                    }
+                )
+
+                addView(
+                    periodRow,
+                    matchWidth()
+                )
+
+                trendDashboardPeriodText =
+                    textView(
+                        "Período: últimas 24 horas",
+                        13f,
+                        true,
+                        TEXT_PRIMARY
+                    ).apply {
+                        setPadding(
+                            0,
+                            dp(12),
+                            0,
+                            0
+                        )
+                    }
+
+                addView(
+                    trendDashboardPeriodText
+                )
+
+                trendDashboardGeneralText =
+                    textView(
+                        "Calculando…",
+                        13f,
+                        false,
+                        TEXT_MUTED
+                    ).apply {
+                        setPadding(
+                            0,
+                            dp(8),
+                            0,
+                            0
+                        )
+                    }
+
+                addView(
+                    trendDashboardGeneralText
+                )
+
+                trendDashboardAppsText =
+                    textView(
+                        "",
+                        13f,
+                        false,
+                        TEXT_MUTED
+                    ).apply {
+                        setPadding(
+                            0,
+                            dp(8),
+                            0,
+                            0
+                        )
+                    }
+
+                addView(
+                    trendDashboardAppsText
+                )
+
+                addView(
+                    textView(
+                        "Detalhe de um aplicativo",
+                        13f,
+                        true,
+                        TEXT_PRIMARY
+                    ).apply {
+                        setPadding(
+                            0,
+                            dp(14),
+                            0,
+                            dp(4)
+                        )
+                    }
+                )
+
+                trendDashboardAppInput =
+                    EditText(
+                        this@MainActivity
+                    ).apply {
+                        hint =
+                            "Ex.: ChatGPT"
+
+                        setSingleLine(
+                            true
+                        )
+
+                        textSize =
+                            15f
+
+                        backgroundTintList =
+                            ColorStateList
+                                .valueOf(
+                                    PRIMARY
+                                )
+                    }
+
+                addView(
+                    trendDashboardAppInput,
+                    matchWidth()
+                )
+
+                addView(
+                    outlineButton(
+                        "Comparar este app no período"
+                    ) {
+                        showTrendAppDetail()
+                    }.apply {
+                        topMargin(
+                            8
+                        )
+                    }
+                )
+
+                trendDashboardAppDetailText =
+                    textView(
+                        "",
+                        13f,
+                        false,
+                        TEXT_MUTED
+                    ).apply {
+                        setPadding(
+                            0,
+                            dp(10),
+                            0,
+                            0
+                        )
+                    }
+
+                addView(
+                    trendDashboardAppDetailText
+                )
+            }
+        )
+
+        root.addView(
+            sectionTitle(
                 "Perguntar ao Guardian"
             )
         )
@@ -507,6 +728,7 @@ class MainActivity : Activity() {
             appendLine("✓ Auto-validação de privacidade, timeline e totais")
             appendLine("✓ Pacote único de validação")
             appendLine("✓ Insights automáticos com proteção contra histórico incompleto")
+            appendLine("✓ Painel selecionável 24h/7d + detalhe por app")
             appendLine("✓ Relatório com precisão em milissegundos")
             appendLine("— Domínios: ainda não")
             appendLine("— Guia anônima: schema pronto; detecção ainda não")
@@ -647,6 +869,10 @@ class MainActivity : Activity() {
 
                     automaticAppTrend7Text.text =
                         appTrend7
+
+                    updateTrendDashboard(
+                        trendDashboardPeriod
+                    )
                 }
             } catch (_: Throwable) {
                 runOnUiThread {
@@ -664,6 +890,123 @@ class MainActivity : Activity() {
 
                     automaticAppTrend7Text.text =
                         ""
+                }
+            }
+        }.start()
+    }
+
+    private fun updateTrendDashboard(
+        period: AppTrendPeriod
+    ) {
+        trendDashboardPeriod =
+            period
+
+        trendDashboardPeriodText.text =
+            when (
+                period
+            ) {
+                AppTrendPeriod.LAST_24_HOURS ->
+                    "Período: últimas 24 horas"
+
+                AppTrendPeriod.LAST_7_DAYS ->
+                    "Período: últimos 7 dias"
+            }
+
+        trendDashboardGeneralText.text =
+            "Calculando…"
+
+        trendDashboardAppsText.text =
+            ""
+
+        trendDashboardAppDetailText.text =
+            ""
+
+        Thread {
+            try {
+                val snapshot =
+                    TrendDashboardEngine(
+                        applicationContext
+                    ).snapshot(
+                        period
+                    )
+
+                runOnUiThread {
+                    if (
+                        trendDashboardPeriod ==
+                        period
+                    ) {
+                        trendDashboardGeneralText.text =
+                            snapshot.generalTrendText
+
+                        trendDashboardAppsText.text =
+                            snapshot.appTrendText
+                    }
+                }
+            } catch (_: Throwable) {
+                runOnUiThread {
+                    if (
+                        trendDashboardPeriod ==
+                        period
+                    ) {
+                        trendDashboardGeneralText.text =
+                            "Painel temporariamente indisponível."
+
+                        trendDashboardAppsText.text =
+                            ""
+                    }
+                }
+            }
+        }.start()
+    }
+
+    private fun showTrendAppDetail() {
+        val query =
+            trendDashboardAppInput
+                .text
+                .toString()
+                .trim()
+
+        if (
+            query.isBlank()
+        ) {
+            Toast.makeText(
+                this,
+                "Digite o nome de um aplicativo.",
+                Toast.LENGTH_SHORT
+            ).show()
+
+            return
+        }
+
+        val period =
+            trendDashboardPeriod
+
+        trendDashboardAppDetailText.text =
+            "Calculando…"
+
+        Thread {
+            try {
+                val answer =
+                    TrendDashboardEngine(
+                        applicationContext
+                    ).appDetailText(
+                        query,
+                        period
+                    )
+
+                runOnUiThread {
+                    if (
+                        trendDashboardPeriod ==
+                        period
+                    ) {
+                        trendDashboardAppDetailText.text =
+                            answer
+                    }
+                }
+            } catch (_: Throwable) {
+                runOnUiThread {
+                    trendDashboardAppDetailText.text =
+                        "Não foi possível calcular este detalhe agora."
                 }
             }
         }.start()

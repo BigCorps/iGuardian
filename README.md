@@ -1,77 +1,92 @@
-# Guardian DEV — Android 0.1.16 — App Trends AutoTest
+# Guardian DEV — Android 0.1.17 — Selectable Trend Dashboard
 
-This build intentionally supersedes the failed 0.1.15 build.
+## 0.1.16 physical result
 
-## Action #39 fix
+The full AutoTest Suite v5 passed:
 
-The 0.1.15 source accidentally left generic placeholders (`intent`, `period`,
-`currentLabel`, `previousLabel`) inside the dedicated 24-hour comparison
-method. Kotlin compilation therefore failed before tests could run.
-
-0.1.16 fixes that exact method and keeps the generic history guard only in
-the generic comparison path.
-
-## Product advance in the same build
-
-### Per-app trend engine v1
-
-The Guardian can now compare application usage between:
-- last 24h vs previous 24h
-- last 7d vs previous 7d
-
-It reports only meaningful changes of at least 1 minute.
-
-When history is mature it can show up to:
-- top 3 increases
-- top 3 decreases
-
-When history is incomplete it shows `histórico insuficiente` instead of
-inventing a delta.
-
-### Automatic dashboard
-
-The existing automatic insights card now also shows per-app trends for:
-- 24h
-- 7d
-
-No manual question is required.
-
-### AutoTest Suite v5
-
-The suite now validates the app-trend engine itself:
-- readiness must match report history/coverage
-- incomplete trends must contain no deltas
-- increases must be positive
-- decreases must be negative
-- ordering must be deterministic
-
-### Validation pack v5
-
-The one-file validation export now includes:
-- `app_trends.last_24h`
-- `app_trends.last_7d`
-
-with readiness, history percentages, coverage and app deltas.
-
-## Existing protections kept
-
-- history guard across 24h/7d/calendar comparisons
+- critical_passed=true
+- manual_test_required=false
+- 13 PASS
+- 0 WARN
+- 0 FAIL
+- coverage 99.4%
 - report schema v4
-- DB v7 system cleanup
-- Xiaomi Wallpaper Carousel classified as SYSTEM
-- no INTERNET
-- no QUERY_ALL_PACKAGES
-- no backend/cloud
-- WorkManager unchanged
+- history-availability math PASS
+- timeline privacy/overlap PASS
+- app aggregate consistency PASS
+- history guards PASS for 24h/7d/calendar
+- AppTrendEngine v1 PASS
+- technical system-surface exclusion PASS
+- WorkManager active=1 with no failures/retries/stops
+
+App trends are now real:
+- last 24h has mature history and produces deterministic deltas
+- last 7d is still immature and correctly refuses a comparison
+
+## 0.1.17 product advance
+
+### Selectable Trend Dashboard
+
+New UI section:
+**Painel de tendências**
+
+The user can switch between:
+- 24 hours
+- 7 days
+
+The selected view shows:
+- general period comparison
+- app trend summary
+- readiness-aware output
+
+### Per-app detail
+
+The same dashboard lets the user type an app name, for example:
+
+`ChatGPT`
+
+and compare that app in the selected period.
+
+When history is mature, the result shows:
+- current usage
+- previous-period usage
+- signed difference
+
+When history is incomplete, it returns `Histórico insuficiente`.
+
+### TrendDashboardEngine v1
+
+A dedicated local engine now owns dashboard composition and app detail.
+
+No cloud, API or external LLM is used.
+
+### AutoTest Suite v6
+
+New automatic check:
+`trend_dashboard_engine_v1`
+
+It validates:
+- selected 24h/7d readiness matches AppTrendEngine
+- incomplete periods never show false trends
+- general/app dashboard text follows readiness
+- per-app detail is guarded by the same maturity rules
+
+### Validation Pack v6
+
+The single exported JSON now includes:
+
+- `trend_dashboard.last_24h`
+- `trend_dashboard.last_7d`
+
+No manual dashboard test is required.
 
 ## Test flow
 
-Upload this package.
+Install over 0.1.16.
 
-After GitHub Actions passes, install directly over 0.1.14.
-There is no 0.1.15 APK to install because its Action failed.
+Use normally for about 60–90 minutes.
 
-Use normally for ~60–90 minutes and export only the recommended
-`guardian-validacao-*.json`.
+Export only:
+`guardian-validacao-*.json`
 
-No question-by-question testing is required.
+If AutoTest is green, no manual period/app-detail test is required.
