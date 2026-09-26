@@ -1156,12 +1156,11 @@ class LocalQuestionEngine(
         ) {
             return LocalQuestionAnswer(
                 intent =
-                    LocalQuestionIntent
-                        .COMPARE_LAST_24H_PREVIOUS_24H,
+                    intent,
                 period =
-                    LocalQuestionPeriod.LAST_24_HOURS,
+                    period,
                 text =
-                    "Histórico insuficiente para comparar as últimas 24 horas com as 24 horas anteriores com segurança. " +
+                    "Histórico insuficiente para comparar $currentLabel com $previousLabel com segurança. " +
                         "Disponibilidade do histórico: ${
                             percentLabel(
                                 currentHistory
@@ -1455,6 +1454,57 @@ class LocalQuestionEngine(
             previous.getJSONObject(
                 "tracking"
             )
+
+        val currentHistory =
+            currentTracking.optDouble(
+                "history_availability_percent",
+                100.0
+            )
+
+        val previousHistory =
+            previousTracking.optDouble(
+                "history_availability_percent",
+                100.0
+            )
+
+        val currentCoverage =
+            currentTracking.optDouble(
+                "coverage_percent",
+                0.0
+            )
+
+        val previousCoverage =
+            previousTracking.optDouble(
+                "coverage_percent",
+                0.0
+            )
+
+        if (
+            !HistoryReadiness.canCompare(
+                currentHistory,
+                previousHistory,
+                currentCoverage,
+                previousCoverage
+            )
+        ) {
+            return LocalQuestionAnswer(
+                intent =
+                    intent,
+                period =
+                    period,
+                text =
+                    "Histórico insuficiente para comparar $currentLabel com $previousLabel com segurança. " +
+                        "Disponibilidade do histórico: ${
+                            percentLabel(
+                                currentHistory
+                            )
+                        } vs ${
+                            percentLabel(
+                                previousHistory
+                            )
+                        }. O Guardian evita calcular uma diferença quando um dos períodos está incompleto."
+            )
+        }
 
         val currentApps =
             current.getJSONArray(

@@ -1,11 +1,19 @@
-# Local Intelligence v7 — 0.1.14
+# Local Intelligence v8 — 0.1.15
 
-Comparisons are now history-aware.
+All comparison families are now history-maturity aware.
 
-A numeric comparison is returned only when both requested periods have enough
-historical availability (>=99%) and classification coverage (>=90%).
+Protected comparisons:
+- today vs yesterday
+- last 24h vs previous 24h
+- last 7d vs previous 7d
+- calendar day vs day
+- calendar range vs range
 
-Otherwise Guardian reports that history is insufficient rather than treating
-missing pre-install history as zero usage.
+Minimums:
+- 99% requested-history availability in both periods
+- 90% classified-data coverage in both periods
 
-All processing remains local and user questions are not persisted.
+Incomplete periods return `Histórico insuficiente...` instead of a misleading
+numeric delta.
+
+Questions remain local and non-persistent.

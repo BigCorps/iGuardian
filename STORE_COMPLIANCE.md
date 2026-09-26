@@ -1,8 +1,16 @@
-# Store Compliance — 0.1.14
+# Store Compliance Design Notes — 0.1.15
 
-No new permission or network capability.
+No permission expansion.
 
-Still no INTERNET, QUERY_ALL_PACKAGES, AccessibilityService, VPN,
-screen/input/content capture or notification-content access.
+Still:
+- no INTERNET
+- no AccessibilityService
+- no VPN
+- no screen/media/input capture
+- no notification/message contents
+- no QUERY_ALL_PACKAGES
+- explicit Usage Access
+- privacy-before-storage
+- offline/non-persistent intelligence
 
-History-maturity logic improves accuracy without collecting new content.
+0.1.15 improves local comparison safety and system-surface classification only.

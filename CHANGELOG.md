@@ -1,17 +1,16 @@
 # Changelog
 
-## 0.1.14 — 2026-09-26
+## 0.1.15 — 2026-09-26
 
-- versionCode 15 / versionName 0.1.14
-- Report schema v4
-- Diagnostic schema v13
-- DB v6
-- ValidationSuite v3
-- Validation pack v3
-- Local Intelligence v7
-- Added explicit history availability measurement
-- Block misleading comparisons when requested history is incomplete
-- Added dynamic history-readiness AutoTest
-- Reclassified Android Downloads UI as SYSTEM
-- Added known-system-surface exclusion AutoTest
-- No scheduler, Internet, backend or external-AI change
+- versionCode 16 / versionName 0.1.15.
+- Diagnostic schema v14.
+- Validation pack schema v4.
+- ValidationSuite v4.
+- DB v7.
+- Local Intelligence v8.
+- SystemSurfaceClassifier v5.
+- Added history-readiness guard to generic 7d/calendar comparisons.
+- Added calendar history-guard AutoTest.
+- Reclassified Xiaomi Wallpaper Carousel as SYSTEM.
+- Historical Wallpaper Carousel rows are sanitized on DB migration.
+- No scheduler, permission, network or backend change.

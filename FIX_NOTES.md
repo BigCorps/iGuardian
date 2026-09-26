@@ -1,9 +1,8 @@
-# Guardian 0.1.14
+# Guardian Android 0.1.15
 
-Install over 0.1.13. Do not uninstall.
+This build fixes the single AutoTest failure found by 0.1.14.
 
-No manual question-by-question test.
-Send only the recommended validation-pack JSON.
+No manual reproduction is needed.
 
-Expected artifact:
-guardian-android-0.1.14-fixed-signed-debug
+Expected Actions artifact:
+guardian-android-0.1.15-fixed-signed-debug

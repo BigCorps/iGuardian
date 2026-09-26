@@ -1,68 +1,77 @@
-# Guardian DEV — Android 0.1.14 — Data Maturity + AutoTest v3
+# Guardian DEV — Android 0.1.15 — Complete History Guard
 
-## Why this build exists
+## 0.1.14 physical result
 
-0.1.13 passed all automated checks, but the new trend cards revealed an
-important product-correctness issue: a comparison can be mathematically valid
-over the data that exists while still being unfair if part of the requested
-period predates Guardian tracking.
+The 0.1.14 validation pack proved that the automated validation strategy is
+working: it caught one real semantic regression without manual reproduction.
 
-Example observed on the physical device:
-- last 7d had data;
-- previous 7d had no historical data;
-- the old card still showed a numeric delta.
+Result:
+- 11 PASS
+- 0 WARN
+- 1 FAIL
+- only failure: `comparison_history_guard`
 
-0.1.14 fixes that class of problem.
+24h behaved correctly:
+- current 24h history availability: 100.0%
+- previous 24h: 92.0%
+- Guardian blocked the comparison.
 
-## Report schema v4
+7d did not:
+- current 7d availability: 27.4%
+- previous 7d: 0.0%
+- Guardian still produced a numeric delta.
 
-Tracking now distinguishes:
-- requested period;
-- history actually available for that requested period;
-- classification coverage inside the available history.
+Root cause:
+the 24h and today/yesterday methods had explicit maturity guards, while the
+generic comparison path used by 7d/calendar comparisons did not.
 
-New fields:
-- requested_period_milliseconds/seconds
-- history_available_milliseconds/seconds
-- history_availability_percent
+## 0.1.15
 
-`coverage_percent` keeps its existing meaning: classified data divided by
-available history.
+### Local Intelligence v8
 
-## Local Intelligence v7
+History readiness is now enforced centrally on the generic comparison path.
 
-Comparisons require:
-- >=99% history availability in both periods;
-- >=90% classification coverage in both periods.
+This protects:
+- last 7d vs previous 7d
+- calendar day vs calendar day
+- calendar range vs calendar range
 
-Otherwise Guardian returns `Histórico insuficiente...` instead of a misleading
-numeric difference.
+The engine refuses a delta until both compared periods have:
+- >= 99% requested-history availability
+- >= 90% classified-data coverage
 
-This applies to:
-- today vs yesterday;
-- 24h vs previous 24h;
-- 7d vs previous 7d;
-- calendar-period comparisons.
+### AutoTest Suite v4
 
-## System-surface cleanup
+The history-guard check now validates:
+- 24h
+- 7d
+- calendar comparison using dates guaranteed to precede tracking start
 
-`com.android.providers.downloads.ui` is now treated as SYSTEM rather than a
-user APP. DB version 6 repairs already-stored historical rows and removes
-identity, matching other Android document/download surfaces.
+A single validation pack remains sufficient.
 
-## AutoTest Suite v3
+### System cleanup
 
-Adds:
-- report-v4 history availability arithmetic;
-- dynamic comparison history guard;
-- known system-surface exclusion.
+`com.miui.android.fashiongallery` is the Xiaomi lock-screen Wallpaper Carousel.
+It is now classified as SYSTEM rather than APP.
 
-Validation pack schema v3 includes `data_maturity`.
+DB v7 repairs already stored rows and removes their identity.
+
+### Unchanged
+
+- no INTERNET
+- no QUERY_ALL_PACKAGES
+- no backend/cloud
+- WorkManager scheduling unchanged
+- report schema remains v4
 
 ## Test
 
-Install over 0.1.13 without uninstalling.
+Install directly over 0.1.14.
+
 No manual question testing is needed.
 
-Use normally for ~60–90 minutes, export one recommended validation pack and
-send only that JSON.
+Use normally for ~60–90 minutes and export one
+`guardian-validacao-*.json`.
+
+Expected result:
+`critical_passed=true` and `manual_test_required=false`.

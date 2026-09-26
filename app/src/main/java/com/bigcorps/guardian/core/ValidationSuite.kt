@@ -4,13 +4,16 @@ import android.content.Context
 import org.json.JSONArray
 import org.json.JSONObject
 import java.time.OffsetDateTime
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 import kotlin.math.abs
 
 object ValidationSuite {
     private const val PASS = "PASS"
     private const val WARN = "WARN"
     private const val FAIL = "FAIL"
-    private const val SUITE_VERSION = 3
+    private const val SUITE_VERSION = 4
 
     fun run(
         context: Context,
@@ -509,6 +512,64 @@ object ValidationSuite {
                 "Histórico insuficiente"
             )
 
+        val trackingStart =
+            runCatching {
+                context
+                    .getSharedPreferences(
+                        "guardian_collector",
+                        Context.MODE_PRIVATE
+                    )
+                    .getLong(
+                        "tracking_start_ms",
+                        0L
+                    )
+            }.getOrDefault(0L)
+
+        val calendarReference =
+            if (
+                trackingStart >
+                0L
+            ) {
+                trackingStart
+            } else {
+                now
+            }
+
+        val dateFormat =
+            SimpleDateFormat(
+                "dd/MM/yyyy",
+                Locale.US
+            )
+
+        val calendarFirst =
+            dateFormat.format(
+                Date(
+                    calendarReference -
+                        3L * day
+                )
+            )
+
+        val calendarSecond =
+            dateFormat.format(
+                Date(
+                    calendarReference -
+                        2L * day
+                )
+            )
+
+        val answerCalendar =
+            LocalQuestionEngine(
+                context
+            ).answer(
+                "Compare $calendarFirst com $calendarSecond",
+                now
+            ).text
+
+        val guardCalendar =
+            answerCalendar.contains(
+                "Histórico insuficiente"
+            )
+
         val expected24 =
             !ready(
                 current24,
@@ -525,18 +586,19 @@ object ValidationSuite {
             guard24 ==
             expected24 &&
             guard7 ==
-            expected7
+            expected7 &&
+            guardCalendar
         ) {
             add(
                 "comparison_history_guard",
                 PASS,
-                "Comparações 24h/7d bloqueiam deltas quando o histórico solicitado ainda está incompleto."
+                "Comparações 24h/7d/calendário bloqueiam deltas quando o histórico solicitado ainda está incompleto."
             )
         } else {
             add(
                 "comparison_history_guard",
                 FAIL,
-                "guard24=$guard24;expected24=$expected24;guard7=$guard7;expected7=$expected7"
+                "guard24=$guard24;expected24=$expected24;guard7=$guard7;expected7=$expected7;guard_calendar=$guardCalendar"
             )
         }
     }
@@ -552,6 +614,7 @@ object ValidationSuite {
                 "com.google.android.photopicker",
                 "com.mi.appfinder",
                 "com.android.providers.downloads.ui",
+                "com.miui.android.fashiongallery",
                 "com.android.packageinstaller",
                 "com.google.android.packageinstaller",
                 "com.miui.global.packageinstaller"

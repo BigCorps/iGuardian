@@ -1,10 +1,11 @@
-# Privacy Model — Guardian 0.1.14
+# Privacy Model — Guardian 0.1.15
 
-No permission expansion.
+No privacy expansion.
 
-History availability is timing metadata only.
+History readiness changes only whether a local comparison is allowed to display
+a numeric delta.
 
-Downloads UI joins other technical Android surfaces as SYSTEM before
-storage; historical migrated rows have package/name removed.
+Wallpaper Carousel lock-screen intervals are sanitized to SYSTEM and identity
+is removed before export.
 
-No domains, URLs, content, keyboard, screen capture or network transport.
+User questions remain memory-only and are never transmitted.

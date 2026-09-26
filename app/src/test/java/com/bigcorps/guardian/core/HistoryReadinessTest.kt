@@ -40,4 +40,16 @@ class HistoryReadinessTest {
             )
         )
     }
+    @Test
+    fun zeroHistoryCannotCompare() {
+        assertFalse(
+            HistoryReadiness.canCompare(
+                27.4,
+                0.0,
+                99.3,
+                0.0
+            )
+        )
+    }
+
 }

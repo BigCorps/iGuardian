@@ -7,7 +7,7 @@ import java.util.Date
 import java.util.Locale
 
 object ValidationPackGenerator {
-    const val PACK_SCHEMA = 3
+    const val PACK_SCHEMA = 4
 
     fun generate(context: Context): JSONObject {
         val daily = ReportGenerator(context).todayJson()

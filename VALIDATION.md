@@ -1,26 +1,40 @@
-# Validation — Android 0.1.14
+# Validation — Android 0.1.15
 
-0.1.13 physical result:
-- AutoTest v2: 9 PASS / 0 WARN / 0 FAIL
-- critical_passed=true
-- manual_test_required=false
-- coverage 99.6%
-- engine v6 self-check fully PASS
-- WorkManager 30/30 success, 0 retry/failure/stopped
+## 0.1.14 physical result
 
-Observed product-quality issue:
-weekly trend compared a partially available current 7d window against a
-0%-available prior 7d window. This was not a collector failure; it was missing
-history-maturity semantics.
+PASS:
+- permissions/privacy contract
+- report schema v4
+- history availability math
+- report totals
+- timeline privacy/overlap
+- app aggregate consistency
+- Local Intelligence self-check
+- product capabilities v7
+- system surface exclusion
+- WorkManager
+- tracking coverage 99.4%
 
-0.1.14 acceptance:
-- report schema 4
-- diagnostic schema 13
-- DB 6
-- engine v7
-- validation suite 3
-- validation pack 3
-- history availability arithmetic PASS
-- comparison_history_guard PASS
-- system_surface_exclusion PASS
-- existing privacy/timeline/report/background tests remain green
+FAIL:
+- comparison_history_guard
+  - guard24=true / expected24=true
+  - guard7=false / expected7=true
+
+Data maturity:
+- current 24h 100.0%
+- previous 24h 92.0%
+- current 7d 27.4%
+- previous 7d 0.0%
+
+## 0.1.15 acceptance
+
+- version 0.1.15 / code 16
+- diagnostic schema 14
+- DB 7
+- engine v8
+- classifier v5
+- ValidationSuite v4
+- validation pack v4
+- comparison_history_guard PASS for 24h/7d/calendar
+- Wallpaper Carousel absent from APP aggregate
+- existing privacy/report/WorkManager checks remain green

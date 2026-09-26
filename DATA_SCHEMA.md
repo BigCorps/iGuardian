@@ -1,9 +1,15 @@
-# Data Schema — report v4 / DB v6 / diagnostic v13 / validation-pack v3
+# Data Schema — report v4 / DB v7 / diagnostic v14 / validation-pack v4
 
-Report v4 adds requested-period vs history-availability fields while retaining
-all v3 millisecond/second fields.
+Report schema remains v4.
 
-DB v6 migrates known Android Downloads UI APP rows to SYSTEM and clears
-identity.
+DB v7:
+- historical `com.miui.android.fashiongallery` APP intervals -> SYSTEM
+- package/name removed
 
-Validation pack v3 adds data_maturity percentages.
+Diagnostic v14:
+- Local Intelligence v8
+- SystemSurfaceClassifier v5
+- ValidationSuite v4
+- all-comparison history-readiness capability
+
+Validation pack v4 keeps one-file validation.

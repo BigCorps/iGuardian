@@ -1,16 +1,21 @@
 # Guardian Roadmap
 
-Phase 1 Android foundation: approved.
+## Phase 1 — Android Foundation
+Approved on primary Xiaomi/Android 16 device.
 
-Phase 2 Local Intelligence:
-- rolling/calendar periods
-- deterministic insights
-- automated trend cards
-- one-file AutoTest
-- 0.1.14 history-maturity guard and report v4
+## Phase 2 — Local Intelligence — ACTIVE
 
-Next after validation:
-- richer dashboard cards
-- per-app trend deltas, only when periods are mature
+0.1.15 closes history maturity across every comparison family and extends
+AutoTest coverage to prevent regressions.
+
+After validation:
+- richer insight dashboard
+- per-app trend deltas
 - selectable comparison periods
-- OEM hardening/store preparation
+- automatic daily/weekly local cards
+
+## Phase 3 — Android hardening / Store
+Additional OEMs, timezone/date changes, final brand/applicationId/signing/AAB.
+
+## Phase 4 — Windows
+Same privacy contract with Windows-native collector.

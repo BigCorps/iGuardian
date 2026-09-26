@@ -21,7 +21,8 @@ class SystemSurfaceClassifier(private val context: Context) {
         "com.google.android.documentsui",
         "com.google.android.photopicker",
         "com.mi.appfinder",
-        "com.android.providers.downloads.ui"
+        "com.android.providers.downloads.ui",
+        "com.miui.android.fashiongallery"
     )
 
     private val homePackages: Set<String> by lazy {

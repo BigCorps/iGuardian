@@ -162,6 +162,31 @@ class GuardianDatabase(context: Context) :
                 )
             )
         }
+
+        if (oldVersion < 7) {
+            val newlyKnownSystemPackages = listOf(
+                "com.miui.android.fashiongallery"
+            )
+
+            val placeholders =
+                newlyKnownSystemPackages.joinToString(",") { "?" }
+
+            val values = ContentValues().apply {
+                put("type", IntervalType.SYSTEM.name)
+                putNull("package_name")
+                putNull("app_label")
+            }
+
+            db.update(
+                "intervals",
+                values,
+                "type = ? AND package_name IN ($placeholders)",
+                arrayOf(
+                    IntervalType.APP.name,
+                    *newlyKnownSystemPackages.toTypedArray()
+                )
+            )
+        }
     }
 
     @Synchronized
@@ -382,6 +407,6 @@ class GuardianDatabase(context: Context) :
 
     companion object {
         private const val DB_NAME = "guardian.db"
-        private const val DB_VERSION = 6
+        private const val DB_VERSION = 7
     }
 }

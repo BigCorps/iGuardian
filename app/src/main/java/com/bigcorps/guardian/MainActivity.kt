@@ -300,7 +300,7 @@ class MainActivity : Activity() {
             card().apply {
                 addView(
                     textView(
-                        "Inteligência local v7 • tendências só com histórico suficiente • sem internet",
+                        "Inteligência local v8 • tendências só com histórico suficiente • sem internet",
                         12f,
                         true,
                         PRIMARY

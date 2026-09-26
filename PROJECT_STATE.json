@@ -1,45 +1,51 @@
 {
   "project_codename": "Guardian",
-  "version": "0.1.14",
+  "version": "0.1.15",
   "platform": "android",
   "phase": 2,
-  "phase_name": "History-aware Local Intelligence + AutoTest v3",
+  "phase_name": "Complete history guard + system cleanup",
   "schema_version": 4,
-  "diagnostic_schema_version": 13,
-  "database_version": 6,
-  "validation_pack_schema": 3,
-  "validation_suite_version": 3,
+  "diagnostic_schema_version": 14,
+  "database_version": 7,
+  "validation_pack_schema": 4,
+  "validation_suite_version": 4,
   "repository": "BigCorps/iGuardian",
   "backend": "none",
   "internet_permission": false,
   "dev_application_id": "com.bigcorps.guardian.dev",
   "last_physically_validated_build": {
-    "version": "0.1.13",
-    "version_code": 14,
-    "generated_at": "2026-09-26T14:48:28.870-03:00",
+    "version": "0.1.14",
+    "version_code": 15,
+    "generated_at": "2026-09-26T16:45:58.425-03:00",
     "validation": {
-      "critical_passed": true,
-      "manual_test_required": false,
-      "pass_count": 9,
+      "critical_passed": false,
+      "manual_test_required": true,
+      "pass_count": 11,
       "warning_count": 0,
-      "fail_count": 0,
-      "coverage_percent": 99.6
+      "fail_count": 1,
+      "failing_check": "comparison_history_guard"
+    },
+    "data_maturity": {
+      "current_24h_history_percent": 100.0,
+      "previous_24h_history_percent": 92.0,
+      "current_7d_history_percent": 27.4,
+      "previous_7d_history_percent": 0.0
     },
     "workmanager": {
-      "worker_run_count": 30,
-      "worker_success_count": 30,
+      "worker_run_count": 33,
+      "worker_success_count": 33,
       "worker_retry_count": 0,
       "worker_failure_count": 0,
-      "worker_stopped_count": 0
-    },
-    "observation": "7d trend exposed incomplete-history comparison; collector itself passed"
+      "worker_stopped_count": 0,
+      "unique_active_work": 1
+    }
   },
-  "implemented_in_0_1_14": [
-    "report v4 history availability",
-    "history-aware comparison guard",
-    "dynamic comparison AutoTest",
-    "Downloads UI system classification and DB repair",
-    "system-surface exclusion AutoTest"
+  "implemented_in_0_1_15": [
+    "generic comparison history readiness guard",
+    "calendar comparison maturity AutoTest",
+    "Wallpaper Carousel system classification",
+    "DB v7 historical system cleanup",
+    "ValidationSuite v4"
   ],
-  "next_task": "Install over 0.1.13; no manual feature tests; use 60-90m and export one validation pack."
+  "next_task": "Install 0.1.15 over 0.1.14 after Actions passes; use normally 60-90m; export one guardian-validacao JSON."
 }

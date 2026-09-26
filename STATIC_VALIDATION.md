@@ -1,8 +1,5 @@
-# Static validation — 0.1.14
+# Static validation — 0.1.15
 
-Base: physically validated 0.1.13 package.
-
-Checks:
 - `app/src/main/java/com/bigcorps/guardian/GuardianApplication.kt`: braces=0; parens=0
 - `app/src/main/java/com/bigcorps/guardian/MainActivity.kt`: braces=0; parens=0
 - `app/src/main/java/com/bigcorps/guardian/core/DiagnosticsGenerator.kt`: braces=0; parens=0
