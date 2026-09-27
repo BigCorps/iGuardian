@@ -1,18 +1,14 @@
-# Data Schema — report v4 / DB v7 / diagnostic v16 / validation-pack v6
+# Data Schema — report v4 / DB v7 / diagnostic v17 / validation-pack v7
 
-No report or database schema change.
+Report schema remains v4.
+Database remains v7.
 
-Diagnostic v16 adds TrendDashboardEngine capabilities.
+Diagnostic v17 can omit the heavy activity snapshot when used as a validation
+source. Explicit full diagnostic export still includes it.
 
-Validation pack v6 adds:
-- trend_dashboard.last_24h
-- trend_dashboard.last_7d
-
-Dashboard JSON includes:
-- readiness
-- history availability
-- coverage
-- general trend text
-- app trend text
-
-User-entered app detail queries are not persisted.
+Validation pack v7 adds:
+- `pack_meta`
+- `generation_metrics`
+- `validation_lineage`
+- compact report timeline evidence on successful builds
+- automatic full evidence on failed builds

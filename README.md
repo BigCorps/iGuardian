@@ -1,92 +1,94 @@
-# Guardian DEV — Android 0.1.17 — Selectable Trend Dashboard
+# Guardian DEV — Android 0.1.18 — Lean Validation + Lineage
 
-## 0.1.16 physical result
+## 0.1.17 physical result
 
-The full AutoTest Suite v5 passed:
+The one-file AutoTest passed completely:
 
-- critical_passed=true
-- manual_test_required=false
-- 13 PASS
+- `critical_passed=true`
+- `manual_test_required=false`
+- 14 PASS
 - 0 WARN
 - 0 FAIL
-- coverage 99.4%
-- report schema v4
-- history-availability math PASS
-- timeline privacy/overlap PASS
-- app aggregate consistency PASS
-- history guards PASS for 24h/7d/calendar
-- AppTrendEngine v1 PASS
-- technical system-surface exclusion PASS
-- WorkManager active=1 with no failures/retries/stops
+- coverage 99.2%
+- 1173 timeline intervals validated
+- 24h trend/dashboard ready with 100% vs 100% history
+- 7d trend correctly blocked at 29.9% vs 0%
+- WorkManager 38/38 successes, zero retry/failure/stopped
 
-App trends are now real:
-- last 24h has mature history and produces deterministic deltas
-- last 7d is still immature and correctly refuses a comparison
+## Why 0.1.18 exists
 
-## 0.1.17 product advance
+The validation JSON had grown to roughly 768 KB because it embedded:
+1. the full daily timeline; and
+2. another full 24h activity snapshot inside diagnostics.
 
-### Selectable Trend Dashboard
+Those large sections were useful while stabilizing the timeline, but they are
+redundant on a green build because ValidationSuite has already checked them.
 
-New UI section:
-**Painel de tendências**
+## Lean validation pack v7
 
-The user can switch between:
-- 24 hours
-- 7 days
+Recommended export now uses two modes:
 
-The selected view shows:
-- general period comparison
-- app trend summary
-- readiness-aware output
+### `compact_success`
+When all AutoTests pass:
+- full timelines are omitted;
+- report summaries/apps/tracking remain;
+- timeline evidence/counts remain;
+- scheduler, permissions, capabilities, privacy guarantees and self-checks remain;
+- app trends/dashboard remain;
+- validation lineage remains.
 
-### Per-app detail
+Expected size is tens of KB rather than hundreds of KB.
 
-The same dashboard lets the user type an app name, for example:
+### `full_failure_evidence`
+If any critical check fails:
+- full daily timeline is kept automatically;
+- full 24h diagnostic snapshot is kept automatically.
 
-`ChatGPT`
+No user decision is required.
 
-and compare that app in the selected period.
+## Export feedback
 
-When history is mature, the result shows:
-- current usage
-- previous-period usage
-- signed difference
+The recommended export button now contains a circular indeterminate loader while
+the package is being processed and is disabled until the operation finishes.
 
-When history is incomplete, it returns `Histórico insuficiente`.
+## Validation lineage
 
-### TrendDashboardEngine v1
+0.1.18 adopts a pattern already proven in the other BigCorps repositories:
+stable subsystems can inherit physical validation only when their source hashes
+are unchanged.
 
-A dedicated local engine now owns dashboard composition and app detail.
+Inherited from physically validated 0.1.17:
+- privacy/collection core
+- database/report core
+- background scheduler core
+- local intelligence core
 
-No cloud, API or external LLM is used.
+Retested automatically in 0.1.18:
+- validation/export/UI
 
-### AutoTest Suite v6
+CI-only validation:
+- build pipeline
 
-New automatic check:
-`trend_dashboard_engine_v1`
+`scripts/verify_validation_contracts.py` fails the build if an inherited source
+changes without an intentional contract update.
 
-It validates:
-- selected 24h/7d readiness matches AppTrendEngine
-- incomplete periods never show false trends
-- general/app dashboard text follows readiness
-- per-app detail is guarded by the same maturity rules
+## Final APK guard
 
-### Validation Pack v6
+After Gradle builds the APK, CI now checks the finished artifact itself:
+- applicationId
+- versionName
+- versionCode
+- absence of prohibited permissions/services
 
-The single exported JSON now includes:
-
-- `trend_dashboard.last_24h`
-- `trend_dashboard.last_7d`
-
-No manual dashboard test is required.
+The fixed signing certificate verification remains separate and unchanged.
 
 ## Test flow
 
-Install over 0.1.16.
+Upload 0.1.18.
 
-Use normally for about 60–90 minutes.
+If Actions is green, install directly over 0.1.17.
 
-Export only:
-`guardian-validacao-*.json`
+Use normally for ~60–90 minutes and export only the recommended validation JSON.
 
-If AutoTest is green, no manual period/app-detail test is required.
+The loader should be visible during processing, and a green pack should be much
+smaller/faster to save and share.

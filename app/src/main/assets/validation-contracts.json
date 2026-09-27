@@ -1,0 +1,95 @@
+{
+  "schema": 1,
+  "build_version": "0.1.18",
+  "base_physically_validated_version": "0.1.17",
+  "strategy": "Inherit physical validation only when source hashes are unchanged; continue cheap runtime AutoTests; retest changed validation/export UI automatically; guard build pipeline in CI.",
+  "contracts": [
+    {
+      "id": "privacy_collection_core",
+      "validation_mode": "inherited",
+      "validated_in": "0.1.17",
+      "manual_retest_required": false,
+      "continuous_autotest": true,
+      "files": [
+        "app/src/main/AndroidManifest.xml",
+        "app/src/main/java/com/bigcorps/guardian/core/Preferences.kt",
+        "app/src/main/java/com/bigcorps/guardian/core/GuardianPrivacyOverride.kt",
+        "app/src/main/java/com/bigcorps/guardian/core/SystemSurfaceClassifier.kt",
+        "app/src/main/java/com/bigcorps/guardian/core/TimelineNormalizer.kt",
+        "app/src/main/java/com/bigcorps/guardian/core/UsageCollector.kt"
+      ],
+      "sha256": "010cd0fe9ee926d160d39fdc39b6d0c0a43bb4afc2d1b10e5a9003a9f594fd7b"
+    },
+    {
+      "id": "database_report_core",
+      "validation_mode": "inherited",
+      "validated_in": "0.1.17",
+      "manual_retest_required": false,
+      "continuous_autotest": true,
+      "files": [
+        "app/src/main/java/com/bigcorps/guardian/core/GuardianDatabase.kt",
+        "app/src/main/java/com/bigcorps/guardian/core/ReportGenerator.kt"
+      ],
+      "sha256": "0b3a0ebf1a34fd2e141beecce18bc3c98edf12f53180883a42b02f8d15e2f2b5"
+    },
+    {
+      "id": "background_scheduler_core",
+      "validation_mode": "inherited",
+      "validated_in": "0.1.17",
+      "manual_retest_required": false,
+      "continuous_autotest": true,
+      "files": [
+        "app/src/main/java/com/bigcorps/guardian/GuardianApplication.kt",
+        "app/src/main/java/com/bigcorps/guardian/core/GuardianScheduler.kt",
+        "app/src/main/java/com/bigcorps/guardian/core/GuardianWorker.kt",
+        "app/src/main/java/com/bigcorps/guardian/core/GuardianRescheduleReceiver.kt"
+      ],
+      "sha256": "9deb411b2d632315912972628070d2cd2eaf3fdb3ac3afffcb00e4a12d037d72"
+    },
+    {
+      "id": "local_intelligence_core",
+      "validation_mode": "inherited",
+      "validated_in": "0.1.17",
+      "manual_retest_required": false,
+      "continuous_autotest": true,
+      "files": [
+        "app/src/main/java/com/bigcorps/guardian/core/HistoryReadiness.kt",
+        "app/src/main/java/com/bigcorps/guardian/core/LocalQuestionEngine.kt",
+        "app/src/main/java/com/bigcorps/guardian/core/LocalIntelligenceSelfCheck.kt",
+        "app/src/main/java/com/bigcorps/guardian/core/AppTrendEngine.kt",
+        "app/src/main/java/com/bigcorps/guardian/core/TrendDashboardEngine.kt"
+      ],
+      "sha256": "25c052811406af3035467ff82382bbb9c438ec86ae5a0670f641b70a8c72cd32"
+    },
+    {
+      "id": "validation_export_ui",
+      "validation_mode": "runtime_autotest",
+      "validated_in": "0.1.18",
+      "manual_retest_required": false,
+      "continuous_autotest": true,
+      "files": [
+        "app/src/main/java/com/bigcorps/guardian/MainActivity.kt",
+        "app/src/main/java/com/bigcorps/guardian/core/DiagnosticsGenerator.kt",
+        "app/src/main/java/com/bigcorps/guardian/core/ValidationPackGenerator.kt",
+        "app/src/main/java/com/bigcorps/guardian/core/ValidationSuite.kt",
+        "app/src/main/java/com/bigcorps/guardian/core/ValidationLineage.kt"
+      ],
+      "sha256": "8480b105e8f6c13111aedc7507df6561d89189fe6220fa857ecfd5a2f55b2964"
+    },
+    {
+      "id": "build_pipeline",
+      "validation_mode": "ci_only",
+      "validated_in": "0.1.18",
+      "manual_retest_required": false,
+      "continuous_autotest": false,
+      "files": [
+        "app/build.gradle.kts",
+        ".github/workflows/android.yml",
+        "scripts/verify_project.py",
+        "scripts/verify_validation_contracts.py",
+        "scripts/verify_apk_contract.sh"
+      ],
+      "sha256": "4f024b67ca6a9f4cdbbca268660fd56dc0a86aba39f1f0610f4968c748358db3"
+    }
+  ]
+}

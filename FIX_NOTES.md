@@ -1,9 +1,14 @@
-# Guardian Android 0.1.17
+# Guardian Android 0.1.18
 
-0.1.16 fully passed runtime AutoTest.
-
-0.1.17 advances the product instead of spending a build on maintenance:
-selectable trend periods + per-app detail + automated dashboard validation.
+This build keeps the already validated collection/scheduler/intelligence cores
+unchanged and advances validation infrastructure.
 
 Expected Actions artifact:
-guardian-android-0.1.17-fixed-signed-debug
+guardian-android-0.1.18-fixed-signed-debug
+
+Expected green runtime pack:
+- validation_pack_schema = 7
+- ValidationSuite = 7
+- pack_meta.mode = compact_success
+- validation_lineage_contract = PASS
+- materially smaller file

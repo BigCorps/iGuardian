@@ -25,6 +25,7 @@ required_docs = [
     "PROJECT_STATE.json",
     "SIGNING_DEV.md",
     "LOCAL_INTELLIGENCE.md",
+    "VALIDATION_CONTRACTS.json",
 ]
 
 errors = []
@@ -81,6 +82,30 @@ else:
 if code_match is None:
     errors.append("Could not read versionCode from app/build.gradle.kts")
 
+workflow_path = root / ".github/workflows/android.yml"
+workflow = workflow_path.read_text(encoding="utf-8")
+
+if version_match is not None:
+    expected_artifact = (
+        f"guardian-android-{version_match.group(1)}-fixed-signed-debug"
+    )
+    if expected_artifact not in workflow:
+        errors.append(
+            "Workflow artifact name must match current versionName: "
+            f"{expected_artifact}"
+        )
+
+for required_script in [
+    "scripts/verify_validation_contracts.py",
+    "scripts/verify_apk_contract.sh",
+]:
+    if not (root / required_script).exists():
+        errors.append(f"Missing required CI validation script: {required_script}")
+
+asset_contract = root / "app/src/main/assets/validation-contracts.json"
+if not asset_contract.exists():
+    errors.append("Missing runtime validation lineage asset")
+
 for name in required_docs:
     if not (root / name).exists():
         errors.append(f"Missing required project handoff file: {name}")
@@ -90,6 +115,7 @@ required_sources = [
     "app/src/main/java/com/bigcorps/guardian/core/ValidationPackGenerator.kt",
     "app/src/main/java/com/bigcorps/guardian/core/LocalIntelligenceSelfCheck.kt",
     "app/src/main/java/com/bigcorps/guardian/core/HistoryReadiness.kt",
+    "app/src/main/java/com/bigcorps/guardian/core/ValidationLineage.kt",
 ]
 
 for name in required_sources:
@@ -117,6 +143,8 @@ print("- no AccessibilityService")
 print("- WorkManager background architecture present")
 print("- comprehensive local validation suite present")
 print("- one-file validation pack generator present")
+print("- validation lineage manifest + CI guard present")
+print("- final APK contract guard present")
 print("- history-readiness guard source present")
 print("- no legacy direct GuardianJobService in app manifest")
 print("- no signing private key committed")

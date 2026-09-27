@@ -1,10 +1,12 @@
-# Privacy Model — Guardian 0.1.17
+# Privacy Model — Guardian 0.1.18
 
 No privacy expansion.
 
-TrendDashboardEngine reads only sanitized report/app aggregates.
+Recommended validation exports are now smaller because successful packs no
+longer duplicate the full timeline or 24h snapshot.
 
-Per-app detail is limited to normal APP identity.
-PRIVATE and SYSTEM identity remains unavailable.
+If validation fails, full sanitized evidence is retained automatically for
+debugging.
 
-No cloud transport, external AI or persisted app-detail query.
+PRIVATE/SYSTEM identity remains unavailable.
+No network transport or external AI was added.

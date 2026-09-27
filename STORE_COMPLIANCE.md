@@ -1,13 +1,15 @@
-# Store Compliance Design Notes — 0.1.17
+# Store Compliance Design Notes — 0.1.18
 
 No permission expansion.
 
-Still:
+CI now verifies the final built APK in addition to source-level checks.
+
+The APK guard confirms:
+- expected applicationId/version
 - no INTERNET
-- no AccessibilityService
-- no VPN
-- no screen/media/input capture
-- no notification/message contents
 - no QUERY_ALL_PACKAGES
-- explicit Usage Access
-- local-only dashboard and trend calculations
+- no Accessibility binding permission
+- no Notification Listener binding permission
+- no MediaProjection foreground-service permission
+
+Existing fixed DEV certificate verification remains active.

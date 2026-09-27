@@ -1,38 +1,32 @@
-# Validation — Android 0.1.17
+# Validation — Android 0.1.18
 
-## 0.1.16 physical result
+## 0.1.17 physical result
 
-PASS:
-- ValidationSuite v5
-- 13 PASS / 0 WARN / 0 FAIL
-- manual_test_required=false
-- tracking coverage 99.4%
-- 1044 timeline intervals with no overlap/leak/bad duration
-- report arithmetic exact
-- app aggregate arithmetic exact
+- ValidationSuite v6
+- 14 PASS / 0 WARN / 0 FAIL
+- critical_passed true
+- manual_test_required false
+- coverage 99.2%
+- timeline 1173 intervals
+- no overlap / non-APP identity / duration inconsistency
+- app aggregates exact
 - comparison history guard PASS
 - AppTrendEngine v1 PASS
+- TrendDashboardEngine v1 PASS
 - system surface exclusion PASS
-- WorkManager PASS
+- WorkManager 38 runs / 38 successes / 0 retry / 0 failure / 0 stopped
 
-24h app trend:
-- ready=true
-- history 100% vs 100%
-- 16 meaningful changed apps
+## 0.1.18 acceptance
 
-7d app trend:
-- ready=false
-- history 29.2% vs 0%
-- zero deltas, as required
-
-## 0.1.17 acceptance
-
-- version 0.1.17 / code 18
-- diagnostic schema 16
-- validation suite v6
-- validation pack v6
-- TrendDashboardEngine v1
-- product_capabilities_v8 PASS
-- trend_dashboard_engine_v1 PASS
-- existing 0.1.16 checks remain green
-- manual_test_required=false expected
+- version 0.1.18 / code 19
+- diagnostic schema 17
+- validation suite v7
+- validation pack v7
+- validation_lineage_contract PASS
+- pack_meta.mode = compact_success on green build
+- full_daily_timeline_embedded = false on green build
+- validation JSON materially smaller than 0.1.17
+- export button circular loader visible while processing
+- CI validation-contract hashes PASS
+- final APK contract PASS
+- existing runtime AutoTests remain green

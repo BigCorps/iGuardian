@@ -1,51 +1,55 @@
 {
   "project_codename": "Guardian",
-  "version": "0.1.17",
+  "version": "0.1.18",
   "platform": "android",
   "phase": 2,
-  "phase_name": "Selectable trend dashboard + per-app detail",
+  "phase_name": "Lean validation + hash-bound validation inheritance",
   "schema_version": 4,
-  "diagnostic_schema_version": 16,
+  "diagnostic_schema_version": 17,
   "database_version": 7,
-  "validation_pack_schema": 6,
-  "validation_suite_version": 6,
+  "validation_pack_schema": 7,
+  "validation_suite_version": 7,
   "repository": "BigCorps/iGuardian",
   "backend": "none",
   "internet_permission": false,
   "dev_application_id": "com.bigcorps.guardian.dev",
   "last_physically_validated_build": {
-    "version": "0.1.16",
-    "version_code": 17,
-    "generated_at": "2026-09-26T19:41:12.610-03:00",
+    "version": "0.1.17",
+    "version_code": 18,
+    "generated_at": "2026-09-26T20:52:00.018-03:00",
     "validation": {
       "critical_passed": true,
       "manual_test_required": false,
-      "pass_count": 13,
+      "pass_count": 14,
       "warning_count": 0,
       "fail_count": 0,
-      "coverage_percent": 99.4
+      "coverage_percent": 99.2,
+      "timeline_intervals": 1173
     },
     "workmanager": {
-      "worker_run_count": 37,
-      "worker_success_count": 37,
+      "worker_run_count": 38,
+      "worker_success_count": 38,
       "worker_retry_count": 0,
       "worker_failure_count": 0,
       "worker_stopped_count": 0,
       "unique_active_work": 1
     },
-    "app_trends": {
+    "history": {
       "last_24h_ready": true,
-      "last_7d_ready": false,
-      "last_7d_history_percent": 29.2
+      "previous_24h_ready": true,
+      "last_7d_history_percent": 29.9,
+      "previous_7d_history_percent": 0.0
     }
   },
-  "implemented_in_0_1_17": [
-    "TrendDashboardEngine v1",
-    "selectable 24h/7d trend dashboard",
-    "per-app trend detail lookup",
-    "ValidationSuite v6 dashboard tests",
-    "validation pack v6 dashboard evidence",
-    "product capabilities v8 contract"
+  "implemented_in_0_1_18": [
+    "circular export loader",
+    "compact-success validation pack",
+    "automatic full evidence on validation failure",
+    "single timestamp for pack comparisons",
+    "generation timing metrics",
+    "ValidationLineage runtime evidence",
+    "hash-bound CI validation inheritance",
+    "final built APK contract verification"
   ],
-  "next_task": "Upload 0.1.17 and verify Actions. If green, install over 0.1.16, use 60-90m and export one guardian-validacao JSON; no manual dashboard tests."
+  "next_task": "Upload 0.1.18 and verify Actions. If green, install over 0.1.17, use normally 60-90m, export one recommended validation JSON. Confirm compact_success and loader behavior through the pack/normal use; no question-by-question manual tests."
 }

@@ -1,27 +1,9 @@
-# Local Intelligence v8 + TrendDashboardEngine v1 — 0.1.17
+# Local Intelligence v8 — 0.1.18
 
-## Existing
-- deterministic local questions
-- calendar/rolling periods
-- mature-history comparisons
-- AppTrendEngine 24h/7d
+No semantic engine change from physically validated 0.1.17.
 
-## New dashboard layer
+The Local Intelligence source group is inherited only while its source hash
+matches the validation contract.
 
-Selectable periods:
-- last 24h
-- last 7d
-
-Dashboard content:
-- general trend
-- top app changes
-- per-app detail lookup
-
-Per-app detail reports:
-- current usage
-- previous usage
-- signed difference
-
-Every comparison reuses HistoryReadiness.
-
-No user query persistence, network or behavioral scoring.
+Continuous runtime self-checks still execute in every recommended validation
+pack, so inheritance does not remove cheap automatic regression checks.

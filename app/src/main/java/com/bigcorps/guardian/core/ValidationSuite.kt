@@ -13,7 +13,7 @@ object ValidationSuite {
     private const val PASS = "PASS"
     private const val WARN = "WARN"
     private const val FAIL = "FAIL"
-    private const val SUITE_VERSION = 6
+    private const val SUITE_VERSION = 7
 
     fun run(
         context: Context,
@@ -43,6 +43,7 @@ object ValidationSuite {
         validateComparisonHistoryGuard(context, ::add)
         validateAppTrendEngine(context, ::add)
         validateTrendDashboardEngine(context, ::add)
+        validateValidationLineage(context, ::add)
         validateSystemSurfaceExclusion(daily, ::add)
         validateBackground(diagnostic, ::add)
         validateCoverage(daily, ::add)
@@ -955,6 +956,139 @@ object ValidationSuite {
                 "trend_dashboard_engine_v1",
                 FAIL,
                 "snapshot24=${snapshot24.ready};app24=${app24.ready};snapshot7=${snapshot7.ready};app7=${app7.ready}"
+            )
+        }
+    }
+
+    private fun validateValidationLineage(
+        context: Context,
+        add: (String, String, String) -> Unit
+    ) {
+        val manifest =
+            runCatching {
+                ValidationLineage.manifest(
+                    context
+                )
+            }.getOrNull()
+
+        if (
+            manifest ==
+            null
+        ) {
+            add(
+                "validation_lineage_contract",
+                FAIL,
+                "Manifesto de herança de validação ausente ou ilegível."
+            )
+            return
+        }
+
+        val currentVersion =
+            runCatching {
+                @Suppress("DEPRECATION")
+                context.packageManager
+                    .getPackageInfo(
+                        context.packageName,
+                        0
+                    )
+                    .versionName
+                    ?: ""
+            }.getOrDefault("")
+
+        val contracts =
+            manifest.optJSONArray(
+                "contracts"
+            )
+
+        if (
+            manifest.optInt(
+                "schema",
+                0
+            ) !=
+            ValidationLineage.SCHEMA ||
+            manifest.optString(
+                "build_version"
+            ) !=
+            currentVersion ||
+            contracts ==
+            null
+        ) {
+            add(
+                "validation_lineage_contract",
+                FAIL,
+                "Manifesto não corresponde ao build instalado."
+            )
+            return
+        }
+
+        val modes =
+            linkedMapOf<
+                String,
+                String
+                >()
+
+        for (
+            index in
+            0 until contracts.length()
+        ) {
+            val item =
+                contracts.getJSONObject(
+                    index
+                )
+
+            modes[
+                item.optString(
+                    "id"
+                )
+            ] =
+                item.optString(
+                    "validation_mode"
+                )
+        }
+
+        val inheritedRequired =
+            listOf(
+                "privacy_collection_core",
+                "database_report_core",
+                "background_scheduler_core",
+                "local_intelligence_core"
+            )
+
+        val inheritedOk =
+            inheritedRequired.all {
+                modes[
+                    it
+                ] ==
+                    "inherited"
+            }
+
+        val runtimeOk =
+            modes[
+                "validation_export_ui"
+            ] ==
+                "runtime_autotest"
+
+        val ciOk =
+            modes[
+                "build_pipeline"
+            ] ==
+                "ci_only"
+
+        if (
+            inheritedOk &&
+            runtimeOk &&
+            ciOk
+        ) {
+            add(
+                "validation_lineage_contract",
+                PASS,
+                "4 núcleos herdados do último build físico; export/UI retestados automaticamente; pipeline protegido no CI."
+            )
+        } else {
+            add(
+                "validation_lineage_contract",
+                FAIL,
+                "Modos de validação divergentes do contrato esperado."
             )
         }
     }

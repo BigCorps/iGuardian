@@ -14,7 +14,10 @@ import java.util.Locale
 import java.util.TimeZone
 
 class DiagnosticsGenerator(private val context: Context) {
-    fun generate(): JSONObject {
+    fun generate(
+        includeActivitySnapshot: Boolean = true,
+        nowMs: Long = System.currentTimeMillis()
+    ): JSONObject {
         val db = GuardianDatabase(context)
         val counts = db.intervalCounts()
         val state = CollectorStateStore(context)
@@ -38,8 +41,8 @@ class DiagnosticsGenerator(private val context: Context) {
         }
 
         return JSONObject().apply {
-            put("diagnostic_schema", 16)
-            put("generated_at", iso(System.currentTimeMillis()))
+            put("diagnostic_schema", 17)
+            put("generated_at", iso(nowMs))
 
             put(
                 "app",
@@ -486,7 +489,12 @@ class DiagnosticsGenerator(private val context: Context) {
                     put("trend_dashboard_selectable_periods", true)
                     put("trend_dashboard_app_detail", true)
                     put("validation_pack_export", true)
-                    put("validation_suite_version", 6)
+                    put("validation_pack_schema_version", ValidationPackGenerator.PACK_SCHEMA)
+                    put("validation_pack_compact_success", true)
+                    put("validation_pack_full_evidence_on_failure", true)
+                    put("validation_lineage_manifest", true)
+                    put("validation_lineage_schema", ValidationLineage.SCHEMA)
+                    put("validation_suite_version", 7)
                     put("browser_domains", false)
                     put("anonymous_browser_detection", false)
                     put("anonymous_browser_schema_ready", true)
@@ -509,13 +517,22 @@ class DiagnosticsGenerator(private val context: Context) {
 
             put("recent_technical_events", technical)
 
-            put(
-                "activity_snapshot_24h",
-                ReportGenerator(context).periodJson(
-                    System.currentTimeMillis() - 24L * 60L * 60L * 1000L,
-                    System.currentTimeMillis()
+            if (
+                includeActivitySnapshot
+            ) {
+                put(
+                    "activity_snapshot_24h",
+                    ReportGenerator(context).periodJson(
+                        nowMs - 24L * 60L * 60L * 1000L,
+                        nowMs
+                    )
                 )
-            )
+            } else {
+                put(
+                    "activity_snapshot_24h_included",
+                    false
+                )
+            }
 
             put(
                 "privacy_guarantees",

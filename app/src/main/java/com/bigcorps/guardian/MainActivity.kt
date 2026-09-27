@@ -17,7 +17,9 @@ import android.view.ViewGroup
 import android.view.WindowInsets
 import android.widget.Button
 import android.widget.EditText
+import android.widget.FrameLayout
 import android.widget.LinearLayout
+import android.widget.ProgressBar
 import android.widget.ScrollView
 import android.widget.TextView
 import android.widget.Toast
@@ -53,6 +55,8 @@ class MainActivity : Activity() {
     private lateinit var trendDashboardAppsText: TextView
     private lateinit var trendDashboardAppInput: EditText
     private lateinit var trendDashboardAppDetailText: TextView
+    private lateinit var validationExportButton: Button
+    private lateinit var validationExportSpinner: ProgressBar
     private var trendDashboardPeriod =
         AppTrendPeriod.LAST_24_HOURS
     @Volatile
@@ -677,12 +681,62 @@ class MainActivity : Activity() {
                 )
             )
 
-            addView(
+            val validationExportContainer =
+                FrameLayout(
+                    this@MainActivity
+                ).apply {
+                    layoutParams =
+                        matchWidth().apply {
+                            topMargin =
+                                dp(12)
+                        }
+                }
+
+            validationExportButton =
                 primaryButton(
                     "Exportar pacote de validação (recomendado)"
                 ) {
                     exportValidationPack()
-                }.apply { topMargin(12) }
+                }
+
+            validationExportSpinner =
+                ProgressBar(
+                    this@MainActivity
+                ).apply {
+                    isIndeterminate =
+                        true
+
+                    indeterminateTintList =
+                        ColorStateList.valueOf(
+                            Color.WHITE
+                        )
+
+                    visibility =
+                        View.GONE
+                }
+
+            validationExportContainer.addView(
+                validationExportButton,
+                FrameLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT,
+                    ViewGroup.LayoutParams.WRAP_CONTENT
+                )
+            )
+
+            validationExportContainer.addView(
+                validationExportSpinner,
+                FrameLayout.LayoutParams(
+                    dp(22),
+                    dp(22),
+                    Gravity.END or Gravity.CENTER_VERTICAL
+                ).apply {
+                    marginEnd =
+                        dp(18)
+                }
+            )
+
+            addView(
+                validationExportContainer
             )
 
             addView(
@@ -726,7 +780,9 @@ class MainActivity : Activity() {
             appendLine("✓ WorkManager best-effort + catch-up")
             appendLine("✓ Inteligência local com auto-teste")
             appendLine("✓ Auto-validação de privacidade, timeline e totais")
-            appendLine("✓ Pacote único de validação")
+            appendLine("✓ Pacote único de validação compacto quando tudo passa")
+            appendLine("✓ Loader visual durante processamento do pacote")
+            appendLine("✓ Herança de validação por contrato + hash no CI")
             appendLine("✓ Insights automáticos com proteção contra histórico incompleto")
             appendLine("✓ Painel selecionável 24h/7d + detalhe por app")
             appendLine("✓ Relatório com precisão em milissegundos")
@@ -1141,6 +1197,9 @@ class MainActivity : Activity() {
         }
 
         exportInProgress = true
+        setValidationExportLoading(
+            true
+        )
         statusText.text = "Executando auto-testes e preparando pacote…"
 
         Thread {
@@ -1150,7 +1209,7 @@ class MainActivity : Activity() {
                 val contents =
                     ValidationPackGenerator
                         .generate(applicationContext)
-                        .toString(2)
+                        .toString()
 
                 val filename =
                     "guardian-validacao-${
@@ -1178,6 +1237,9 @@ class MainActivity : Activity() {
 
                     runOnUiThread {
                         exportInProgress = false
+                        setValidationExportLoading(
+                            false
+                        )
                         updateSummary()
                         showSavedDialog(saved)
                     }
@@ -1208,6 +1270,9 @@ class MainActivity : Activity() {
 
                 runOnUiThread {
                     exportInProgress = false
+                    setValidationExportLoading(
+                        false
+                    )
                     refresh(false)
 
                     Toast.makeText(
@@ -1333,6 +1398,47 @@ class MainActivity : Activity() {
         }.start()
     }
 
+    private fun setValidationExportLoading(
+        loading: Boolean
+    ) {
+        if (
+            !::validationExportButton.isInitialized ||
+            !::validationExportSpinner.isInitialized
+        ) {
+            return
+        }
+
+        validationExportButton.isEnabled =
+            !loading
+
+        validationExportButton.text =
+            if (
+                loading
+            ) {
+                "Preparando pacote…"
+            } else {
+                "Exportar pacote de validação (recomendado)"
+            }
+
+        validationExportButton.alpha =
+            if (
+                loading
+            ) {
+                0.88f
+            } else {
+                1.0f
+            }
+
+        validationExportSpinner.visibility =
+            if (
+                loading
+            ) {
+                View.VISIBLE
+            } else {
+                View.GONE
+            }
+    }
+
     private fun showSavedDialog(saved: ExportStorage.SavedFile) {
         AlertDialog.Builder(this)
             .setTitle("JSON salvo e verificado")
@@ -1392,6 +1498,9 @@ class MainActivity : Activity() {
 
         if (resultCode != RESULT_OK) {
             exportInProgress = false
+            setValidationExportLoading(
+                false
+            )
             clearPendingExport()
             return
         }
@@ -1405,6 +1514,9 @@ class MainActivity : Activity() {
             pending.length() <= 0L
         ) {
             exportInProgress = false
+            setValidationExportLoading(
+                false
+            )
             clearPendingExport()
 
             Toast.makeText(
@@ -1430,6 +1542,9 @@ class MainActivity : Activity() {
             }
 
             exportInProgress = false
+            setValidationExportLoading(
+                false
+            )
             clearPendingExport()
 
             showSavedDialog(
@@ -1441,6 +1556,9 @@ class MainActivity : Activity() {
             )
         } catch (t: Throwable) {
             exportInProgress = false
+            setValidationExportLoading(
+                false
+            )
             runCatching {
                 GuardianDatabase(applicationContext).logTechnical(
                     "EXPORT_WRITE_ERROR",

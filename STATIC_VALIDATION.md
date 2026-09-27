@@ -1,8 +1,9 @@
-# Static validation — 0.1.17
+# Static validation — 0.1.18
 
 - Kotlin brace/parenthesis structure: PASS
-- TrendDashboardEngine source present: PASS
-- Selectable 24h/7d UI source present: PASS
-- Per-app detail source present: PASS
-- ValidationSuite v6 dashboard check present: PASS
-- Diagnostic/validation-pack capability wiring: PASS
+- privacy/project source guard: PASS
+- validation lineage hash guard: PASS
+- APK guard shell syntax: PASS
+- compact-success pack wiring: PASS
+- circular export loader wiring: PASS
+- inherited source groups unchanged from 0.1.17 base: PASS by digest
