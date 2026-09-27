@@ -1,32 +1,31 @@
-# Guardian Android 0.1.23 — offline merged-manifest correction
+# Guardian Android 0.1.24 — Hybrid v3 implementation notes
 
-GitHub Actions #57 progressed much further than #55:
+Base: 0.1.23 repository HEAD `aaad03f8527ee2ce3a19a58ee2cfb17f166a327c`.
+That base's Android APK workflow #59 completed successfully after the bundled OCR
+manifest-merger network-permission correction.
 
-- project/privacy guard: PASS
-- validation lineage: PASS
-- unit tests: PASS
-- Kotlin compilation: PASS
-- APK build: PASS
-- final APK contract: FAIL
+Why 0.1.24 exists:
+- physical 0.1.23 evidence showed screenshots/OCR work technically;
+- host-shaped OCR reads were much more frequent than persisted host rows;
+- private visual probing could remain at zero because the mode probe was disabled
+  after a normal host observation existed;
+- accessibility extractor code still existed but was disconnected from the
+  running service pipeline.
 
-Exact failure:
-`APK final contém permissão/contrato proibido: android.permission.INTERNET`
+Hybrid v3 reconnects the tree as the primary source without returning heavy work
+to the Accessibility callback. Direct known IDs are read synchronously; bounded
+fallback, resource-ID inventory, OCR and SQLite remain off the callback hot path.
 
-Cause:
-the bundled ML Kit OCR dependency contributes INTERNET through a transitive
-library manifest even though the Guardian app manifest itself does not request it.
+Important deliberate choices:
+- URL bar visibility is not required, focus/typing is still rejected;
+- a missing toolbar never clears the last valid host while UsageStats says the
+  same browser is foreground;
+- tree hosts are strong, OCR hosts still need two consecutive reads;
+- secure-window screenshot error is not automatically incognito;
+- private → normal transition requires a positive Chromium standard-mode accessibility marker;
+- a window-screenshot failure falls back to the 0.1.23 display-screenshot path;
+- Mi Browser is observed without inventing a resource ID;
+- Device Owner is not introduced into normal Guardian onboarding.
 
-Correction:
-- add `tools:node="remove"` for `android.permission.INTERNET`
-- also remove `android.permission.ACCESS_NETWORK_STATE`
-- source guard now permits those names only as merger-removal directives
-- final APK guard now explicitly verifies both are absent from the built APK
-
-No distributable APK was uploaded by #57, so version remains:
-- versionName 0.1.23
-- versionCode 24
-
-Guardian Web Visual v1 remains otherwise unchanged.
-
-Expected artifact:
-guardian-android-0.1.23-fixed-signed-debug
+Expected GitHub Actions artifact after upload:
+`guardian-android-0.1.24-fixed-signed-debug`.

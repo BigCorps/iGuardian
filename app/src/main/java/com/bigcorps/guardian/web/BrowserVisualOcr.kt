@@ -12,7 +12,8 @@ import kotlin.math.roundToInt
 data class BrowserVisualOcrResult(
     val host: String?,
     val privateModeDetected: Boolean,
-    val privateReason: String
+    val privateReason: String,
+    val privateProbeAttempted: Boolean
 )
 
 class BrowserVisualOcr {
@@ -39,9 +40,10 @@ class BrowserVisualOcr {
                 0
         ) {
             return BrowserVisualOcrResult(
-                null,
-                false,
-                "INVALID_BITMAP"
+                host = null,
+                privateModeDetected = false,
+                privateReason = "INVALID_BITMAP",
+                privateProbeAttempted = false
             )
         }
 
@@ -64,6 +66,10 @@ class BrowserVisualOcr {
                 width,
                 toolbarHeight
             )
+
+        var toolbarHost:
+            String? =
+            null
 
         try {
             val toolbarText =
@@ -88,21 +94,28 @@ class BrowserVisualOcr {
                         toolbarText.text
                 )
 
+            toolbarHost =
+                toolbarParsed.host
+
             if (
-                toolbarParsed.host !=
-                    null ||
                 toolbarParsed.privateModeDetected ||
                 !allowModeProbe
             ) {
                 return BrowserVisualOcrResult(
                     host =
-                        toolbarParsed.host,
+                        toolbarHost,
                     privateModeDetected =
                         toolbarParsed.privateModeDetected,
                     privateReason =
-                        toolbarParsed.privateReason
+                        toolbarParsed.privateReason,
+                    privateProbeAttempted =
+                        allowModeProbe
                 )
             }
+
+            // 0.1.23 returned as soon as a toolbar host existed, which meant
+            // the larger incognito-start-page probe could remain at zero. In
+            // Hybrid v3, a known host no longer suppresses the private probe.
         } finally {
             toolbar.recycle()
         }
@@ -141,7 +154,7 @@ class BrowserVisualOcr {
 
             return BrowserVisualOcrResult(
                 host =
-                    null,
+                    toolbarHost,
                 privateModeDetected =
                     privateDetected,
                 privateReason =
@@ -151,7 +164,9 @@ class BrowserVisualOcr {
                         "VISUAL_INCOGNITO_START_PAGE"
                     } else {
                         "NO_VISUAL_PRIVATE_TEXT"
-                    }
+                    },
+                privateProbeAttempted =
+                    true
             )
         } finally {
             probe.recycle()

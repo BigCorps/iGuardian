@@ -137,7 +137,7 @@ class BrowserWebActivity :
 
         root.addView(
             text(
-                "O Guardian Web Visual analisa localmente a faixa superior do navegador para identificar apenas o host. A imagem existe somente em memória durante o processamento e nunca é salva. Caminho, parâmetros, buscas, título, conteúdo e texto OCR bruto não entram no banco.",
+                "O Guardian Web Hybrid tenta primeiro ler localmente a barra de endereço pela árvore de acessibilidade. Se o navegador não expuser um host utilizável, usa screenshot temporário + OCR local como fallback. Só o host sanitizado pode entrar no histórico; imagem, OCR bruto, caminho, parâmetros, buscas, título, conteúdo e texto digitado não são salvos.",
                 14f,
                 false,
                 TEXT_MUTED
@@ -192,7 +192,7 @@ class BrowserWebActivity :
 
                 addView(
                     text(
-                        "Guardian Web Visual v1: screenshot local temporário + OCR embarcado, sem INTERNET. A validação física desta rodada continua focada em Chrome Dev.",
+                        "Guardian Web Hybrid v3: árvore primeiro, OCR embarcado como fallback, tudo local e sem INTERNET. A validação física desta rodada continua focada em Chrome Dev e calibração opcional do Mi Browser.",
                         12f,
                         false,
                         TEXT_MUTED
@@ -255,7 +255,7 @@ class BrowserWebActivity :
 
         val health =
             buildString {
-                append("Guardian Web Visual v1: ")
+                append("Guardian Web Hybrid v3: ")
                 append(
                     if (alive) {
                         "respondendo"
@@ -265,12 +265,40 @@ class BrowserWebActivity :
                 )
 
                 append(
+                    "\nÁrvore: ${prefs.treeHostFoundCount()}/${prefs.treeProbeCount()} hosts • direta: ${prefs.treeDirectHostCount()} • fallback: ${prefs.treeFallbackHostCount()}"
+                )
+
+                prefs.treeLastUrlBarId()
+                    ?.let {
+                        append(
+                            "\nÚltima barra: $it"
+                        )
+                    }
+
+                append(
                     "\nScreenshots: ${prefs.visualScreenshotSuccessCount()}/${prefs.visualScreenshotRequestCount()} • falhas: ${prefs.visualScreenshotFailureCount()}"
                 )
 
                 append(
-                    "\nOCR: ${prefs.visualOcrRunCount()} • hosts reconhecidos: ${prefs.visualOcrHostCount()} • incógnito detectado: ${prefs.visualPrivateProbeCount()}"
+                    "\nOCR: ${prefs.visualOcrRunCount()} • hosts: ${prefs.visualOcrHostCount()} • probes privados: ${prefs.visualPrivateProbeCount()} • detecções privadas: ${prefs.visualPrivateDetectedCount()}"
                 )
+
+                if (
+                    prefs.visualWindowScreenshotRequestCount() >
+                    0
+                ) {
+                    append(
+                        "\nScreenshot por janela: ${prefs.visualWindowScreenshotSuccessCount()}/${prefs.visualWindowScreenshotRequestCount()} • falhas: ${prefs.visualWindowScreenshotFailureCount()}"
+                    )
+                }
+
+                if (
+                    prefs.secureBrowserWindow()
+                ) {
+                    append(
+                        "\nJanela segura observada (sinal diagnóstico; não significa incógnito por si só)."
+                    )
+                }
 
                 prefs.visualLastHost()
                     ?.let {
@@ -536,7 +564,7 @@ class BrowserWebActivity :
             card().apply {
                 addView(
                     text(
-                        "1. Aceite novamente o Guardian Web Visual e confirme a Acessibilidade.\n2. No Chrome Dev normal, abra uol.com.br por ~20 s e depois globo.com por ~20 s.\n3. Volte ao Guardian por alguns segundos.\n4. Abra uma nova guia anônima, aguarde ~4 s na tela inicial anônima e então visite outro domínio por ~20 s.\n5. Volte aqui e confira os hosts e o tempo anônimo. Depois exporte o pacote de validação.",
+                        "1. Confirme que o Guardian Web e a Acessibilidade continuam ativos.\n2. No Chrome Dev normal, abra uol.com.br por ~20 s e depois globo.com por ~20 s.\n3. Role uma página para recolher a barra e permaneça alguns segundos no mesmo site.\n4. Abra uma nova guia anônima, aguarde ~4–6 s na tela inicial e então visite outro domínio por ~20 s.\n5. Opcional: repita normal/anônimo no Mi Browser para capturar somente os resource IDs.\n6. Volte aqui, confira árvore/OCR/tempo anônimo e exporte o pacote de validação.",
                         13f,
                         false,
                         TEXT_MUTED
@@ -554,12 +582,13 @@ class BrowserWebActivity :
                 "Ativar Guardian Web"
             )
             .setMessage(
-                "Nesta versão, o Guardian Web usa a Acessibilidade para solicitar capturas temporárias da tela somente quando um navegador compatível está em primeiro plano.\n\n" +
-                    "O screenshot completo existe apenas em memória pelo tempo necessário para recortar e analisar localmente a barra superior. A imagem nunca é salva, exportada ou enviada.\n\n" +
+                "Nesta versão, o Guardian Web usa a Acessibilidade somente em navegadores compatíveis. Primeiro tenta ler a barra de endereço pela árvore do navegador e reduzir o endereço ao host. Se a árvore não fornecer um host utilizável, pode solicitar uma captura temporária da janela/tela para OCR local.\n\n" +
+                    "O screenshot existe apenas em memória pelo tempo necessário ao processamento e nunca é salvo, exportado ou enviado.\n\n" +
                     "O OCR é embarcado no aplicativo e funciona sem INTERNET. O texto OCR bruto também nunca é persistido.\n\n" +
                     "ANTES DE SALVAR, qualquer endereço reconhecido é reduzido ao host. Ex.: https://www.google.com/search?q=segredo vira google.com.\n\n" +
-                    "Não são armazenados: screenshot, OCR bruto, caminho, parâmetros, pesquisas, fragmentos, título da página, conteúdo, texto digitado ou senhas.\n\n" +
-                    "Para detectar navegação anônima, o Guardian pode analisar temporariamente uma área maior da parte superior quando ainda não há host reconhecido, apenas para procurar indicadores explícitos de modo anônimo.\n\n" +
+                    "Não são armazenados: screenshot, OCR bruto, texto da árvore, caminho, parâmetros, pesquisas, fragmentos, título da página, conteúdo, texto digitado ou senhas.\n\n" +
+                    "Para diagnóstico de compatibilidade, o Guardian DEV pode registrar apenas os identificadores técnicos dos elementos da árvore (resource IDs), nunca o texto desses elementos.\n\n" +
+                    "Para detectar navegação anônima, o Guardian combina indicadores da árvore, activity/class e texto visual explícito quando disponível. Uma janela protegida contra screenshot é apenas um sinal diagnóstico e não é tratada sozinha como prova de modo anônimo.\n\n" +
                     "Tudo permanece neste aparelho e o Guardian continua sem permissão de INTERNET."
             )
             .setNegativeButton(

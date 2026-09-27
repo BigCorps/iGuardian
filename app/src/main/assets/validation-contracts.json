@@ -1,8 +1,8 @@
 {
   "schema": 1,
-  "build_version": "0.1.23",
+  "build_version": "0.1.24",
   "base_physically_validated_version": "0.1.18",
-  "strategy": "Inherit unchanged usage/scheduler/intelligence/report by pinned hash; runtime-test changed validation/export wiring; physically retest Guardian Web Visual screenshot+OCR normal/incognito capture.",
+  "strategy": "Inherit unchanged usage/scheduler/intelligence by pinned hash; runtime-test changed browser report/validation wiring; physically retest Guardian Web Hybrid v3 tree-first + OCR fallback + normal/incognito capture.",
   "contracts": [
     {
       "id": "usage_collection_core",
@@ -51,7 +51,7 @@
     {
       "id": "database_report_browser_overlay",
       "validation_mode": "runtime_autotest",
-      "validated_in": "0.1.21",
+      "validated_in": "0.1.24",
       "manual_retest_required": false,
       "continuous_autotest": true,
       "files": [
@@ -59,12 +59,12 @@
         "app/src/main/java/com/bigcorps/guardian/core/ReportGenerator.kt",
         "app/src/main/java/com/bigcorps/guardian/web/BrowserReport.kt"
       ],
-      "sha256": "ab3091d8929a55bfe368825ab16ccf1065ce7268691f3c502b4484929bcd8a19"
+      "sha256": "__CURRENT_BUILD__"
     },
     {
       "id": "guardian_web_core",
       "validation_mode": "runtime_plus_physical",
-      "validated_in": "0.1.23",
+      "validated_in": "0.1.24",
       "manual_retest_required": true,
       "continuous_autotest": true,
       "files": [
@@ -81,6 +81,7 @@
         "app/src/main/java/com/bigcorps/guardian/web/BrowserWebActivity.kt",
         "app/src/test/java/com/bigcorps/guardian/web/BrowserDomainSanitizerTest.kt",
         "app/src/test/java/com/bigcorps/guardian/web/BrowserPrivateModeHeuristicsTest.kt",
+        "app/src/test/java/com/bigcorps/guardian/web/BrowserCatalogTest.kt",
         "app/src/main/java/com/bigcorps/guardian/web/BrowserVisualTextParser.kt",
         "app/src/main/java/com/bigcorps/guardian/web/BrowserVisualOcr.kt",
         "app/src/test/java/com/bigcorps/guardian/web/BrowserVisualTextParserTest.kt"
@@ -90,7 +91,7 @@
     {
       "id": "validation_export_ui",
       "validation_mode": "runtime_autotest",
-      "validated_in": "0.1.23",
+      "validated_in": "0.1.24",
       "manual_retest_required": false,
       "continuous_autotest": true,
       "files": [
@@ -105,7 +106,7 @@
     {
       "id": "build_pipeline",
       "validation_mode": "ci_only",
-      "validated_in": "0.1.23",
+      "validated_in": "0.1.24",
       "manual_retest_required": false,
       "continuous_autotest": false,
       "files": [

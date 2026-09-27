@@ -1,16 +1,34 @@
 {
-  "version": "0.1.7",
-  "build_fix": "01",
-  "failed_actions_run": 21,
-  "failed_step": "Unit tests",
-  "failing_test": "LocalQuestionIntentParserTest.parsesScreenOff",
-  "root_cause": "Parser required contiguous 'tela desligada' while natural Portuguese phrase inserted 'ficou'.",
-  "fix": [
-    "Recognize tela + deslig stem",
-    "Recognize tela + apag stem",
-    "Keep screen off synonym",
-    "Add four screen-off phrasing tests",
-    "Use Locale.forLanguageTag pt-BR"
+  "version": "0.1.24",
+  "version_code": 25,
+  "base_actions_run": 59,
+  "base_actions_status": "success",
+  "current_work": "Guardian Web Hybrid v3",
+  "reason": "0.1.23 proved screenshot/OCR but persisted only one host; tree extractor was disconnected and private visual probe telemetry was ambiguous.",
+  "changes": [
+    "tree first, OCR fallback",
+    "remove URL-bar isVisibleToUser requirement",
+    "preserve last host with UsageStats",
+    "resource-ID-only diagnostics",
+    "API 34+ window screenshot secure-window signal",
+    "expanded browser catalog",
+    "private probe attempts separated from detections",
+    "same-timestamp accessibility status snapshot reuse",
+    "positive Chromium normal-mode marker clears private latch; missing marker never does"
   ],
-  "version_bump_required": false
+  "database_migration_required": false,
+  "new_consent_required": false,
+  "physical_retest_required": true,
+  "local_validation": {
+    "hybrid_kotlin_structural_compile": "pass",
+    "guardian_web_ui_structural_compile": "pass",
+    "ocr_mlkit_stub_compile": "pass",
+    "extractor_behavior": "pass",
+    "ocr_deep_private_probe_behavior": "pass",
+    "preferences_telemetry_behavior": "pass",
+    "access_status_snapshot_behavior": "pass",
+    "catalog_runtime": "pass",
+    "json_xml_lineage_workflow_invariants": "pass"
+  },
+  "expected_actions_artifact": "guardian-android-0.1.24-fixed-signed-debug"
 }
