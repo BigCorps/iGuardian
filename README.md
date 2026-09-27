@@ -1,68 +1,81 @@
-# Guardian DEV — Android 0.1.19 — Guardian Web v1
+# Guardian DEV — Android 0.1.20 — Guardian Web Observer v2
 
-## 0.1.18 physical result
+## Physical finding from 0.1.19
 
-The compact validation architecture passed. The recommended pack dropped from ~768 KB to ~26 KB while retaining all green evidence. Validation lineage also passed.
+The Guardian Web service really connected on the Xiaomi/Android 16 device, but
+the detector never reached a host:
 
-The only warning was historical WorkManager stop telemetry after BOOT_COMPLETED. Android stop reason 13 is `STOP_REASON_USER`; the same unique work later completed successfully, with no retry/failure and remained ENQUEUED. 0.1.19 therefore keeps the telemetry but classifies a later successful completion as recovered.
+- consent granted
+- `WEB_SERVICE_CONNECTED` recorded
+- tracking start recorded
+- 0 browser rows
+- no last browser
+- no URL-bar id
+- no detector timestamp
 
-## Guardian Web v1
+The user also observed the Guardian UI becoming unresponsive after visiting
+Chrome and returning.
 
-0.1.19 intentionally introduces one narrow exception to the previous no-Accessibility rule. Guardian Web is optional, requires a separate prominent disclosure/consent, and the service is limited in XML to supported browser packages.
+## Observer v2
 
-It observes only browser chrome needed to read the address bar and strong private/incognito UI indicators. Before any persistence, a full URL is reduced to a sanitized host.
+The v1 service performed accessibility-tree queries, fallback traversal,
+incognito-marker traversal and SQLite writes on the app main thread.
 
-Example:
+0.1.20 moves that work to a dedicated `HandlerThread` named
+`GuardianWebObserver`.
 
-`https://www.google.com/search?q=segredo#x` -> `google.com`
+The Accessibility callback now only records sanitized counters and schedules a
+debounced worker sample.
 
-Never stored:
-- path
-- query/search terms
-- fragment
-- page title
-- page content
-- typed text/passwords
-- data from non-browser apps
+Worker behavior:
+- 5-second periodic sample
+- 500 ms event debounce
+- direct browser `url_bar` lookup first
+- bounded 120-node fallback
+- host-only persistence
+- incognito/private marker check
+- SQLite writes off the UI thread
 
-The app still has no INTERNET permission.
+## Better Android/Xiaomi status detection
 
-### Initial browser adapters
+The old status probe depended on one AccessibilityManager result. 0.1.20
+combines:
+- AccessibilityManager
+- Android secure enabled-service setting
+- recent service heartbeat
 
-- Chrome
-- Chrome Dev
-- Brave
-- Microsoft Edge
-- Vivaldi
-- Opera
-- Firefox
-- Samsung Internet
-- DuckDuckGo
+Diagnostics distinguish configured vs alive.
 
-Chrome Dev is the physical validation target for this round. Other adapters remain best-effort until individually exercised.
+## Privacy-safe calibration
 
-### Anonymous/incognito
+The app now records only technical counters/states:
+- service connection count
+- heartbeat
+- accessibility event count
+- sample count
+- host-found/focused/missing/invalid/error counts
+- last supported browser package
+- last URL-bar resource id
+- last extraction state/error class
 
-Private mode is never inferred from color or network traffic. It is marked only when strong browser-owned accessibility labels/resource indicators are present. The host remains local and is marked anonymous in the separate browser overlay.
-
-Browser data is an overlay and is not added to APP time a second time.
-
-## Validation
-
-ValidationSuite v8 adds:
-- Guardian Web host-only privacy contract
-- browser arithmetic/storage audit
-- physical normal + anonymous evidence check
-- recovered WorkManager stop semantics
-
-A successful physical test should produce no FAIL and `guardian_web_physical_validation=PASS`.
+It never logs the raw URL, path, query, search text, title or page content.
 
 ## Physical test
 
-1. Open Guardian Web and consent.
-2. If sideload restrictions appear, allow restricted settings for Guardian.
-3. Enable Guardian Web in Accessibility.
-4. In Chrome Dev normal mode, visit one domain for ~20 seconds.
-5. In Chrome Dev incognito mode, visit a different domain for ~20 seconds.
-6. Return to Guardian Web; both hosts should appear and the second should show anonymous time.
-7. Use the phone normally for another 20–30 minutes and export one recommended validation JSON.
+Install over 0.1.19. If Android disabled Accessibility during the update,
+re-enable Guardian Web.
+
+Then:
+1. Chrome Dev normal: one site for ~20–30 seconds.
+2. Chrome Dev incognito: a different site for ~20–30 seconds.
+3. Return to Guardian Web. The screen must remain responsive.
+4. Check the local diagnostic card.
+5. Export one recommended validation JSON.
+
+Expected final proof:
+- `guardian_web_runtime_health` PASS
+- normal rows > 0
+- anonymous rows > 0
+- >= 2 hosts
+- `guardian_web_physical_validation` PASS
+- `manual_test_required=false`

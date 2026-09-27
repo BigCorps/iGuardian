@@ -1,8 +1,10 @@
-# Guardian Android 0.1.19
+# Guardian Android 0.1.20
 
-Major final Android round: Guardian Web v1.
+Fixes the physical Guardian Web v1 failure on Xiaomi Android 16.
+
+Main fix:
+Accessibility tree work and browser database writes no longer run on the app
+main/UI thread.
 
 Expected Actions artifact:
-`guardian-android-0.1.19-fixed-signed-debug`
-
-Physical acceptance requires one normal Chrome Dev domain and one incognito domain plus a green validation pack.
+guardian-android-0.1.20-fixed-signed-debug

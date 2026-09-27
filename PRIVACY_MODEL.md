@@ -1,17 +1,19 @@
-# Privacy Model — Guardian 0.1.19
+# Privacy Model — Guardian 0.1.20
 
-## Guardian Web exception
+No privacy expansion from 0.1.19.
 
-The general prohibition on AccessibilityService now has one explicit narrow exception: the optional Guardian Web browser observer.
+Guardian Web persists only:
+- sanitized host
+- allowlisted browser package
+- interval
+- normal/private boolean
 
-It is allowed only because:
-- separate in-app consent is required;
-- Android user activation is required;
-- XML packageNames restricts events to supported browsers;
-- the code only extracts the browser address field and strong private-mode browser UI markers;
-- the value is reduced to host before database insertion;
-- focused address fields are ignored to avoid typed/search text;
-- no page content/title/path/query/fragment is persisted;
-- no network transport exists.
+Never persisted:
+- raw URL
+- path/query/search/fragment
+- title/content
+- text typed into the address bar
+- passwords
+- non-browser content
 
-PRIVATE app identity remains unavailable. Guardian Web does not inspect non-browser apps.
+New diagnostics are technical counters/states only.

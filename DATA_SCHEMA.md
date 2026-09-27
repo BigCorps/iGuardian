@@ -1,15 +1,10 @@
-# Data Schema — report v5 / DB v8 / diagnostic v18 / validation-pack v8
+# Data Schema — 0.1.20
 
-DB v8 adds `browser_sessions` with only:
-- start/end time
-- sanitized host
-- supported browser package
-- private-mode boolean
+- DB v8 unchanged
+- report v5 unchanged
+- diagnostic v19
+- validation pack v9
+- ValidationSuite v9
 
-No full URL column exists.
-
-Report v5 adds a `browser` overlay with host aggregates and normal/anonymous milliseconds. The overlay is not additive to APP total.
-
-Diagnostic v18 adds Guardian Web consent/service/storage audit evidence.
-
-Validation pack v8 adds top-level `guardian_web` + the one-round physical test contract.
+Guardian Web diagnostics add service/heartbeat/sample counters and extraction
+state. No raw web content is added.

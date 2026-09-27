@@ -212,12 +212,16 @@ object BrowserReport {
                 "consent_granted",
                 prefs.consented()
             )
-            put(
-                "accessibility_service_enabled",
-                BrowserWebAccess.isEnabled(
-                    context
+            val accessStatus =
+                BrowserWebAccess.status(
+                    context,
+                    endMs
                 )
-            )
+
+            put("accessibility_service_enabled", accessStatus.enabled)
+            put("accessibility_service_manager_reported", accessStatus.managerReported)
+            put("accessibility_service_secure_setting_reported", accessStatus.secureSettingReported)
+            put("accessibility_service_alive", accessStatus.alive)
             put(
                 "total_milliseconds",
                 totalMs

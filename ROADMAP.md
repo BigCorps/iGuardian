@@ -1,20 +1,24 @@
 # Guardian Roadmap
 
-## Phase 1 — Android foundation
-Validated.
+## Android
 
-## Phase 2 — Android intelligence + Guardian Web — FINAL VALIDATION
+0.1.20 is the Guardian Web physical-fix round.
 
-0.1.19 adds the major missing product value:
-- domain/host usage
-- normal vs anonymous/incognito browser time
-- host-only privacy-before-storage
-- optional browser-scoped AccessibilityService
+If normal + incognito domain capture passes and the UI remains responsive,
+Android moves to final UX/release cleanup rather than another architecture
+round.
 
-If this physical round passes, Android enters final polish rather than another architecture phase.
+## Windows
 
-## Next
+After Guardian Web is physically validated, Windows development can begin using
+the same product contracts:
+- application activity
+- host-only browser activity
+- normal/private browsing
+- privacy-before-storage
+- trends and local intelligence
+- compact validation packs
+- validation lineage
 
-0.1.20 only if needed for final polish/fixes discovered in 0.1.19. Then start Windows.
-
-Windows should reproduce the same product semantics with Windows-native collection plus browser integration/extension rather than Android AccessibilityService. Shared concepts: host sanitizer, browser-domain schema, anonymous/private flag, reports, local intelligence and validation contracts.
+Windows uses Windows-native collection/browser integration, not Android
+AccessibilityService.

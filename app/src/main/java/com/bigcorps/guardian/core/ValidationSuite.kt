@@ -15,7 +15,7 @@ object ValidationSuite {
     private const val PASS = "PASS"
     private const val WARN = "WARN"
     private const val FAIL = "FAIL"
-    private const val SUITE_VERSION = 8
+    private const val SUITE_VERSION = 9
 
     fun run(
         context: Context,
@@ -47,6 +47,7 @@ object ValidationSuite {
         validateTrendDashboardEngine(context, ::add)
         validateValidationLineage(context, ::add)
         validateBrowserWebPrivacy(context, daily, ::add)
+        validateGuardianWebRuntimeHealth(diagnostic, ::add)
         validateGuardianWebPhysical(diagnostic, ::add)
         validateSystemSurfaceExclusion(daily, ::add)
         validateBackground(diagnostic, ::add)
@@ -1245,6 +1246,77 @@ object ValidationSuite {
         }
     }
 
+    private fun validateGuardianWebRuntimeHealth(
+        diagnostic: JSONObject,
+        add: (String, String, String) -> Unit
+    ) {
+        val web =
+            diagnostic.optJSONObject(
+                "browser_web"
+            )
+
+        if (web == null) {
+            add(
+                "guardian_web_runtime_health",
+                FAIL,
+                "Diagnóstico Guardian Web ausente."
+            )
+            return
+        }
+
+        val consent = web.optBoolean("consent_granted", false)
+        val enabled = web.optBoolean("accessibility_service_enabled", false)
+        val alive = web.optBoolean("accessibility_service_alive", false)
+        val connections = web.optInt("service_connection_count", 0)
+        val samples = web.optInt("sample_count", 0)
+        val errors = web.optInt("sample_error_count", 0)
+        val found = web.optInt("host_found_count", 0)
+
+        when {
+            !consent ->
+                add(
+                    "guardian_web_runtime_health",
+                    WARN,
+                    "Guardian Web ainda sem consentimento."
+                )
+
+            !enabled ->
+                add(
+                    "guardian_web_runtime_health",
+                    WARN,
+                    "Serviço ainda não aparece como habilitado no sistema."
+                )
+
+            connections <= 0 ->
+                add(
+                    "guardian_web_runtime_health",
+                    WARN,
+                    "Serviço habilitado, mas ainda sem conexão registrada."
+                )
+
+            errors > 0 ->
+                add(
+                    "guardian_web_runtime_health",
+                    WARN,
+                    "Observador ativo com errors=$errors;samples=$samples;hosts=$found."
+                )
+
+            alive && samples > 0 ->
+                add(
+                    "guardian_web_runtime_health",
+                    PASS,
+                    "Observador v2 vivo fora da thread principal; connections=$connections;samples=$samples;hosts=$found;errors=0."
+                )
+
+            else ->
+                add(
+                    "guardian_web_runtime_health",
+                    WARN,
+                    "Serviço configurado, aguardando heartbeat/amostras; connections=$connections;samples=$samples;hosts=$found."
+                )
+        }
+    }
+
     private fun validateGuardianWebPhysical(
         diagnostic: JSONObject,
         add: (String, String, String) -> Unit
@@ -1278,6 +1350,12 @@ object ValidationSuite {
                 false
             )
 
+        val alive =
+            web.optBoolean(
+                "accessibility_service_alive",
+                false
+            )
+
         val normal =
             web.optInt(
                 "normal_rows",
@@ -1299,6 +1377,15 @@ object ValidationSuite {
         if (
             consent &&
             service &&
+            (
+                alive ||
+                    (
+                        normal >
+                            0 &&
+                        anonymous >
+                            0
+                    )
+                ) &&
             normal >
                 0 &&
             anonymous >
@@ -1315,7 +1402,7 @@ object ValidationSuite {
             add(
                 "guardian_web_physical_validation",
                 WARN,
-                "Teste físico pendente: consent=$consent;service=$service;normal=$normal;anonymous=$anonymous;hosts=$distinctHosts."
+                "Teste físico pendente: consent=$consent;service=$service;alive=$alive;normal=$normal;anonymous=$anonymous;hosts=$distinctHosts."
             )
         }
     }

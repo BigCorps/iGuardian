@@ -1,13 +1,11 @@
-# Static validation — 0.1.19
+# Static validation — 0.1.20
 
-- Kotlin structural brace/parenthesis scan: PASS
-- privacy/project source guard: PASS
-- AccessibilityService isolation to Guardian Web: PASS
-- browser XML package allowlist + isAccessibilityTool=false: PASS
+- Kotlin brace/parenthesis structure: PASS
+- Guardian Web accessibility/tree/DB work off UI thread: PASS
+- Xiaomi-safe Accessibility status wiring: PASS
+- browser-only Accessibility package scope retained: PASS
+- event flood reduced: PASS
+- 5s ticker / 500ms debounce / 120-node fallback: PASS
+- privacy/project guard: PASS
 - validation lineage hash guard: PASS
-- final APK guard shell syntax: PASS
-- host-only sanitizer unit-test source present: PASS
-- private-mode heuristic unit-test source present: PASS
-- DB v8/report v5/diagnostic v18/suite v8 wiring: PASS
-
-Android compilation/unit execution still requires GitHub Actions.
+- APK guard shell syntax: PASS

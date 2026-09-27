@@ -45,7 +45,7 @@ class DiagnosticsGenerator(private val context: Context) {
         }
 
         return JSONObject().apply {
-            put("diagnostic_schema", 18)
+            put("diagnostic_schema", 19)
             put("generated_at", iso(nowMs))
 
             put(
@@ -520,10 +520,13 @@ class DiagnosticsGenerator(private val context: Context) {
                     put("validation_pack_full_evidence_on_failure", true)
                     put("validation_lineage_manifest", true)
                     put("validation_lineage_schema", ValidationLineage.SCHEMA)
-                    put("validation_suite_version", 8)
+                    put("validation_suite_version", 9)
                     put("browser_domains", true)
                     put("browser_domains_storage", "host_only")
                     put("browser_web_optional_accessibility", true)
+                    put("browser_web_observer_version", 2)
+                    put("browser_web_off_main_thread", true)
+                    put("browser_web_runtime_health_telemetry", true)
                     put("browser_web_supported_browser_count", BrowserCatalog.supported.size)
                     put("anonymous_browser_detection", true)
                     put("anonymous_browser_detection_source", "browser_accessibility_indicators")
@@ -552,9 +555,75 @@ class DiagnosticsGenerator(private val context: Context) {
                             ?.let(::iso)
                             ?: JSONObject.NULL
                     )
+                    val accessStatus =
+                        BrowserWebAccess.status(
+                            context,
+                            nowMs
+                        )
+
+                    put("accessibility_service_enabled", accessStatus.enabled)
+                    put("accessibility_service_manager_reported", accessStatus.managerReported)
+                    put("accessibility_service_secure_setting_reported", accessStatus.secureSettingReported)
+                    put("accessibility_service_alive", accessStatus.alive)
                     put(
-                        "accessibility_service_enabled",
-                        BrowserWebAccess.isEnabled(context)
+                        "service_connected_at",
+                        webPreferences.serviceConnectedAtMs()
+                            .takeIf { it > 0L }
+                            ?.let(::iso)
+                            ?: JSONObject.NULL
+                    )
+                    put(
+                        "last_heartbeat_at",
+                        webPreferences.lastHeartbeatMs()
+                            .takeIf { it > 0L }
+                            ?.let(::iso)
+                            ?: JSONObject.NULL
+                    )
+                    put("service_connection_count", webPreferences.serviceConnectionCount())
+                    put("accessibility_event_count", webPreferences.accessibilityEventCount())
+                    put(
+                        "last_event_browser_package",
+                        webPreferences.lastEventBrowserPackage() ?: JSONObject.NULL
+                    )
+                    put("last_event_type", webPreferences.lastEventType())
+                    put(
+                        "last_event_at",
+                        webPreferences.lastEventAtMs()
+                            .takeIf { it > 0L }
+                            ?.let(::iso)
+                            ?: JSONObject.NULL
+                    )
+                    put("sample_count", webPreferences.sampleCount())
+                    put("host_found_count", webPreferences.hostFoundCount())
+                    put("focused_skip_count", webPreferences.focusedSkipCount())
+                    put("missing_count", webPreferences.missingCount())
+                    put("invalid_count", webPreferences.invalidCount())
+                    put("sample_error_count", webPreferences.sampleErrorCount())
+                    put(
+                        "last_sample_state",
+                        webPreferences.lastSampleState() ?: JSONObject.NULL
+                    )
+                    put(
+                        "last_sample_at",
+                        webPreferences.lastSampleAtMs()
+                            .takeIf { it > 0L }
+                            ?.let(::iso)
+                            ?: JSONObject.NULL
+                    )
+                    put(
+                        "last_root_browser_package",
+                        webPreferences.lastRootBrowserPackage() ?: JSONObject.NULL
+                    )
+                    put(
+                        "last_sample_error",
+                        webPreferences.lastSampleError() ?: JSONObject.NULL
+                    )
+                    put(
+                        "last_sample_error_at",
+                        webPreferences.lastSampleErrorAtMs()
+                            .takeIf { it > 0L }
+                            ?.let(::iso)
+                            ?: JSONObject.NULL
                     )
                     put(
                         "tracking_started_at",

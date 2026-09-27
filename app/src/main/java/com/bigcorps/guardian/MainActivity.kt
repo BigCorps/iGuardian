@@ -837,7 +837,7 @@ class MainActivity : Activity() {
             appendLine("✓ Insights automáticos com proteção contra histórico incompleto")
             appendLine("✓ Painel selecionável 24h/7d + detalhe por app")
             appendLine("✓ Relatório com precisão em milissegundos")
-            appendLine("✓ Guardian Web opcional: hosts por navegador")
+            appendLine("✓ Guardian Web v2: hosts por navegador sem bloquear a UI")
             appendLine("✓ Guia anônima por indicadores confiáveis do navegador")
             appendLine("✓ URL completa, busca, título e conteúdo nunca armazenados")
             append("— Nuvem/API externa: não existe neste build")

@@ -126,10 +126,16 @@ class BrowserWebActivity :
                 this
             )
 
-        val enabled =
-            BrowserWebAccess.isEnabled(
+        val accessStatus =
+            BrowserWebAccess.status(
                 this
             )
+
+        val enabled =
+            accessStatus.enabled
+
+        val alive =
+            accessStatus.alive
 
         root.addView(
             card().apply {
@@ -139,8 +145,12 @@ class BrowserWebActivity :
                             !prefs.consented() ->
                                 "• Consentimento ainda não concedido"
 
+                            enabled &&
+                                alive ->
+                                "✓ Guardian Web ativo e respondendo"
+
                             enabled ->
-                                "✓ Guardian Web ativo"
+                                "• Guardian Web habilitado; aguardando o observador responder"
 
                             else ->
                                 "• Guardian Web autorizado, mas o serviço de acessibilidade está desligado"
@@ -217,6 +227,77 @@ class BrowserWebActivity :
                 topMargin(
                     14
                 )
+            }
+        )
+
+        val health =
+            buildString {
+                append("Observador v2: ")
+                append(
+                    if (alive) {
+                        "respondendo"
+                    } else {
+                        "sem heartbeat recente"
+                    }
+                )
+                append(
+                    "\nAmostras: ${prefs.sampleCount()} • hosts encontrados: ${prefs.hostFoundCount()} • erros: ${prefs.sampleErrorCount()}"
+                )
+
+                prefs.lastRootBrowserPackage()
+                    ?.let {
+                        append("\nÚltimo navegador observado: $it")
+                    }
+
+                prefs.lastSampleState()
+                    ?.let {
+                        append(" • estado: $it")
+                    }
+
+                prefs.lastUrlBarId()
+                    ?.let {
+                        append("\nBarra detectada: $it")
+                    }
+            }
+
+        root.addView(
+            card().apply {
+                addView(
+                    text(
+                        "Diagnóstico local",
+                        14f,
+                        true,
+                        TEXT_PRIMARY
+                    )
+                )
+
+                addView(
+                    text(
+                        health,
+                        12f,
+                        false,
+                        TEXT_MUTED
+                    ).apply {
+                        setPadding(
+                            0,
+                            dp(8),
+                            0,
+                            0
+                        )
+                    }
+                )
+
+                addView(
+                    outlineButton(
+                        "Atualizar diagnóstico"
+                    ) {
+                        render()
+                    }.apply {
+                        topMargin(10)
+                    }
+                )
+            }.apply {
+                topMargin(10)
             }
         )
 

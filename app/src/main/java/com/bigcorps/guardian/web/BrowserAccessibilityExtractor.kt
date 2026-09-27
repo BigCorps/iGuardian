@@ -17,7 +17,7 @@ data class BrowserModeExtraction(
 
 object BrowserAccessibilityExtractor {
     private const val MAX_TREE_NODES =
-        300
+        120
 
     fun extractHost(
         root: AccessibilityNodeInfo,

@@ -1,14 +1,14 @@
 {
   "project_codename": "Guardian",
-  "version": "0.1.19",
+  "version": "0.1.20",
   "platform": "android",
   "phase": 2,
-  "phase_name": "Guardian Web v1 final major Android validation",
+  "phase_name": "Guardian Web Observer v2 physical validation",
   "schema_version": 5,
-  "diagnostic_schema_version": 18,
+  "diagnostic_schema_version": 19,
   "database_version": 8,
-  "validation_pack_schema": 8,
-  "validation_suite_version": 8,
+  "validation_pack_schema": 9,
+  "validation_suite_version": 9,
   "repository": "BigCorps/iGuardian",
   "backend": "none",
   "internet_permission": false,
@@ -58,5 +58,24 @@
     "ValidationSuite v8",
     "recovered WorkManager stop semantics"
   ],
-  "next_task": "Upload 0.1.19, verify Actions, install over 0.1.18, enable Guardian Web, visit one normal and one incognito Chrome Dev domain for ~20s each, use 20-30m, export one validation JSON."
+  "next_task": "Upload 0.1.20 and verify Actions. Install over 0.1.19. Ensure Guardian Web Accessibility is enabled. Browse one normal and one incognito Chrome Dev site for 20-30s each, verify UI responsiveness, then export one validation JSON.",
+  "last_physical_finding": {
+    "version": "0.1.19",
+    "guardian_web_service_connected": true,
+    "consent_granted": true,
+    "stored_rows": 0,
+    "normal_rows": 0,
+    "anonymous_rows": 0,
+    "detector_state_seen": false,
+    "ui_freeze_after_browser": true
+  },
+  "implemented_in_0_1_20": [
+    "off-main Guardian Web HandlerThread observer",
+    "5-second ticker and 500ms debounce",
+    "120-node bounded fallback",
+    "manager + secure settings + heartbeat service status",
+    "privacy-safe observer health telemetry",
+    "Guardian Web diagnostic UI",
+    "ValidationSuite v9 runtime health check"
+  ]
 }
