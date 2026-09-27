@@ -1,8 +1,8 @@
 {
   "schema": 1,
-  "build_version": "0.1.20",
+  "build_version": "0.1.21",
   "base_physically_validated_version": "0.1.18",
-  "strategy": "Inherit unchanged usage/scheduler/intelligence by hash; runtime-test changed Guardian Web observer/status/diagnostics; require physical normal+incognito proof.",
+  "strategy": "Inherit unchanged usage/scheduler/intelligence by hash; runtime-test changed Guardian Web v3 capture path; require physical normal+incognito proof.",
   "contracts": [
     {
       "id": "usage_collection_core",
@@ -51,7 +51,7 @@
     {
       "id": "database_report_browser_overlay",
       "validation_mode": "runtime_autotest",
-      "validated_in": "0.1.20",
+      "validated_in": "0.1.21",
       "manual_retest_required": false,
       "continuous_autotest": true,
       "files": [
@@ -64,7 +64,7 @@
     {
       "id": "guardian_web_core",
       "validation_mode": "runtime_plus_physical",
-      "validated_in": "0.1.20",
+      "validated_in": "0.1.21",
       "manual_retest_required": true,
       "continuous_autotest": true,
       "files": [
@@ -82,12 +82,12 @@
         "app/src/test/java/com/bigcorps/guardian/web/BrowserDomainSanitizerTest.kt",
         "app/src/test/java/com/bigcorps/guardian/web/BrowserPrivateModeHeuristicsTest.kt"
       ],
-      "sha256": "b72907569c889a56ab8d7bcff59800e7460d74fb328dc992bb2c2bec36e2c339"
+      "sha256": "63058c1c970fa79d6adf153b35a78e1f8635add6e9fd2ac4fc34933175dabec8"
     },
     {
       "id": "validation_export_ui",
       "validation_mode": "runtime_autotest",
-      "validated_in": "0.1.20",
+      "validated_in": "0.1.21",
       "manual_retest_required": false,
       "continuous_autotest": true,
       "files": [
@@ -97,12 +97,12 @@
         "app/src/main/java/com/bigcorps/guardian/core/ValidationSuite.kt",
         "app/src/main/java/com/bigcorps/guardian/core/ValidationLineage.kt"
       ],
-      "sha256": "939fec2437391a9c15f701a80dafdebb0b5a557aa090beb8d9f9385ba26bb126"
+      "sha256": "de10beb3a64d73ab56d16c36a09f4eb79d578b52d969b333f11697b21b86e098"
     },
     {
       "id": "build_pipeline",
       "validation_mode": "ci_only",
-      "validated_in": "0.1.20",
+      "validated_in": "0.1.21",
       "manual_retest_required": false,
       "continuous_autotest": false,
       "files": [
@@ -112,7 +112,7 @@
         "scripts/verify_validation_contracts.py",
         "scripts/verify_apk_contract.sh"
       ],
-      "sha256": "0681d9c799b8b8d47c61e58eb76ee3d8eae71271482f83e7a26dd1bba0acd07a"
+      "sha256": "dad26c3abde5c207571474eae383b228aefbc65c7cc4e6a11ca55972fc279ff3"
     }
   ]
 }

@@ -1,11 +1,14 @@
 package com.bigcorps.guardian.web
 
 import android.accessibilityservice.AccessibilityService
+import android.os.Build
 import android.os.Handler
 import android.os.HandlerThread
+import android.os.Looper
 import android.os.PowerManager
 import android.os.SystemClock
 import android.view.accessibility.AccessibilityEvent
+import android.view.accessibility.AccessibilityNodeInfo
 import com.bigcorps.guardian.core.GuardianDatabase
 
 class BrowserAccessibilityService : AccessibilityService() {
@@ -15,211 +18,681 @@ class BrowserAccessibilityService : AccessibilityService() {
         val privateMode: Boolean
     )
 
-    private lateinit var workerThread: HandlerThread
-    private lateinit var worker: Handler
+    private val mainHandler =
+        Handler(
+            Looper.getMainLooper()
+        )
 
-    private var lastObservation: Observation? = null
-    private var lastWallMs = 0L
-    private var lastElapsedMs = 0L
+    private lateinit var storageThread:
+        HandlerThread
 
-    private val sampleRunnable =
-        object : Runnable {
+    private lateinit var storage:
+        Handler
+
+    private var currentObservation:
+        Observation? =
+        null
+
+    private var foregroundPackage:
+        String? =
+        null
+
+    private var lastBankWallMs =
+        0L
+
+    private var lastBankElapsedMs =
+        0L
+
+    private var lastExtractElapsedMs =
+        0L
+
+    private var lastFallbackElapsedMs =
+        0L
+
+    private var lastPrivateScanElapsedMs =
+        0L
+
+    private var cachedPrivateMode =
+        false
+
+    private var cachedPrivatePackage:
+        String? =
+        null
+
+    private val ticker =
+        object :
+            Runnable {
             override fun run() {
-                sampleSafely()
-                if (::worker.isInitialized) {
-                    worker.postDelayed(this, SAMPLE_INTERVAL_MS)
+                runCatching {
+                    tick(
+                        verifyForeground =
+                            true
+                    )
+                }.onFailure {
+                    BrowserWebPreferences(
+                        applicationContext
+                    ).recordSampleError(
+                        it::class.java.simpleName
+                    )
                 }
+
+                mainHandler.postDelayed(
+                    this,
+                    TICK_MS
+                )
             }
         }
 
-    private val eventRunnable = Runnable { sampleSafely() }
-
     override fun onCreate() {
         super.onCreate()
-        workerThread = HandlerThread("GuardianWebObserver").apply { start() }
-        worker = Handler(workerThread.looper)
+
+        storageThread =
+            HandlerThread(
+                "GuardianWebStorage"
+            ).apply {
+                start()
+            }
+
+        storage =
+            Handler(
+                storageThread.looper
+            )
     }
 
     override fun onServiceConnected() {
         super.onServiceConnected()
-        val prefs = BrowserWebPreferences(applicationContext)
+
+        val prefs =
+            BrowserWebPreferences(
+                applicationContext
+            )
+
         prefs.markTrackingStartedIfMissing()
         prefs.recordServiceConnected()
 
         runCatching {
-            GuardianDatabase(applicationContext)
-                .logTechnical("WEB_SERVICE_CONNECTED")
+            GuardianDatabase(
+                applicationContext
+            ).logTechnical(
+                "WEB_SERVICE_CONNECTED"
+            )
         }
 
-        worker.removeCallbacks(sampleRunnable)
-        worker.post(sampleRunnable)
+        mainHandler.removeCallbacks(
+            ticker
+        )
+
+        mainHandler.post(
+            ticker
+        )
     }
 
-    override fun onAccessibilityEvent(event: AccessibilityEvent?) {
-        val prefs = BrowserWebPreferences(applicationContext)
-        if (!prefs.consented()) return
+    override fun onAccessibilityEvent(
+        event: AccessibilityEvent?
+    ) {
+        if (
+            event ==
+            null
+        ) {
+            return
+        }
 
-        val pkg =
-            event?.packageName?.toString()
-                ?.takeIf { BrowserCatalog.isSupported(it) }
+        val prefs =
+            BrowserWebPreferences(
+                applicationContext
+            )
 
-        prefs.recordAccessibilityEvent(pkg, event?.eventType ?: 0)
+        if (
+            !prefs.consented()
+        ) {
+            return
+        }
 
-        if (!::worker.isInitialized) return
-        worker.removeCallbacks(eventRunnable)
-        worker.postDelayed(eventRunnable, EVENT_DEBOUNCE_MS)
+        val packageName =
+            event.packageName
+                ?.toString()
+
+        prefs.recordAccessibilityEvent(
+            browserPackage =
+                packageName,
+            eventType =
+                event.eventType
+        )
+
+        val spec =
+            BrowserCatalog.spec(
+                packageName
+            )
+                ?: return
+
+        foregroundPackage =
+            spec.packageName
+
+        val now =
+            SystemClock.elapsedRealtime()
+
+        if (
+            event.eventType ==
+            AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED &&
+            now -
+                lastExtractElapsedMs <
+                EXTRACT_THROTTLE_MS
+        ) {
+            return
+        }
+
+        lastExtractElapsedMs =
+            now
+
+        runCatching {
+            inspectActiveBrowser(
+                spec,
+                allowFallback =
+                    now -
+                        lastFallbackElapsedMs >=
+                        FALLBACK_SCAN_INTERVAL_MS,
+                allowPrivateScan =
+                    now -
+                        lastPrivateScanElapsedMs >=
+                        PRIVATE_SCAN_INTERVAL_MS
+            )
+        }.onFailure {
+            prefs.recordSampleError(
+                it::class.java.simpleName
+            )
+        }
+
+        tick(
+            verifyForeground =
+                false
+        )
     }
 
     override fun onInterrupt() {
-        if (::worker.isInitialized) worker.post { sampleAsInactive() }
+        stopAccruing()
     }
 
     override fun onDestroy() {
-        if (::worker.isInitialized) {
-            worker.removeCallbacks(sampleRunnable)
-            worker.removeCallbacks(eventRunnable)
-            worker.post { sampleAsInactive() }
-        }
+        mainHandler.removeCallbacks(
+            ticker
+        )
+
+        stopAccruing()
 
         runCatching {
-            GuardianDatabase(applicationContext)
-                .logTechnical("WEB_SERVICE_DISCONNECTED")
+            GuardianDatabase(
+                applicationContext
+            ).logTechnical(
+                "WEB_SERVICE_DISCONNECTED"
+            )
         }
 
-        if (::workerThread.isInitialized) workerThread.quitSafely()
+        if (
+            ::storageThread.isInitialized
+        ) {
+            storageThread.quitSafely()
+        }
+
         super.onDestroy()
     }
 
-    private fun sampleSafely() {
-        val prefs = BrowserWebPreferences(applicationContext)
+    private fun tick(
+        verifyForeground: Boolean
+    ) {
+        val prefs =
+            BrowserWebPreferences(
+                applicationContext
+            )
+
         prefs.recordHeartbeat()
 
-        try {
-            sampleNow(prefs)
-        } catch (t: Throwable) {
-            prefs.recordSampleError(t::class.java.simpleName)
-            runCatching {
-                GuardianDatabase(applicationContext)
-                    .logTechnical("WEB_SAMPLE_ERROR", t::class.java.simpleName)
-            }
-            sampleAsInactive()
-        }
-    }
-
-    private fun sampleNow(prefs: BrowserWebPreferences) {
-        if (!prefs.consented()) {
-            prefs.recordSample(null, "NO_CONSENT", false)
-            sampleAsInactive()
-            return
-        }
-
-        val power = getSystemService(POWER_SERVICE) as PowerManager
-        if (!power.isInteractive) {
-            prefs.recordSample(null, "SCREEN_OFF", false)
-            sampleAsInactive()
-            return
-        }
-
-        val root = rootInActiveWindow
-        if (root == null) {
-            prefs.recordSample(null, "ROOT_NULL", false)
-            sampleAsInactive()
-            return
-        }
-
-        val packageName = root.packageName?.toString()
-        val spec = BrowserCatalog.spec(packageName)
-
-        if (spec == null || packageName == null) {
-            prefs.recordSample(null, "UNSUPPORTED_WINDOW", false)
-            sampleAsInactive()
-            return
-        }
-
-        val extraction =
-            BrowserAccessibilityExtractor.extractHost(root, spec)
-
-        prefs.recordSample(
-            packageName,
-            extraction.state,
-            extraction.host != null
-        )
-
-        if (extraction.state == "FOCUSED" || extraction.state == "INVALID") {
-            updateObservation(null)
-            return
-        }
-
-        val host = extraction.host
-        if (host == null) {
-            val previous = lastObservation
-            if (
-                previous != null &&
-                previous.browserPackage == packageName &&
-                extraction.state == "MISSING"
-            ) {
-                updateObservation(previous)
-            } else {
-                updateObservation(null)
-            }
-            return
-        }
-
-        val mode =
-            BrowserAccessibilityExtractor.detectPrivateMode(root, spec)
-
-        prefs.recordDetectorState(
-            packageName,
-            extraction.urlBarId,
-            mode.privateMode,
-            mode.reason
-        )
-
-        updateObservation(
-            Observation(host, packageName, mode.privateMode)
-        )
-    }
-
-    private fun sampleAsInactive() = updateObservation(null)
-
-    private fun updateObservation(current: Observation?) {
-        val nowWall = System.currentTimeMillis()
-        val nowElapsed = SystemClock.elapsedRealtime()
-        val previous = lastObservation
+        val power =
+            getSystemService(
+                POWER_SERVICE
+            ) as
+                PowerManager
 
         if (
-            previous != null &&
-            lastWallMs > 0L &&
-            lastElapsedMs > 0L
+            !power.isInteractive
         ) {
-            val elapsed = nowElapsed - lastElapsedMs
+            prefs.recordSample(
+                null,
+                "SCREEN_OFF",
+                false
+            )
+            stopAccruing()
+            return
+        }
+
+        if (
+            verifyForeground
+        ) {
+            val active =
+                activeRoot()
+
             if (
-                elapsed in 1L..MAX_BANK_GAP_MS &&
-                nowWall > lastWallMs
+                active ==
+                null
             ) {
-                runCatching {
-                    GuardianDatabase(applicationContext).recordBrowserChunk(
-                        startMs = lastWallMs,
-                        endMs = nowWall,
-                        host = previous.host,
-                        browserPackage = previous.browserPackage,
-                        privateMode = previous.privateMode
+                prefs.recordSample(
+                    null,
+                    "ROOT_NULL_MAIN",
+                    false
+                )
+                stopAccruing()
+                return
+            }
+
+            try {
+                foregroundPackage =
+                    active.packageName
+                        ?.toString()
+
+                val spec =
+                    BrowserCatalog.spec(
+                        foregroundPackage
                     )
-                }.onFailure {
-                    BrowserWebPreferences(applicationContext)
-                        .recordSampleError(it::class.java.simpleName)
+
+                if (
+                    spec ==
+                    null
+                ) {
+                    prefs.recordSample(
+                        null,
+                        "NON_BROWSER_FOREGROUND",
+                        false
+                    )
+                    stopAccruing()
+                    return
                 }
+
+                val now =
+                    SystemClock.elapsedRealtime()
+
+                inspectRoot(
+                    root =
+                        active,
+                    spec =
+                        spec,
+                    allowFallback =
+                        now -
+                            lastFallbackElapsedMs >=
+                            FALLBACK_SCAN_INTERVAL_MS,
+                    allowPrivateScan =
+                        now -
+                            lastPrivateScanElapsedMs >=
+                            PRIVATE_SCAN_INTERVAL_MS
+                )
+            } finally {
+                recycleQuietly(
+                    active
+                )
             }
         }
 
-        lastObservation = current
-        lastWallMs = nowWall
-        lastElapsedMs = nowElapsed
+        val observation =
+            currentObservation
+
+        if (
+            observation ==
+            null ||
+            foregroundPackage !=
+                observation.browserPackage
+        ) {
+            stopAccruing()
+            return
+        }
+
+        bankCurrent(
+            observation
+        )
+    }
+
+    private fun inspectActiveBrowser(
+        spec: BrowserSpec,
+        allowFallback: Boolean,
+        allowPrivateScan: Boolean
+    ) {
+        val root =
+            activeRoot()
+
+        if (
+            root ==
+            null
+        ) {
+            BrowserWebPreferences(
+                applicationContext
+            ).recordSample(
+                spec.packageName,
+                "ROOT_NULL_EVENT",
+                false
+            )
+            return
+        }
+
+        try {
+            if (
+                root.packageName
+                    ?.toString() !=
+                spec.packageName
+            ) {
+                BrowserWebPreferences(
+                    applicationContext
+                ).recordSample(
+                    spec.packageName,
+                    "ROOT_PACKAGE_MISMATCH",
+                    false
+                )
+                return
+            }
+
+            inspectRoot(
+                root,
+                spec,
+                allowFallback,
+                allowPrivateScan
+            )
+        } finally {
+            recycleQuietly(
+                root
+            )
+        }
+    }
+
+    private fun inspectRoot(
+        root: AccessibilityNodeInfo,
+        spec: BrowserSpec,
+        allowFallback: Boolean,
+        allowPrivateScan: Boolean
+    ) {
+        val prefs =
+            BrowserWebPreferences(
+                applicationContext
+            )
+
+        val extraction =
+            BrowserAccessibilityExtractor.extractHost(
+                root,
+                spec,
+                allowFallback
+            )
+
+        if (
+            extraction.state ==
+            "FOUND_FALLBACK" ||
+            (
+                allowFallback &&
+                extraction.state ==
+                    "MISSING"
+                )
+        ) {
+            lastFallbackElapsedMs =
+                SystemClock.elapsedRealtime()
+        }
+
+        prefs.recordSample(
+            browserPackage =
+                spec.packageName,
+            state =
+                extraction.state,
+            hostFound =
+                extraction.host !=
+                    null
+        )
+
+        if (
+            extraction.state ==
+            "FOCUSED" ||
+            extraction.state ==
+                "INVALID"
+        ) {
+            stopAccruing()
+            return
+        }
+
+        val host =
+            extraction.host
+
+        if (
+            host ==
+            null
+        ) {
+            if (
+                currentObservation
+                    ?.browserPackage ==
+                spec.packageName
+            ) {
+                return
+            }
+
+            stopAccruing()
+            return
+        }
+
+        val privateMode =
+            if (
+                allowPrivateScan ||
+                cachedPrivatePackage !=
+                    spec.packageName
+            ) {
+                val mode =
+                    BrowserAccessibilityExtractor.detectPrivateMode(
+                        root,
+                        spec
+                    )
+
+                lastPrivateScanElapsedMs =
+                    SystemClock.elapsedRealtime()
+
+                cachedPrivatePackage =
+                    spec.packageName
+
+                cachedPrivateMode =
+                    mode.privateMode
+
+                prefs.recordDetectorState(
+                    browserPackage =
+                        spec.packageName,
+                    urlBarId =
+                        extraction.urlBarId,
+                    privateMode =
+                        mode.privateMode,
+                    privateReason =
+                        mode.reason
+                )
+
+                mode.privateMode
+            } else {
+                cachedPrivateMode
+            }
+
+        val next =
+            Observation(
+                host =
+                    host,
+                browserPackage =
+                    spec.packageName,
+                privateMode =
+                    privateMode
+            )
+
+        if (
+            next !=
+            currentObservation
+        ) {
+            currentObservation
+                ?.let {
+                    bankCurrent(
+                        it
+                    )
+                }
+
+            currentObservation =
+                next
+
+            lastBankWallMs =
+                System.currentTimeMillis()
+
+            lastBankElapsedMs =
+                SystemClock.elapsedRealtime()
+        }
+    }
+
+    private fun bankCurrent(
+        observation: Observation
+    ) {
+        val nowWall =
+            System.currentTimeMillis()
+
+        val nowElapsed =
+            SystemClock.elapsedRealtime()
+
+        if (
+            lastBankWallMs <=
+                0L ||
+            lastBankElapsedMs <=
+                0L
+        ) {
+            lastBankWallMs =
+                nowWall
+
+            lastBankElapsedMs =
+                nowElapsed
+
+            return
+        }
+
+        val elapsed =
+            nowElapsed -
+                lastBankElapsedMs
+
+        if (
+            elapsed <=
+                0L
+        ) {
+            return
+        }
+
+        if (
+            elapsed >
+            MAX_BANK_GAP_MS
+        ) {
+            lastBankWallMs =
+                nowWall
+
+            lastBankElapsedMs =
+                nowElapsed
+
+            return
+        }
+
+        val start =
+            lastBankWallMs
+
+        val end =
+            nowWall
+
+        lastBankWallMs =
+            nowWall
+
+        lastBankElapsedMs =
+            nowElapsed
+
+        if (
+            end <=
+            start
+        ) {
+            return
+        }
+
+        storage.post {
+            runCatching {
+                GuardianDatabase(
+                    applicationContext
+                ).recordBrowserChunk(
+                    startMs =
+                        start,
+                    endMs =
+                        end,
+                    host =
+                        observation.host,
+                    browserPackage =
+                        observation.browserPackage,
+                    privateMode =
+                        observation.privateMode
+                )
+            }.onFailure {
+                BrowserWebPreferences(
+                    applicationContext
+                ).recordSampleError(
+                    it::class.java.simpleName
+                )
+            }
+        }
+    }
+
+    private fun stopAccruing() {
+        currentObservation
+            ?.let {
+                bankCurrent(
+                    it
+                )
+            }
+
+        currentObservation =
+            null
+
+        foregroundPackage =
+            null
+
+        lastBankWallMs =
+            0L
+
+        lastBankElapsedMs =
+            0L
+    }
+
+    private fun activeRoot():
+        AccessibilityNodeInfo? =
+        runCatching {
+            rootInActiveWindow
+        }.getOrNull()
+
+    @Suppress(
+        "DEPRECATION"
+    )
+    private fun recycleQuietly(
+        node: AccessibilityNodeInfo?
+    ) {
+        if (
+            node ==
+            null ||
+            Build.VERSION.SDK_INT >=
+                Build.VERSION_CODES.TIRAMISU
+        ) {
+            return
+        }
+
+        runCatching {
+            node.recycle()
+        }
     }
 
     companion object {
-        private const val SAMPLE_INTERVAL_MS = 5_000L
-        private const val EVENT_DEBOUNCE_MS = 500L
-        private const val MAX_BANK_GAP_MS = 15_000L
+        private const val TICK_MS =
+            5_000L
+
+        private const val MAX_BANK_GAP_MS =
+            TICK_MS *
+                3L
+
+        private const val EXTRACT_THROTTLE_MS =
+            700L
+
+        private const val FALLBACK_SCAN_INTERVAL_MS =
+            3_000L
+
+        private const val PRIVATE_SCAN_INTERVAL_MS =
+            3_000L
     }
 }

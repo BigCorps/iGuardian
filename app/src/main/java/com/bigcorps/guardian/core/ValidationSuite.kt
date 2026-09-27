@@ -15,7 +15,7 @@ object ValidationSuite {
     private const val PASS = "PASS"
     private const val WARN = "WARN"
     private const val FAIL = "FAIL"
-    private const val SUITE_VERSION = 9
+    private const val SUITE_VERSION = 10
 
     fun run(
         context: Context,
@@ -1305,7 +1305,7 @@ object ValidationSuite {
                 add(
                     "guardian_web_runtime_health",
                     PASS,
-                    "Observador v2 vivo fora da thread principal; connections=$connections;samples=$samples;hosts=$found;errors=0."
+                    "Observador v3 vivo; leitura da janela no contexto do serviço de acessibilidade e gravação web fora da UI; connections=$connections;samples=$samples;hosts=$found;errors=0."
                 )
 
             else ->

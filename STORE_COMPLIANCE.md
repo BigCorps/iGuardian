@@ -1,9 +1,10 @@
-# Store Compliance — 0.1.20
+# Store Compliance — 0.1.21
 
-Guardian Web remains optional and explicitly consented.
+Guardian Web remains optional, explicitly consented and browser-package scoped.
 
-AccessibilityService stays browser-package scoped. Observer v2 changes
-performance/diagnostics only.
+Observer v3 adds `flagIncludeNotImportantViews` so the browser URL bar remains
+discoverable on OEM/browser combinations where the view is not marked important
+for accessibility. It does not expand the package allowlist or persisted data.
 
 Still absent:
 - INTERNET

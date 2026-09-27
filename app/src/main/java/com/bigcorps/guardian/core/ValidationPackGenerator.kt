@@ -10,7 +10,7 @@ import java.util.Locale
 
 object ValidationPackGenerator {
     const val PACK_SCHEMA =
-        9
+        10
 
     fun generate(
         context: Context

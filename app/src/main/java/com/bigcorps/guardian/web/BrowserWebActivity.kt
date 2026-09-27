@@ -232,7 +232,7 @@ class BrowserWebActivity :
 
         val health =
             buildString {
-                append("Observador v2: ")
+                append("Observador v3: ")
                 append(
                     if (alive) {
                         "respondendo"

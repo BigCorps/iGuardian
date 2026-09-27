@@ -1,19 +1,20 @@
-# Privacy Model — Guardian 0.1.20
+# Privacy Model — Guardian 0.1.21
 
-No privacy expansion from 0.1.19.
+No privacy expansion.
 
-Guardian Web persists only:
+Guardian Web remains explicit opt-in and browser-package scoped.
+
+Persisted:
 - sanitized host
 - allowlisted browser package
-- interval
+- time interval
 - normal/private boolean
 
 Never persisted:
 - raw URL
 - path/query/search/fragment
-- title/content
-- text typed into the address bar
-- passwords
+- page title/content
+- typed text/passwords
 - non-browser content
 
-New diagnostics are technical counters/states only.
+Observer v3 adds no new user-content telemetry.

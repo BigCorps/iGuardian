@@ -45,7 +45,7 @@ class DiagnosticsGenerator(private val context: Context) {
         }
 
         return JSONObject().apply {
-            put("diagnostic_schema", 19)
+            put("diagnostic_schema", 20)
             put("generated_at", iso(nowMs))
 
             put(
@@ -520,12 +520,12 @@ class DiagnosticsGenerator(private val context: Context) {
                     put("validation_pack_full_evidence_on_failure", true)
                     put("validation_lineage_manifest", true)
                     put("validation_lineage_schema", ValidationLineage.SCHEMA)
-                    put("validation_suite_version", 9)
+                    put("validation_suite_version", 10)
                     put("browser_domains", true)
                     put("browser_domains_storage", "host_only")
                     put("browser_web_optional_accessibility", true)
-                    put("browser_web_observer_version", 2)
-                    put("browser_web_off_main_thread", true)
+                    put("browser_web_observer_version", 3)
+                    put("browser_web_ui_safe_hybrid", true)
                     put("browser_web_runtime_health_telemetry", true)
                     put("browser_web_supported_browser_count", BrowserCatalog.supported.size)
                     put("anonymous_browser_detection", true)

@@ -81,7 +81,14 @@ class BrowserWebPreferences(context: Context) {
                 if (hostFound) edit.putInt("host_found_count", hostFoundCount() + 1)
             "FOCUSED" ->
                 edit.putInt("focused_skip_count", focusedSkipCount() + 1)
-            "MISSING", "ROOT_NULL", "UNSUPPORTED_WINDOW" ->
+            "MISSING",
+            "MISSING_THROTTLED",
+            "ROOT_NULL",
+            "ROOT_NULL_MAIN",
+            "ROOT_NULL_EVENT",
+            "ROOT_PACKAGE_MISMATCH",
+            "UNSUPPORTED_WINDOW",
+            "NON_BROWSER_FOREGROUND" ->
                 edit.putInt("missing_count", missingCount() + 1)
             "INVALID" ->
                 edit.putInt("invalid_count", invalidCount() + 1)

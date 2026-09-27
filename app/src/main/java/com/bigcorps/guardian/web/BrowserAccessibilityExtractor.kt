@@ -21,7 +21,8 @@ object BrowserAccessibilityExtractor {
 
     fun extractHost(
         root: AccessibilityNodeInfo,
-        spec: BrowserSpec
+        spec: BrowserSpec,
+        allowFallback: Boolean = true
     ): BrowserUrlExtraction {
         spec.urlBarIds.forEach {
             id ->
@@ -66,6 +67,16 @@ object BrowserAccessibilityExtractor {
                     }
                 )
             }
+        }
+
+        if (
+            !allowFallback
+        ) {
+            return BrowserUrlExtraction(
+                null,
+                null,
+                "MISSING_THROTTLED"
+            )
         }
 
         val queue =

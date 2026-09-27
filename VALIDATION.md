@@ -1,32 +1,27 @@
-# Validation — Android 0.1.20
+# Validation — Android 0.1.21
 
-## 0.1.19 result
+## 0.1.20 physical evidence
+- Guardian Web enabled=true
+- manager=true
+- secure setting=true
+- alive=true
+- 780 browser accessibility events
+- 24 samples
+- 0 sample errors
+- 0 hosts
+- 24 missing samples
+- last state ROOT_NULL
+- UI freeze fixed
 
-Guardian core: healthy.
-Guardian Web privacy contract: PASS.
-Guardian Web physical proof: not completed.
-
-Observed evidence:
-- service connection recorded
-- consent true
-- tracking started
-- service status probe false
-- zero web rows
-- no detector state
-- UI freeze after Chrome
-
-## 0.1.20 acceptance
-
-- version 0.1.20 / code 21
-- DB v8
-- report v5
-- diagnostic v19
-- ValidationSuite v9
-- validation pack v9
+## 0.1.21 acceptance
+- version 0.1.21 / code 22
+- diagnostic v20
+- ValidationSuite v10
+- validation pack v10
 - Guardian Web runtime health PASS
-- normal browser evidence > 0
-- anonymous browser evidence > 0
-- >= 2 distinct hosts
+- normal host > 0
+- anonymous host > 0
+- >=2 distinct hosts
 - physical validation PASS
-- no raw web content persisted
-- UI remains responsive after browser round-trip
+- manual_test_required=false
+- UI remains responsive

@@ -1,10 +1,6 @@
-# Guardian Android 0.1.20
+# Guardian Android 0.1.21
 
-Fixes the physical Guardian Web v1 failure on Xiaomi Android 16.
-
-Main fix:
-Accessibility tree work and browser database writes no longer run on the app
-main/UI thread.
+Fixes the 0.1.20 `ROOT_NULL` capture failure while retaining the no-freeze improvements.
 
 Expected Actions artifact:
-guardian-android-0.1.20-fixed-signed-debug
+guardian-android-0.1.21-fixed-signed-debug
