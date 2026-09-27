@@ -85,6 +85,13 @@ for forbidden in [
     if forbidden in source:
         errors.append(f"Forbidden MVP API found in source: {forbidden}")
 
+
+if "BrowserDomainSanitizer.isValidStoredHost" in source:
+    errors.append(
+        "Stale Guardian Web sanitizer helper reference: "
+        "use BrowserDomainSanitizer.isSanitizedHost"
+    )
+
 accessibility_sources = [
     p.relative_to(root).as_posix()
     for p in (root / "app/src/main/java").rglob("*.kt")

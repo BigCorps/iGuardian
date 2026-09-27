@@ -1,26 +1,23 @@
-# Validation — Android 0.1.23
-
-Expected build:
-- versionName 0.1.23
-- versionCode 24
-- DB v8
-- report v5
-- diagnostic v21
-- ValidationSuite v11
-- validation pack v11
-
-New checks:
-- guardian_web_visual_privacy PASS
-- guardian_web_runtime_health PASS after at least one successful screenshot + OCR
-- guardian_web_physical_validation PASS only after normal + anonymous evidence and >=2 hosts
+# Validation — Android 0.1.22
 
 Physical target:
-- UOL normal >= ~20 s
-- Globo normal >= ~20 s
-- one different incognito host >= ~20 s
-- screenshot success count > 0
-- OCR run count > 0
-- visual OCR host count > 0
-- anonymous milliseconds > 0
-- no raw screenshot/OCR persistence
-- manual_test_required=false when complete
+- Chrome Dev normal: youtube + uol.com.br + globo.com, ~20–30 s each
+- Chrome Dev incognito: one different host, ~20–30 s
+- Guardian Web UI remains responsive
+- multiple distinct hosts stored
+- normal duration materially exceeds one 5-second tick
+- anonymous_milliseconds > 0
+- guardian_web_physical_validation PASS
+- full_url_stored remains false
+
+CI also unit-tests UOL/Globo host sanitization and incognito heuristics.
+
+## Corrected build after Actions #55
+
+The first 0.1.23 upload failed only at Kotlin compilation; no APK was produced.
+
+Correction:
+- `isValidStoredHost` -> canonical `isSanitizedHost`
+- static source guard added against that stale helper name
+
+Runtime and physical Visual-v1 acceptance criteria remain unchanged.

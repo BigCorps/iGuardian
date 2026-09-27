@@ -1,45 +1,67 @@
-# Guardian DEV — Android 0.1.23 — Guardian Web Visual v1
+# Guardian DEV — Android 0.1.21 — Guardian Web Event Snapshot v3
 
-0.1.22 confirmed that Accessibility events arrive on the physical Xiaomi/Android 16
-device, but the Chrome accessibility tree/event source is not reliable enough for
-continuous domain capture. Only one old `m.youtube.com` interval of about 5 seconds
-remained while Chrome Dev had much more foreground time.
+## What 0.1.20 proved
 
-0.1.23 stops treating the browser accessibility tree as the primary URL source.
+The observer no longer freezes the UI, so the off-main-thread change worked.
+The service is enabled, connected, alive and receives Chrome Dev events.
 
-## Guardian Web Visual
+Physical evidence from 0.1.20:
+- Accessibility enabled: true
+- Accessibility alive: true
+- 780 browser accessibility events received
+- last event browser: com.chrome.dev
+- 24 samples
+- 0 errors
+- 0 hosts
+- every sample failed before tree inspection with ROOT_NULL
 
-When a supported browser is confirmed in the foreground through UsageStats, the
-opt-in AccessibilityService can request a temporary screenshot.
+This isolates the next problem: `rootInActiveWindow` is null when queried later
+from the worker thread on this Xiaomi/Android 16 device.
 
-Privacy flow:
+## Observer v3
 
-1. Screenshot exists only in memory.
-2. OCR first analyzes only the upper toolbar band.
-3. Raw OCR text is never stored/exported.
-4. Candidate URL text is immediately reduced to a sanitized host.
-5. A host must appear in two consecutive visual reads before persistence.
-6. Only host + browser package + time + private boolean enter SQLite.
-7. Screenshot/bitmap is recycled immediately after processing.
+Android's Accessibility API explicitly supports retrieving window content from
+`AccessibilityEvent.source`, and the callback event must be copied if it will be
+used after the callback returns. 0.1.21 does exactly that:
 
-For incognito detection, when no host is known the service may temporarily inspect a
-larger upper portion of the screenshot to detect explicit incognito start-page text.
-UsageStats activity class evidence is also accepted when Chrome exposes an incognito
-launcher/activity.
+1. Chrome Dev event arrives on the Accessibility callback.
+2. Guardian immediately copies the event.
+3. The copied event is moved to `GuardianWebObserver`.
+4. The worker obtains the event source.
+5. It resolves the source window root (or walks parents as fallback).
+6. It extracts only the sanitized host and incognito marker.
 
-The OCR model is bundled in the APK (`com.google.mlkit:text-recognition:16.0.1`);
-no model download or INTERNET permission is needed.
+The service also requests interactive windows and non-important browser toolbar
+views, while remaining package-scoped to supported browsers.
+
+## Accurate duration without reading other apps through Accessibility
+
+The 5-second heartbeat uses the already-authorized UsageStats API only to check
+which app is foreground. If the same browser remains foreground, the sanitized
+host interval is banked. When the user leaves the browser, the interval stops.
+
+## New calibration evidence
+
+Validation now records counts only:
+- event source available / null
+- event window root resolved
+- host found
+- extraction state
+
+No raw URL or page content is added.
+
+## UI polish
+
+The Guardian Web screen now respects status/navigation bar insets on Android 16
+so its heading no longer sits underneath the status bar.
 
 ## Physical test
 
-After Actions passes:
-- install over 0.1.22;
-- accept the new Guardian Web Visual disclosure (consent v2);
-- confirm Accessibility is enabled;
-- normal Chrome Dev: `uol.com.br` ~20 s, then `globo.com` ~20 s;
-- return to Guardian for a few seconds;
-- open a new incognito tab, wait ~4 s on its start page, then visit another host ~20 s;
-- return to Guardian Web and export one validation JSON.
+Install 0.1.21 over 0.1.20. Ensure Guardian Web remains enabled.
 
-If screenshot capture itself is blocked, diagnostics will expose the Android
-takeScreenshot error code so we can decide immediately whether this path is viable.
+1. Open a normal Chrome Dev site for 20–30 seconds.
+2. Open a different incognito site for 20–30 seconds.
+3. Return to Guardian Web.
+4. Confirm the screen stays responsive and the diagnostic shows `fontes` and
+   `raízes` above zero.
+5. Export one validation JSON.

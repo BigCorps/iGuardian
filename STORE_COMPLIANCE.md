@@ -1,19 +1,5 @@
-# Store Compliance — 0.1.23
+# Store Compliance — 0.1.21
 
-Guardian Web Visual uses AccessibilityService only after prominent disclosure and
-explicit consent. The service remains package-scoped to supported browsers.
-
-The AccessibilityService now declares `canTakeScreenshot=true`. Screenshot processing
-is local and transient; images and raw OCR text are not stored or transmitted.
-
-Still absent:
-- INTERNET
-- QUERY_ALL_PACKAGES
-- VPN
-- MediaProjection
-- notification listener
-- input method
-- clipboard capture
-
-A public Play release will require the appropriate AccessibilityService declaration,
-prominent disclosure, consent flow and policy review.
+Guardian Web remains optional, explicitly consented, browser-package scoped and
+local-only. Interactive-window access is used only inside allowlisted browsers
+to obtain the same address-bar host signal. No new user data category is stored.

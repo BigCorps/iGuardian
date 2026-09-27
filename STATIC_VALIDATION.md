@@ -1,11 +1,10 @@
-# Static validation — 0.1.23
+# Static validation — corrected 0.1.23
 
+- Exact Actions #55 sanitizer helper error fixed: PASS
+- Stale helper source guard: PASS
 - Kotlin structural checks: PASS
-- source privacy/project guard: PASS
+- privacy/project source guard: PASS
 - validation lineage guard: PASS
-- final APK guard shell syntax: PASS
-- BrowserDomainSanitizer + BrowserVisualTextParser pure Kotlin compile: PASS
-- bundled ML Kit dependency present: PASS
-- canTakeScreenshot capability present: PASS
-- screenshot memory-only/raw OCR no-persist contract wired: PASS
-- Android build/signing: pending GitHub Actions
+- APK guard shell syntax: PASS
+- Guardian Web Visual v1 wiring retained: PASS
+- Android compile/signing: pending GitHub Actions

@@ -2,21 +2,13 @@
 
 ## Android
 
-0.1.23 is the final alternate capture experiment for Guardian Web before deciding
-whether Android domain/incognito tracking is viable without VPN.
+0.1.21 is the final Guardian Web source-path validation round.
 
-If Visual v1 proves:
-- normal domains,
-- continuous duration,
-- incognito detection,
-- no UI freeze,
-then Android moves to release/UX cleanup.
-
-If Android blocks screenshots or OCR cannot reliably recover the toolbar, stop
-iterating on hidden browser internals and move the rich browser layer to Windows /
-browser integration while keeping Android app-time tracking stable.
+If event source -> window root -> host -> normal/incognito storage passes, Android
+can move to final UX/release cleanup and Windows development can start.
 
 ## Windows
 
-The Windows version will reuse the validated privacy/report/intelligence contracts,
-with native app activity and browser integration rather than Android Accessibility.
+Reuse the validated product contract: app usage, host-only web activity,
+normal/private browsing, privacy-before-storage, local trends/intelligence and
+compact validation.

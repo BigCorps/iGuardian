@@ -269,7 +269,7 @@ class BrowserWebPreferences(context: Context) {
     ) {
         val safeHost =
             host?.takeIf {
-                BrowserDomainSanitizer.isValidStoredHost(
+                BrowserDomainSanitizer.isSanitizedHost(
                     it
                 )
             }
