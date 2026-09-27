@@ -12,3 +12,8 @@
 - Current-incognito labels expanded without treating “New/Enter Incognito” actions as proof.
 - Added UOL/Globo sanitizer unit cases.
 - No DB/report/privacy/network expansion.
+
+### Corrected 0.1.23 build
+- Explicitly remove transitive INTERNET and ACCESS_NETWORK_STATE permissions
+  introduced by bundled OCR dependencies.
+- Final APK guard verifies the merged artifact remains offline.

@@ -48,6 +48,7 @@ XMLTREE="$("$AAPT" dump xmltree "$APK" AndroidManifest.xml)"
 
 for forbidden in \
   "android.permission.INTERNET" \
+  "android.permission.ACCESS_NETWORK_STATE" \
   "android.permission.QUERY_ALL_PACKAGES" \
   "android.permission.BIND_NOTIFICATION_LISTENER_SERVICE" \
   "android.permission.FOREGROUND_SERVICE_MEDIA_PROJECTION"; do

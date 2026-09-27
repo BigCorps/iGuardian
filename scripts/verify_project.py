@@ -30,8 +30,29 @@ required_docs = [
 
 errors = []
 
-if "android.permission.INTERNET" in manifest:
-    errors.append("MVP must not declare INTERNET permission")
+internet_permission_tags = re.findall(
+    r"<uses-permission\\b[^>]*android:name=[\"']android\\.permission\\.INTERNET[\"'][^>]*>",
+    manifest,
+    flags=re.IGNORECASE,
+)
+for tag in internet_permission_tags:
+    if 'tools:node="remove"' not in tag and "tools:node='remove'" not in tag:
+        errors.append(
+            "MVP must not effectively declare INTERNET permission; "
+            "only tools:node=remove is allowed for transitive dependency cleanup"
+        )
+
+network_state_tags = re.findall(
+    r"<uses-permission\\b[^>]*android:name=[\"']android\\.permission\\.ACCESS_NETWORK_STATE[\"'][^>]*>",
+    manifest,
+    flags=re.IGNORECASE,
+)
+for tag in network_state_tags:
+    if 'tools:node="remove"' not in tag and "tools:node='remove'" not in tag:
+        errors.append(
+            "Guardian offline build must not effectively declare ACCESS_NETWORK_STATE"
+        )
+
 if "android.permission.QUERY_ALL_PACKAGES" in manifest:
     errors.append("MVP must not declare QUERY_ALL_PACKAGES")
 web_service_name = ".web.BrowserAccessibilityService"
@@ -188,7 +209,7 @@ if errors:
     sys.exit(1)
 
 print("Privacy/project verification OK")
-print("- no INTERNET permission")
+print("- no effective INTERNET permission (transitive declaration removed at manifest merge)")
 print("- no QUERY_ALL_PACKAGES")
 print("- AccessibilityService isolated to opt-in Guardian Web browser observer")
 print("- Guardian Web Visual screenshot capability + bundled OCR contract present")

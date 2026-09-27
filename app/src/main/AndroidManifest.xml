@@ -6,6 +6,15 @@
         android:name="android.permission.PACKAGE_USAGE_STATS"
         tools:ignore="ProtectedPermissions" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <!-- Guardian remains fully offline. Some bundled OCR dependencies
+         declare network-related permissions transitively; remove them from the
+         final merged APK because the OCR model is bundled locally. -->
+    <uses-permission
+        android:name="android.permission.INTERNET"
+        tools:node="remove" />
+    <uses-permission
+        android:name="android.permission.ACCESS_NETWORK_STATE"
+        tools:node="remove" />
 
     <queries>
         <intent>

@@ -1,10 +1,10 @@
-# Static validation — corrected 0.1.23
+# Static validation — 0.1.23 offline correction
 
-- Exact Actions #55 sanitizer helper error fixed: PASS
-- Stale helper source guard: PASS
-- Kotlin structural checks: PASS
-- privacy/project source guard: PASS
+- Exact Actions #57 failure diagnosed: transitive INTERNET permission
+- manifest-merger removal for INTERNET: PASS
+- manifest-merger removal for ACCESS_NETWORK_STATE: PASS
+- source privacy/project guard: PASS
 - validation lineage guard: PASS
-- APK guard shell syntax: PASS
-- Guardian Web Visual v1 wiring retained: PASS
-- Android compile/signing: pending GitHub Actions
+- final APK guard now checks both network permissions: PASS
+- unit tests/Kotlin/APK build had already passed in Actions #57
+- final merged-APK revalidation: pending next GitHub Actions
