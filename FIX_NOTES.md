@@ -1,6 +1,14 @@
-# Guardian Android 0.1.21
+# Guardian 0.1.22 patch
 
-Fixes the 0.1.20 `ROOT_NULL` capture failure while retaining the no-freeze improvements.
+Apply this ZIP over the current 0.1.21 repository.
 
-Expected Actions artifact:
-guardian-android-0.1.21-fixed-signed-debug
+Physical 0.1.21 result:
+- UI freeze fixed
+- Chrome Dev URL bar identified
+- only m.youtube.com stored for ~5 s
+- UOL/Globo not persisted
+- incognito still 0
+
+0.1.22 changes the capture source and duration accounting rather than changing
+the host sanitizer. Expected Actions artifact:
+guardian-android-0.1.22-fixed-signed-debug

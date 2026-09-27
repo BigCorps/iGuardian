@@ -17,15 +17,14 @@ data class BrowserModeExtraction(
 
 object BrowserAccessibilityExtractor {
     private const val MAX_TREE_NODES =
-        120
+        160
 
     fun extractHost(
         root: AccessibilityNodeInfo,
         spec: BrowserSpec,
         allowFallback: Boolean = true
     ): BrowserUrlExtraction {
-        spec.urlBarIds.forEach {
-            id ->
+        spec.urlBarIds.forEach { id ->
             val nodes =
                 runCatching {
                     root.findAccessibilityNodeInfosByViewId(
@@ -35,13 +34,9 @@ object BrowserAccessibilityExtractor {
                     .orEmpty()
 
             nodes.firstOrNull {
-                node ->
-                node.isVisibleToUser
-            }?.let {
-                node ->
-                if (
-                    node.isFocused
-                ) {
+                it.isVisibleToUser
+            }?.let { node ->
+                if (node.isFocused) {
                     return BrowserUrlExtraction(
                         null,
                         id,
@@ -57,10 +52,7 @@ object BrowserAccessibilityExtractor {
                 return BrowserUrlExtraction(
                     host,
                     id,
-                    if (
-                        host ==
-                        null
-                    ) {
+                    if (host == null) {
                         "INVALID"
                     } else {
                         "FOUND"
@@ -69,9 +61,7 @@ object BrowserAccessibilityExtractor {
             }
         }
 
-        if (
-            !allowFallback
-        ) {
+        if (!allowFallback) {
             return BrowserUrlExtraction(
                 null,
                 null,
@@ -80,27 +70,21 @@ object BrowserAccessibilityExtractor {
         }
 
         val queue =
-            ArrayDeque<
-                AccessibilityNodeInfo
-                >()
+            ArrayDeque<AccessibilityNodeInfo>()
 
-        queue.add(
-            root
-        )
+        queue.add(root)
 
         var visited =
             0
 
         while (
             queue.isNotEmpty() &&
-            visited <
-            MAX_TREE_NODES
+            visited < MAX_TREE_NODES
         ) {
             val node =
                 queue.removeFirst()
 
-            visited +=
-                1
+            visited += 1
 
             val id =
                 node.viewIdResourceName
@@ -109,36 +93,24 @@ object BrowserAccessibilityExtractor {
                     )
 
             val looksLikeAddressField =
-                id !=
-                    null &&
+                id != null &&
                     (
-                        id.contains(
-                            "url"
-                        ) ||
-                            id.contains(
-                                "address"
-                            ) ||
-                            id.contains(
-                                "location_bar"
-                            ) ||
-                            id.contains(
-                                "omnibar"
-                            )
+                        id.contains("url") ||
+                            id.contains("address") ||
+                            id.contains("location_bar") ||
+                            id.contains("omnibar")
                         ) &&
                     node.className
                         ?.toString()
                         ?.contains(
                             "EditText"
-                        ) ==
-                        true
+                        ) == true
 
             if (
                 looksLikeAddressField &&
                 node.isVisibleToUser
             ) {
-                if (
-                    node.isFocused
-                ) {
+                if (node.isFocused) {
                     return BrowserUrlExtraction(
                         null,
                         node.viewIdResourceName,
@@ -151,10 +123,7 @@ object BrowserAccessibilityExtractor {
                         node.text
                     )
 
-                if (
-                    host !=
-                    null
-                ) {
+                if (host != null) {
                     return BrowserUrlExtraction(
                         host,
                         node.viewIdResourceName,
@@ -167,14 +136,8 @@ object BrowserAccessibilityExtractor {
                 index in
                 0 until node.childCount
             ) {
-                node.getChild(
-                    index
-                )
-                    ?.let {
-                        queue.addLast(
-                            it
-                        )
-                    }
+                node.getChild(index)
+                    ?.let(queue::addLast)
             }
         }
 
@@ -189,43 +152,62 @@ object BrowserAccessibilityExtractor {
         root: AccessibilityNodeInfo,
         spec: BrowserSpec
     ): BrowserModeExtraction {
-        val queue =
-            ArrayDeque<
-                AccessibilityNodeInfo
-                >()
+        if (spec.family == "chromium") {
+            val directIds =
+                listOf(
+                    "${spec.packageName}:id/location_bar_incognito_badge",
+                    "${spec.packageName}:id/incognito_indicator",
+                    "com.android.chrome:id/location_bar_incognito_badge",
+                    "com.android.chrome:id/incognito_indicator"
+                )
 
-        queue.add(
-            root
-        )
+            directIds.forEach { id ->
+                val visible =
+                    runCatching {
+                        root.findAccessibilityNodeInfosByViewId(
+                            id
+                        )
+                    }.getOrNull()
+                        .orEmpty()
+                        .any {
+                            it.isVisibleToUser
+                        }
+
+                if (visible) {
+                    return BrowserModeExtraction(
+                        true,
+                        "CHROMIUM_VISIBLE_INCOGNITO_BADGE"
+                    )
+                }
+            }
+        }
+
+        val queue =
+            ArrayDeque<AccessibilityNodeInfo>()
+
+        queue.add(root)
 
         val markers =
-            mutableListOf<
-                BrowserAccessibilityMarker
-                >()
+            mutableListOf<BrowserAccessibilityMarker>()
 
         var visited =
             0
 
         while (
             queue.isNotEmpty() &&
-            visited <
-            MAX_TREE_NODES
+            visited < MAX_TREE_NODES
         ) {
             val node =
                 queue.removeFirst()
 
-            visited +=
-                1
+            visited += 1
 
             val resourceId =
                 node.viewIdResourceName
 
             if (
-                resourceId !=
-                null &&
-                resourceId.contains(
-                    ":id/"
-                )
+                resourceId != null &&
+                resourceId.contains(":id/")
             ) {
                 markers +=
                     BrowserAccessibilityMarker(
@@ -244,14 +226,8 @@ object BrowserAccessibilityExtractor {
                 index in
                 0 until node.childCount
             ) {
-                node.getChild(
-                    index
-                )
-                    ?.let {
-                        queue.addLast(
-                            it
-                        )
-                    }
+                node.getChild(index)
+                    ?.let(queue::addLast)
             }
         }
 

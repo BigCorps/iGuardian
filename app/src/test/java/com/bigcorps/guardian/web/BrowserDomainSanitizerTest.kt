@@ -41,4 +41,20 @@ class BrowserDomainSanitizerTest {
         assertTrue(BrowserDomainSanitizer.isSanitizedHost("youtube.com"))
         assertTrue(BrowserDomainSanitizer.isSanitizedHost("mail.google.com"))
     }
+    @Test
+    fun brazilianPortalUrlsBecomeHosts() {
+        assertEquals(
+            "uol.com.br",
+            BrowserDomainSanitizer.hostFromRaw(
+                "https://www.uol.com.br/esporte/noticia?utm_source=teste"
+            )
+        )
+        assertEquals(
+            "globo.com",
+            BrowserDomainSanitizer.hostFromRaw(
+                "https://www.globo.com/"
+            )
+        )
+    }
+
 }

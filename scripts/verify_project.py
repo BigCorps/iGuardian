@@ -53,6 +53,10 @@ else:
         errors.append("Guardian Web accessibility package allowlist must include Chrome Dev")
     if 'android:packageNames=' not in web_xml:
         errors.append("Guardian Web accessibility package allowlist missing")
+    if 'flagRetrieveInteractiveWindows' not in web_xml:
+        errors.append(
+            "Guardian Web must request flagRetrieveInteractiveWindows for browser-window fallback"
+        )
 if "android.useAndroidX=true" not in gradle_properties:
     errors.append("0.1.8+ requires android.useAndroidX=true")
 if "androidx.work:work-runtime:2.12.0" not in app_gradle:

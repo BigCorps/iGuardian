@@ -1,8 +1,8 @@
 {
   "schema": 1,
-  "build_version": "0.1.21",
+  "build_version": "0.1.22",
   "base_physically_validated_version": "0.1.18",
-  "strategy": "Inherit unchanged usage/scheduler/intelligence by hash; runtime-test changed Guardian Web v3 capture path; require physical normal+incognito proof.",
+  "strategy": "Inherit unchanged usage/scheduler/intelligence by pinned hash; runtime-test unchanged report/export groups; physically retest Guardian Web v4 event-source/window capture and normal+incognito proof.",
   "contracts": [
     {
       "id": "usage_collection_core",
@@ -64,7 +64,7 @@
     {
       "id": "guardian_web_core",
       "validation_mode": "runtime_plus_physical",
-      "validated_in": "0.1.21",
+      "validated_in": "0.1.22",
       "manual_retest_required": true,
       "continuous_autotest": true,
       "files": [
@@ -82,7 +82,7 @@
         "app/src/test/java/com/bigcorps/guardian/web/BrowserDomainSanitizerTest.kt",
         "app/src/test/java/com/bigcorps/guardian/web/BrowserPrivateModeHeuristicsTest.kt"
       ],
-      "sha256": "63058c1c970fa79d6adf153b35a78e1f8635add6e9fd2ac4fc34933175dabec8"
+      "sha256": "__CURRENT_BUILD__"
     },
     {
       "id": "validation_export_ui",
@@ -102,7 +102,7 @@
     {
       "id": "build_pipeline",
       "validation_mode": "ci_only",
-      "validated_in": "0.1.21",
+      "validated_in": "0.1.22",
       "manual_retest_required": false,
       "continuous_autotest": false,
       "files": [
@@ -112,7 +112,7 @@
         "scripts/verify_validation_contracts.py",
         "scripts/verify_apk_contract.sh"
       ],
-      "sha256": "dad26c3abde5c207571474eae383b228aefbc65c7cc4e6a11ca55972fc279ff3"
+      "sha256": "__CURRENT_BUILD__"
     }
   ]
 }

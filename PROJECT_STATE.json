@@ -1,9 +1,9 @@
 {
   "project_codename": "Guardian",
-  "version": "0.1.21",
+  "version": "0.1.22",
   "platform": "android",
   "phase": 2,
-  "phase_name": "Guardian Web Observer v3 live-root capture",
+  "phase_name": "Guardian Web v4 event-source + continuous foreground accrual",
   "schema_version": 5,
   "diagnostic_schema_version": 20,
   "database_version": 8,
@@ -13,77 +13,36 @@
   "backend": "none",
   "internet_permission": false,
   "dev_application_id": "com.bigcorps.guardian.dev",
-  "last_physically_validated_build": {
-    "version": "0.1.18",
-    "version_code": 19,
-    "generated_at": "2026-09-26T21:56:28.950-03:00",
-    "validation": {
-      "critical_passed": true,
-      "manual_test_required": false,
-      "pass_count": 14,
-      "warning_count": 1,
-      "fail_count": 0,
-      "coverage_percent": 99.1
-    },
-    "compact_validation": {
-      "estimated_bytes": 26354,
-      "full_daily_timeline_embedded": false,
-      "full_24h_snapshot_embedded": false
-    },
-    "scheduler": {
-      "worker_run_count": 43,
-      "worker_success_count": 39,
-      "worker_retry_count": 0,
-      "worker_failure_count": 0,
-      "worker_stopped_count": 3,
-      "last_stop_reason": 13,
-      "later_success": true
-    }
-  },
-  "privacy_contract_change": {
-    "accessibility_exception": "Guardian Web only",
-    "explicit_consent": true,
-    "browser_package_allowlist": true,
-    "persisted_web_value": "sanitized host only",
-    "full_url_stored": false,
-    "network_transport": false
-  },
-  "implemented_in_0_1_19": [
-    "Guardian Web v1",
-    "Chrome Dev physical target",
-    "host-only browser storage",
-    "anonymous/incognito marker detection",
-    "DB v8 browser sessions",
-    "report v5 browser overlay",
-    "ValidationSuite v8",
-    "recovered WorkManager stop semantics"
-  ],
-  "next_task": "Upload 0.1.21; verify Actions; install over 0.1.20; test normal + incognito Chrome Dev 20-30s each; export one validation JSON.",
   "last_physical_finding": {
-    "version": "0.1.20",
+    "version": "0.1.21",
     "guardian_web_enabled": true,
     "guardian_web_alive": true,
-    "accessibility_events": 780,
-    "samples": 24,
-    "sample_errors": 0,
-    "hosts_found": 0,
-    "last_state": "ROOT_NULL",
-    "ui_freeze_fixed": true
+    "accessibility_events": 1777,
+    "samples": 95,
+    "hosts_found_samples": 5,
+    "stored_rows": 1,
+    "distinct_hosts": 1,
+    "normal_milliseconds": 5011,
+    "anonymous_milliseconds": 0,
+    "detected_host": "m.youtube.com",
+    "last_url_bar_id": "com.chrome.dev:id/url_bar",
+    "last_state": "ROOT_NULL_MAIN",
+    "ui_freeze_fixed": true,
+    "reported_missing_sites": [
+      "globo.com",
+      "uol.com.br"
+    ]
   },
-  "implemented_in_0_1_20": [
-    "off-main Guardian Web HandlerThread observer",
-    "5-second ticker and 500ms debounce",
-    "120-node bounded fallback",
-    "manager + secure settings + heartbeat service status",
-    "privacy-safe observer health telemetry",
-    "Guardian Web diagnostic UI",
-    "ValidationSuite v9 runtime health check"
+  "implemented_in_0_1_22": [
+    "copied AccessibilityEvent source processed off UI thread",
+    "flagRetrieveInteractiveWindows fallback",
+    "multi-event debounce queue",
+    "UsageStats incremental foreground confirmation",
+    "5-second continuous domain time banking without requiring a root every tick",
+    "direct Chromium location_bar_incognito_badge/incognito_indicator detection",
+    "expanded current-incognito accessibility labels",
+    "unit tests for globo.com and uol.com.br sanitization",
+    "CI guard for interactive-windows accessibility flag"
   ],
-  "implemented_in_0_1_21": [
-    "live accessibility root lookup in callback/ticker context",
-    "flagIncludeNotImportantViews",
-    "700ms extraction throttle",
-    "3s fallback/private scan throttle",
-    "browser SQLite persistence on GuardianWebStorage thread"
-  ]
+  "next_task": "Overlay 0.1.22 patch on current main, wait for Actions, install over 0.1.21. Test globo.com, uol.com.br and youtube for 20-30s each in normal Chrome Dev, then one different site in incognito for 20-30s. Return to Guardian Web and export one JSON."
 }

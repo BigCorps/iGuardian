@@ -3,12 +3,12 @@ from pathlib import Path
 import hashlib
 import json
 import re
-import sys
 
 ROOT = Path(__file__).resolve().parents[1]
 MANIFEST = ROOT / "VALIDATION_CONTRACTS.json"
 ASSET = ROOT / "app/src/main/assets/validation-contracts.json"
 GRADLE = ROOT / "app/build.gradle.kts"
+CURRENT_SENTINEL = "__CURRENT_BUILD__"
 
 def fail(message: str) -> None:
     print(f"::error::{message}")
@@ -57,6 +57,8 @@ if not isinstance(contracts, list) or not contracts:
     fail("validation contracts list is empty")
 
 seen = set()
+actual_digests = {}
+
 for contract in contracts:
     cid = contract.get("id")
     if not cid or cid in seen:
@@ -68,7 +70,24 @@ for contract in contracts:
         fail(f"{cid}: files list is empty")
 
     actual = group_digest(files)
+    actual_digests[cid] = actual
     expected = contract.get("sha256")
+    mode = contract.get("validation_mode")
+    validated_in = contract.get("validated_in")
+
+    if expected == CURRENT_SENTINEL:
+        if mode == "inherited":
+            fail(f"{cid}: inherited groups must have a pinned SHA-256")
+        if validated_in != version:
+            fail(
+                f"{cid}: current-build sentinel requires validated_in={version}, "
+                f"got {validated_in}"
+            )
+        continue
+
+    if not isinstance(expected, str) or not re.fullmatch(r"[0-9a-f]{64}", expected):
+        fail(f"{cid}: invalid SHA-256 contract")
+
     if actual != expected:
         fail(
             f"{cid}: source digest changed. "
@@ -101,7 +120,8 @@ print(f"- build_version: {version}")
 print(f"- base physical validation: {root_manifest.get('base_physically_validated_version')}")
 for cid in required_modes:
     c = by_id[cid]
+    digest = actual_digests[cid]
     print(
         f"- {cid}: {c.get('validation_mode')} "
-        f"(validated_in={c.get('validated_in')})"
+        f"(validated_in={c.get('validated_in')}; sha256={digest})"
     )

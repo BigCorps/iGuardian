@@ -19,8 +19,7 @@ object BrowserPrivateModeHeuristics {
         markers: List<BrowserAccessibilityMarker>
     ): BrowserPrivateModeResult {
         val normalized =
-            markers.map {
-                marker ->
+            markers.map { marker ->
                 BrowserAccessibilityMarker(
                     resourceId =
                         marker.resourceId
@@ -42,31 +41,28 @@ object BrowserPrivateModeHeuristics {
                 )
             }
 
-        if (
-            spec.family ==
-            "firefox"
-        ) {
+        if (spec.family == "firefox") {
             val firefoxPrivate =
-                normalized.any {
-                    marker ->
-                    val description =
-                        marker.contentDescription
-                            .orEmpty()
+                normalized.any { marker ->
+                    val value =
+                        (
+                            marker.contentDescription
+                                ?: marker.text
+                                ?: ""
+                            )
 
-                    description.contains(
+                    value.contains(
                         "disable private browsing"
                     ) ||
-                        description.contains(
+                        value.contains(
                             "desativar navegação privada"
                         ) ||
-                        description.contains(
+                        value.contains(
                             "desativar navegação privativa"
                         )
                 }
 
-            if (
-                firefoxPrivate
-            ) {
+            if (firefoxPrivate) {
                 return BrowserPrivateModeResult(
                     true,
                     "FIREFOX_DISABLE_PRIVATE_BUTTON"
@@ -74,28 +70,19 @@ object BrowserPrivateModeHeuristics {
             }
         }
 
-        val strongDescriptions =
-            setOf(
-                "leave incognito mode",
-                "selected incognito tab",
-                "incognito tab selected",
-                "sair do modo de navegação anônima",
-                "guia anônima selecionada",
-                "guias anônimas selecionadas"
-            )
-
-        val descriptionMatch =
-            normalized.any {
-                marker ->
-                marker.contentDescription in
-                    strongDescriptions ||
-                    marker.text in
-                        strongDescriptions
+        val positiveText =
+            normalized.any { marker ->
+                listOfNotNull(
+                    marker.contentDescription,
+                    marker.text
+                ).any { value ->
+                    isStrongPrivateText(
+                        value
+                    )
+                }
             }
 
-        if (
-            descriptionMatch
-        ) {
+        if (positiveText) {
             return BrowserPrivateModeResult(
                 true,
                 "STRONG_PRIVATE_ACCESSIBILITY_LABEL"
@@ -103,36 +90,31 @@ object BrowserPrivateModeHeuristics {
         }
 
         val resourceMatch =
-            normalized.any {
-                marker ->
+            normalized.any { marker ->
                 val id =
                     marker.resourceId
                         .orEmpty()
 
-                (
-                    id.contains(
-                        "incognito"
+                id.endsWith(
+                    ":id/location_bar_incognito_badge"
+                ) ||
+                    id.endsWith(
+                        ":id/incognito_indicator"
                     ) ||
-                        id.contains(
-                            "private_browsing"
-                        )
-                    ) &&
                     (
-                        id.contains(
-                            "badge"
-                        ) ||
-                            id.contains(
-                                "indicator"
-                            ) ||
-                            id.contains(
-                                "selected"
-                            )
+                        (
+                            id.contains("incognito") ||
+                                id.contains("private_browsing")
+                            ) &&
+                            (
+                                id.contains("badge") ||
+                                    id.contains("indicator") ||
+                                    id.contains("selected")
+                                )
                         )
             }
 
-        if (
-            resourceMatch
-        ) {
+        if (resourceMatch) {
             return BrowserPrivateModeResult(
                 true,
                 "PRIVATE_RESOURCE_INDICATOR"
@@ -143,5 +125,37 @@ object BrowserPrivateModeHeuristics {
             false,
             "NO_STRONG_PRIVATE_MARKER"
         )
+    }
+
+    private fun isStrongPrivateText(
+        raw: String
+    ): Boolean {
+        val value =
+            raw.trim()
+                .lowercase(
+                    Locale.ROOT
+                )
+
+        if (
+            value.contains("enter incognito mode") ||
+            value.contains("new incognito tab") ||
+            value.contains("nova guia anônima") ||
+            value.contains("nova aba anônima") ||
+            value.contains("entrar no modo de navegação anônima")
+        ) {
+            return false
+        }
+
+        return value == "incognito mode" ||
+            value.contains("leave incognito mode") ||
+            value.contains("selected incognito tab") ||
+            value.endsWith(", incognito tab") ||
+            value.endsWith(", selected incognito tab") ||
+            value == "modo de navegação anônima" ||
+            value.contains("sair do modo de navegação anônima") ||
+            value.contains("guia anônima selecionada") ||
+            value.contains("aba anônima selecionada") ||
+            value.endsWith(", guia anônima") ||
+            value.endsWith(", aba anônima")
     }
 }
