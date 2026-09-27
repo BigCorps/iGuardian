@@ -25,5 +25,17 @@
   "database_migration_required": false,
   "new_consent_required": false,
   "physical_retest_required": true,
-  "expected_actions_artifact": "guardian-android-0.1.25-fixed-signed-debug"
+  "expected_actions_artifact": "guardian-android-0.1.25-fixed-signed-debug",
+  "actions_66": {
+    "commit": "0efde7fbefd27f1f5d30ce0f454b2ed0b55aaca4",
+    "privacy_project": "pass",
+    "validation_lineage": "pass",
+    "main_kotlin_compile": "pass",
+    "unit_test_compile": "pass",
+    "unit_tests": "48_pass_1_fail",
+    "failed_test": "BrowserVisualTextParserTest.emailLikeTextIsNotStoredAsHost",
+    "cause": "regex extracted example.com substring from usuario@example.com",
+    "correction": "negative left boundary for email/domain token characters",
+    "version_bump_required": false
+  }
 }

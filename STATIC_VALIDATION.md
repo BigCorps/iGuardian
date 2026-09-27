@@ -35,3 +35,16 @@ Baseline: Actions #64 green on commit `1e196d5fd32d4e25e73ad1ffe85db8e90b623959`
 - Python CI guards compile syntactically.
 
 The authoritative Android SDK, unit-test, merged-manifest, signing and APK checks remain GitHub Actions.
+
+## Actions #66 real-CI evidence
+
+- privacy/project invariants: PASS;
+- validation lineage contracts: PASS;
+- fixed DEV signing preparation: PASS;
+- `compileDebugKotlin`: PASS;
+- `compileDebugUnitTestKotlin`: PASS;
+- 49 unit tests executed; one parser-boundary test failed before this patch;
+- reproduced locally: pre-fix e-mail OCR returned `example.com`;
+- patched pure-Kotlin harness: plain e-mail, plus-tag e-mail and prefixed e-mail all return null, while ordinary `example.com`, `https://example.com`, parenthesized domain and spaced `uol.com.br` still resolve correctly.
+
+The remaining APK assembly/merged-manifest/signing checks were skipped by Actions #66 only because Gradle stops after a failed unit test.

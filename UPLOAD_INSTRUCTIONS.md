@@ -19,3 +19,12 @@ After upload, confirm in GitHub before waiting for Actions:
 - root `VALIDATION_CONTRACTS.json` and Android asset are identical.
 
 Do not install unless the new Actions run is green.
+
+## Actions #66 corrective patch
+
+This follow-up remains version 0.1.25 / code 26. Upload every file from the corrective ZIP preserving paths. In particular replace both:
+
+- `app/src/main/java/com/bigcorps/guardian/web/BrowserVisualTextParser.kt`
+- `app/src/test/java/com/bigcorps/guardian/web/BrowserVisualTextParserTest.kt`
+
+Actions #66 already proved the main Android/Kotlin source compiles; this patch fixes the single failing unit-test boundary case.

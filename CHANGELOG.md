@@ -2,6 +2,14 @@
 
 ## 0.1.25 — 2026-09-27
 
+### CI correction after Actions #66
+
+- Actions #66 passed privacy/project invariants, validation lineage, DEV signing, main Kotlin compilation and unit-test compilation.
+- The run stopped at `:app:testDebugUnitTest`: 49 tests executed, 1 failed (`BrowserVisualTextParserTest.emailLikeTextIsNotStoredAsHost`).
+- Root cause: the token path rejected `usuario@example.com`, but the secondary domain regex extracted the substring `example.com` from inside the e-mail address.
+- `DOMAIN_LIKE_REGEX` now requires a non-email/domain boundary before a visual domain candidate, so e-mail text cannot leak a host while ordinary `example.com`, `https://example.com` and spaced OCR URLs remain supported.
+- Regression coverage now includes plain, plus-tag and prefixed e-mail forms plus a positive ordinary-domain control.
+
 - versionCode 26 / versionName 0.1.25; base Actions #64 green.
 - Added strict OCR-only host acceptance. Visual noise such as `kit`, `fallback`,
   `https`, `app`, `quiser` and implausible long-TLD artifacts such as

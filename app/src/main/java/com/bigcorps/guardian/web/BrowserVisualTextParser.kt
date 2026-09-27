@@ -296,6 +296,6 @@ object BrowserVisualTextParser {
 
     private val DOMAIN_LIKE_REGEX =
         Regex(
-            "(?i)(?:https?://)?(?:www\\.)?[a-z0-9](?:[a-z0-9.-]{0,251}[a-z0-9])?\\.[a-z]{2,}(?:[/?:#][^\\s]*)?"
+            "(?i)(?<![a-z0-9._%+@-])(?:https?://)?(?:www\\.)?[a-z0-9](?:[a-z0-9.-]{0,251}[a-z0-9])?\\.[a-z]{2,}(?:[/?:#][^\\s]*)?"
         )
 }

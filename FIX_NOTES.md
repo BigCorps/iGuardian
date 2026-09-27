@@ -52,3 +52,12 @@ OCR artifacts. Therefore the next test must begin from a web-only clean baseline
    - direct opening of a recognized financial app also triggers a best-effort UsageStats failsafe, but this cannot guarantee pre-launch ordering.
 
 No database schema migration and no network expansion.
+
+## Actions #66 follow-up
+
+Actions #66 reached the real Android/Kotlin unit-test stage. Main app compilation succeeded.
+49 tests ran and exactly one failed: `BrowserVisualTextParserTest.emailLikeTextIsNotStoredAsHost`.
+
+Cause: the visual parser has two candidate paths. The token path correctly discarded strings containing `@`, but `DOMAIN_LIKE_REGEX` could begin matching immediately after `@` and return `example.com` from `usuario@example.com`.
+
+Correction: the regex now uses a left boundary that forbids e-mail/domain-token characters immediately before the candidate. This rejects `usuario@example.com`, `usuario+tag@example.com` and `contato:usuario@example.com` while preserving ordinary domains and OCR spacing repair. No runtime architecture, financial protection, privacy contract or database schema changed in this follow-up.

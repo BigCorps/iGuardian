@@ -48,5 +48,22 @@
     "Automatic failsafe never replaces protected launch because foreground detection necessarily happens after the bank process starts",
     "No database migration, no new network permission, no bank/account/transaction content persistence"
   ],
-  "next_task": "Upload 0.1.25, require GitHub Actions to stay green, install over 0.1.24, tap Iniciar teste limpo, test Chrome Dev normal uol.com.br + globo.com, wait 8s on incognito start page then github.com 20s, verify anonymous time > 0 and no junk hosts, then test Abrir Inter Empresas com proteção and export one validation JSON."
+  "next_task": "Upload the small 0.1.25 Actions-#66 parser patch. Require all 49+ unit tests and APK build/contract/signing to pass, then install the resulting 0.1.25 and run the clean normal/incognito + protected Inter test already defined.",
+  "last_ci_finding": {
+    "run": 66,
+    "commit": "0efde7fbefd27f1f5d30ce0f454b2ed0b55aaca4",
+    "result": "failure_at_unit_test_only",
+    "passed_before_failure": [
+      "privacy_project_invariants",
+      "validation_lineage",
+      "dev_signing_preparation",
+      "compileDebugKotlin",
+      "compileDebugUnitTestKotlin"
+    ],
+    "tests_executed": 49,
+    "tests_failed": 1,
+    "failed_test": "BrowserVisualTextParserTest.emailLikeTextIsNotStoredAsHost",
+    "root_cause": "secondary visual-domain regex extracted example.com from inside an email address despite token-level @ rejection",
+    "fix": "left boundary prevents regex domain matches from starting inside email/domain tokens"
+  }
 }

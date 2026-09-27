@@ -147,11 +147,29 @@ class BrowserVisualTextParserTest {
 
     @Test
     fun emailLikeTextIsNotStoredAsHost() {
-        assertNull(
+        listOf(
+            "usuario@example.com",
+            "usuario+tag@example.com",
+            "contato:usuario@example.com"
+        ).forEach {
+            assertNull(
+                BrowserVisualTextParser.parse(
+                    toolbarTexts =
+                        listOf(
+                            it
+                        ),
+                    modeProbeText =
+                        ""
+                ).host
+            )
+        }
+
+        assertEquals(
+            "example.com",
             BrowserVisualTextParser.parse(
                 toolbarTexts =
                     listOf(
-                        "usuario@example.com"
+                        "site example.com"
                     ),
                 modeProbeText =
                     ""
