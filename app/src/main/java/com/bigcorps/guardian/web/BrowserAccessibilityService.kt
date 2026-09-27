@@ -3,15 +3,17 @@ package com.bigcorps.guardian.web
 import android.accessibilityservice.AccessibilityService
 import android.app.usage.UsageEvents
 import android.app.usage.UsageStatsManager
+import android.graphics.Bitmap
+import android.graphics.ColorSpace
 import android.os.Build
 import android.os.Handler
 import android.os.HandlerThread
 import android.os.PowerManager
 import android.os.SystemClock
+import android.view.Display
 import android.view.accessibility.AccessibilityEvent
-import android.view.accessibility.AccessibilityNodeInfo
 import com.bigcorps.guardian.core.GuardianDatabase
-import java.util.ArrayDeque
+import java.util.concurrent.Executor
 
 class BrowserAccessibilityService :
     AccessibilityService() {
@@ -33,11 +35,8 @@ class BrowserAccessibilityService :
     private lateinit var storage:
         Handler
 
-    private val eventLock =
-        Any()
-
-    private val pendingEvents =
-        ArrayDeque<AccessibilityEvent>()
+    private lateinit var visualOcr:
+        BrowserVisualOcr
 
     private var currentObservation:
         Observation? =
@@ -56,8 +55,38 @@ class BrowserAccessibilityService :
         String? =
         null
 
-    private var lastFallbackScanElapsedMs =
+    private var screenshotInFlight =
+        false
+
+    private var lastScreenshotElapsedMs =
         0L
+
+    private var candidateHost:
+        String? =
+        null
+
+    private var candidateHostCount =
+        0
+
+    private var privateModeLatched =
+        false
+
+    private var privateModeReason =
+        "NONE"
+
+    private val observerExecutor =
+        Executor {
+            command ->
+            if (
+                ::observer.isInitialized
+            ) {
+                observer.post(
+                    command
+                )
+            } else {
+                command.run()
+            }
+        }
 
     private val heartbeat =
         object :
@@ -72,15 +101,38 @@ class BrowserAccessibilityService :
 
                 runCatching {
                     refreshForegroundFromUsage()
-                    inspectForegroundInteractiveWindow()
-                    maintainCurrentObservation()
+
+                    val browserPackage =
+                        usageForegroundPackage
+                            ?.takeIf {
+                                BrowserCatalog.isSupported(
+                                    it
+                                )
+                            }
+
+                    if (
+                        browserPackage ==
+                        null
+                    ) {
+                        stopAccruing()
+                        resetVisualSession()
+                    } else {
+                        maintainCurrentObservation(
+                            browserPackage
+                        )
+                        maybeRequestScreenshot(
+                            browserPackage
+                        )
+                    }
                 }.onFailure {
-                    prefs.recordSampleError(
+                    prefs.recordVisualPipelineError(
                         it::class.java.simpleName
                     )
                 }
 
-                if (::observer.isInitialized) {
+                if (
+                    ::observer.isInitialized
+                ) {
                     observer.postDelayed(
                         this,
                         HEARTBEAT_MS
@@ -89,17 +141,12 @@ class BrowserAccessibilityService :
             }
         }
 
-    private val processEvents =
-        Runnable {
-            processPendingEvents()
-        }
-
     override fun onCreate() {
         super.onCreate()
 
         observerThread =
             HandlerThread(
-                "GuardianWebObserverV4"
+                "GuardianWebVisual"
             ).apply {
                 start()
             }
@@ -120,6 +167,9 @@ class BrowserAccessibilityService :
             Handler(
                 storageThread.looper
             )
+
+        visualOcr =
+            BrowserVisualOcr()
     }
 
     override fun onServiceConnected() {
@@ -157,7 +207,10 @@ class BrowserAccessibilityService :
     override fun onAccessibilityEvent(
         event: AccessibilityEvent?
     ) {
-        if (event == null) {
+        if (
+            event ==
+            null
+        ) {
             return
         }
 
@@ -166,7 +219,9 @@ class BrowserAccessibilityService :
                 applicationContext
             )
 
-        if (!prefs.consented()) {
+        if (
+            !prefs.consented()
+        ) {
             return
         }
 
@@ -187,84 +242,42 @@ class BrowserAccessibilityService :
                 event.eventType
         )
 
-        usageForegroundPackage =
-            packageName
-
-        /*
-         * Android owns the callback event. Copy it before the callback returns,
-         * then perform tree queries on GuardianWebObserverV4 instead of the UI
-         * thread. Keeping several recent events avoids losing the one whose
-         * source is attached to Chrome's toolbar.
-         */
-        @Suppress("DEPRECATION")
-        val copy =
-            AccessibilityEvent.obtain(
-                event
-            )
-
-        synchronized(
-            eventLock
+        if (
+            ::observer.isInitialized
         ) {
-            pendingEvents.addLast(
-                copy
-            )
+            observer.post {
+                usageForegroundPackage =
+                    packageName
 
-            while (
-                pendingEvents.size >
-                MAX_PENDING_EVENTS
-            ) {
-                @Suppress("DEPRECATION")
-                pendingEvents.removeFirst()
-                    .recycle()
+                maybeRequestScreenshot(
+                    packageName
+                )
             }
         }
-
-        if (
-            !::observer.isInitialized
-        ) {
-            return
-        }
-
-        observer.removeCallbacks(
-            processEvents
-        )
-
-        observer.postDelayed(
-            processEvents,
-            EVENT_DEBOUNCE_MS
-        )
     }
 
     override fun onInterrupt() {
-        if (::observer.isInitialized) {
+        if (
+            ::observer.isInitialized
+        ) {
             observer.post {
                 stopAccruing()
+                resetVisualSession()
             }
         }
     }
 
     override fun onDestroy() {
-        if (::observer.isInitialized) {
+        if (
+            ::observer.isInitialized
+        ) {
             observer.removeCallbacks(
                 heartbeat
             )
-            observer.removeCallbacks(
-                processEvents
-            )
+
             observer.post {
                 stopAccruing()
-            }
-        }
-
-        synchronized(
-            eventLock
-        ) {
-            while (
-                pendingEvents.isNotEmpty()
-            ) {
-                @Suppress("DEPRECATION")
-                pendingEvents.removeFirst()
-                    .recycle()
+                resetVisualSession()
             }
         }
 
@@ -276,285 +289,286 @@ class BrowserAccessibilityService :
             )
         }
 
-        if (::observerThread.isInitialized) {
+        if (
+            ::visualOcr.isInitialized
+        ) {
+            runCatching {
+                visualOcr.close()
+            }
+        }
+
+        if (
+            ::observerThread.isInitialized
+        ) {
             observerThread.quitSafely()
         }
 
-        if (::storageThread.isInitialized) {
+        if (
+            ::storageThread.isInitialized
+        ) {
             storageThread.quitSafely()
         }
 
         super.onDestroy()
     }
 
-    private fun processPendingEvents() {
-        val events =
-            synchronized(
-                eventLock
-            ) {
-                buildList {
-                    while (
-                        pendingEvents.isNotEmpty()
-                    ) {
-                        add(
-                            pendingEvents.removeLast()
-                        )
-                    }
-                }
-            }
-
-        var found =
-            false
-
-        try {
-            for (event in events) {
-                if (
-                    inspectEvent(
-                        event
-                    )
-                ) {
-                    found =
-                        true
-                    break
-                }
-            }
-
-            if (!found) {
-                inspectForegroundInteractiveWindow()
-            }
-        } finally {
-            events.forEach {
-                @Suppress("DEPRECATION")
-                it.recycle()
-            }
-        }
-    }
-
-    private fun inspectEvent(
-        event: AccessibilityEvent
-    ): Boolean {
-        val packageName =
-            event.packageName
-                ?.toString()
-                ?: return false
-
-        val spec =
-            BrowserCatalog.spec(
-                packageName
-            )
-                ?: return false
-
-        val source =
-            runCatching {
-                event.source
-            }.getOrNull()
-                ?: run {
-                    BrowserWebPreferences(
-                        applicationContext
-                    ).recordSample(
-                        packageName,
-                        "EVENT_SOURCE_NULL",
-                        false
-                    )
-                    return false
-                }
-
-        val root =
-            resolveRoot(
-                source,
-                packageName
-            )
-                ?: run {
-                    BrowserWebPreferences(
-                        applicationContext
-                    ).recordSample(
-                        packageName,
-                        "EVENT_ROOT_NULL",
-                        false
-                    )
-                    return false
-                }
-
-        return inspectRoot(
-            root,
-            spec,
-            "EVENT"
-        )
-    }
-
-    private fun inspectForegroundInteractiveWindow():
-        Boolean {
-        val packageName =
-            usageForegroundPackage
-                ?.takeIf {
-                    BrowserCatalog.isSupported(
-                        it
-                    )
-                }
-                ?: return false
-
-        val spec =
-            BrowserCatalog.spec(
-                packageName
-            )
-                ?: return false
-
-        val now =
-            SystemClock.elapsedRealtime()
-
-        if (
-            now -
-                lastFallbackScanElapsedMs <
-            WINDOW_SCAN_MIN_INTERVAL_MS
-        ) {
-            return false
-        }
-
-        lastFallbackScanElapsedMs =
-            now
-
-        val root =
-            interactiveRootFor(
-                packageName
-            )
-                ?: return false
-
-        return inspectRoot(
-            root,
-            spec,
-            "WINDOW"
-        )
-    }
-
-    private fun inspectRoot(
-        root: AccessibilityNodeInfo,
-        spec: BrowserSpec,
-        source: String
-    ): Boolean {
+    private fun maybeRequestScreenshot(
+        browserPackage: String
+    ) {
         val prefs =
             BrowserWebPreferences(
                 applicationContext
             )
 
-        val extraction =
-            BrowserAccessibilityExtractor.extractHost(
-                root =
-                    root,
-                spec =
-                    spec,
-                allowFallback =
-                    true
-            )
-
-        prefs.recordSample(
-            browserPackage =
-                spec.packageName,
-            state =
-                extraction.state,
-            hostFound =
-                extraction.host !=
-                    null
-        )
-
         if (
-            extraction.state ==
-            "FOCUSED" ||
-            extraction.state ==
-                "INVALID"
+            !prefs.consented() ||
+            Build.VERSION.SDK_INT <
+                Build.VERSION_CODES.R ||
+            !BrowserCatalog.isSupported(
+                browserPackage
+            ) ||
+            screenshotInFlight
         ) {
-            stopAccruing()
-            return false
+            return
         }
 
-        val host =
-            extraction.host
-                ?: return false
+        val nowElapsed =
+            SystemClock.elapsedRealtime()
 
-        val mode =
-            BrowserAccessibilityExtractor.detectPrivateMode(
-                root,
-                spec
+        if (
+            nowElapsed -
+                lastScreenshotElapsedMs <
+            SCREENSHOT_MIN_INTERVAL_MS
+        ) {
+            return
+        }
+
+        val power =
+            getSystemService(
+                POWER_SERVICE
+            ) as
+                PowerManager
+
+        if (
+            !power.isInteractive
+        ) {
+            return
+        }
+
+        lastScreenshotElapsedMs =
+            nowElapsed
+
+        screenshotInFlight =
+            true
+
+        prefs.recordScreenshotRequested()
+
+        takeScreenshot(
+            Display.DEFAULT_DISPLAY,
+            observerExecutor,
+            object :
+                AccessibilityService.TakeScreenshotCallback {
+                override fun onSuccess(
+                    screenshot:
+                        AccessibilityService.ScreenshotResult
+                ) {
+                    prefs.recordScreenshotSuccess()
+
+                    try {
+                        processScreenshot(
+                            screenshot,
+                            browserPackage
+                        )
+                    } catch (
+                        t: Throwable
+                    ) {
+                        prefs.recordVisualPipelineError(
+                            t::class.java.simpleName
+                        )
+                    } finally {
+                        screenshotInFlight =
+                            false
+                    }
+                }
+
+                override fun onFailure(
+                    errorCode: Int
+                ) {
+                    prefs.recordScreenshotFailure(
+                        errorCode
+                    )
+
+                    screenshotInFlight =
+                        false
+                }
+            }
+        )
+    }
+
+    private fun processScreenshot(
+        screenshot:
+            AccessibilityService.ScreenshotResult,
+        browserPackage: String
+    ) {
+        val hardwareBuffer =
+            screenshot.hardwareBuffer
+
+        val colorSpace =
+            screenshot.colorSpace
+                ?: ColorSpace.get(
+                    ColorSpace.Named.SRGB
+                )
+
+        val wrapped =
+            Bitmap.wrapHardwareBuffer(
+                hardwareBuffer,
+                colorSpace
             )
 
-        prefs.recordDetectorState(
-            browserPackage =
-                spec.packageName,
-            urlBarId =
-                extraction.urlBarId,
-            privateMode =
-                mode.privateMode,
-            privateReason =
-                mode.reason
-        )
+        if (
+            wrapped ==
+            null
+        ) {
+            hardwareBuffer.close()
 
-        updateObservation(
+            BrowserWebPreferences(
+                applicationContext
+            ).recordVisualPipelineError(
+                "BitmapWrapFailed"
+            )
+
+            return
+        }
+
+        val software =
+            try {
+                wrapped.copy(
+                    Bitmap.Config.ARGB_8888,
+                    false
+                )
+            } finally {
+                hardwareBuffer.close()
+                wrapped.recycle()
+            }
+
+        if (
+            software ==
+            null
+        ) {
+            BrowserWebPreferences(
+                applicationContext
+            ).recordVisualPipelineError(
+                "BitmapCopyFailed"
+            )
+
+            return
+        }
+
+        try {
+            val allowModeProbe =
+                !privateModeLatched &&
+                    currentObservation ==
+                        null
+
+            val result =
+                visualOcr.analyze(
+                    bitmap =
+                        software,
+                    allowModeProbe =
+                        allowModeProbe
+                )
+
+            BrowserWebPreferences(
+                applicationContext
+            ).recordVisualOcr(
+                host =
+                    result.host,
+                privateDetected =
+                    result.privateModeDetected,
+                privateReason =
+                    result.privateReason
+            )
+
+            if (
+                result.privateModeDetected
+            ) {
+                privateModeLatched =
+                    true
+
+                privateModeReason =
+                    result.privateReason
+            }
+
+            observeVisualHost(
+                host =
+                    result.host,
+                browserPackage =
+                    browserPackage
+            )
+        } finally {
+            software.recycle()
+        }
+    }
+
+    private fun observeVisualHost(
+        host: String?,
+        browserPackage: String
+    ) {
+        if (
+            host ==
+            null
+        ) {
+            return
+        }
+
+        if (
+            candidateHost ==
+            host
+        ) {
+            candidateHostCount +=
+                1
+        } else {
+            candidateHost =
+                host
+
+            candidateHostCount =
+                1
+        }
+
+        if (
+            candidateHostCount <
+            REQUIRED_CONSECUTIVE_HOST_READS
+        ) {
+            return
+        }
+
+        val observation =
             Observation(
                 host =
                     host,
                 browserPackage =
-                    spec.packageName,
+                    browserPackage,
                 privateMode =
-                    mode.privateMode
+                    privateModeLatched
             )
+
+        BrowserWebPreferences(
+            applicationContext
+        ).recordDetectorState(
+            browserPackage =
+                browserPackage,
+            urlBarId =
+                "VISUAL_OCR_TOOLBAR",
+            privateMode =
+                privateModeLatched,
+            privateReason =
+                privateModeReason
         )
 
-        return true
+        updateObservation(
+            observation
+        )
     }
-
-    private fun resolveRoot(
-        source: AccessibilityNodeInfo,
-        packageName: String
-    ): AccessibilityNodeInfo? {
-        val windowRoot =
-            runCatching {
-                source.window
-                    ?.root
-            }.getOrNull()
-
-        if (
-            windowRoot
-                ?.packageName
-                ?.toString() ==
-            packageName
-        ) {
-            return windowRoot
-        }
-
-        var current:
-            AccessibilityNodeInfo =
-            source
-
-        repeat(
-            MAX_PARENT_HOPS
-        ) {
-            val parent =
-                runCatching {
-                    current.parent
-                }.getOrNull()
-                    ?: return current
-
-            current =
-                parent
-        }
-
-        return current
-    }
-
-    private fun interactiveRootFor(
-        packageName: String
-    ): AccessibilityNodeInfo? =
-        runCatching {
-            windows
-                .asSequence()
-                .mapNotNull {
-                    it.root
-                }
-                .firstOrNull {
-                    it.packageName
-                        ?.toString() ==
-                        packageName
-                }
-        }.getOrNull()
 
     private fun refreshForegroundFromUsage() {
         val manager =
@@ -569,9 +583,9 @@ class BrowserAccessibilityService :
         val begin =
             if (
                 usageCursorMs >
-                0L &&
+                    0L &&
                 usageCursorMs <
-                now
+                    now
             ) {
                 usageCursorMs
             } else {
@@ -605,17 +619,48 @@ class BrowserAccessibilityService :
                 event
             )
 
+            val eventPackage =
+                event.packageName
+
+            val className =
+                event.className
+                    .orEmpty()
+
+            if (
+                BrowserCatalog.isSupported(
+                    eventPackage
+                ) &&
+                (
+                    className.contains(
+                        "IncognitoTabLauncher",
+                        ignoreCase =
+                            true
+                    ) ||
+                    className.contains(
+                        "IncognitoDocumentActivity",
+                        ignoreCase =
+                            true
+                    )
+                    )
+            ) {
+                privateModeLatched =
+                    true
+
+                privateModeReason =
+                    "USAGE_EVENT_INCOGNITO_ACTIVITY"
+            }
+
             if (
                 event.eventType ==
                 UsageEvents.Event.ACTIVITY_RESUMED &&
                 event.timeStamp >=
-                newestTs
+                    newestTs
             ) {
                 newestTs =
                     event.timeStamp
 
                 newestPackage =
-                    event.packageName
+                    eventPackage
             }
         }
 
@@ -623,8 +668,22 @@ class BrowserAccessibilityService :
             newestPackage !=
             null
         ) {
+            val previous =
+                usageForegroundPackage
+
             usageForegroundPackage =
                 newestPackage
+
+            if (
+                previous !=
+                    newestPackage &&
+                !BrowserCatalog.isSupported(
+                    newestPackage
+                )
+            ) {
+                stopAccruing()
+                resetVisualSession()
+            }
         }
 
         usageCursorMs =
@@ -637,16 +696,19 @@ class BrowserAccessibilityService :
                 )
     }
 
-    private fun maintainCurrentObservation() {
+    private fun maintainCurrentObservation(
+        browserPackage: String
+    ) {
         val observation =
             currentObservation
                 ?: return
 
         if (
-            usageForegroundPackage !=
-            observation.browserPackage
+            observation.browserPackage !=
+            browserPackage
         ) {
             stopAccruing()
+            resetVisualSession()
             return
         }
 
@@ -765,7 +827,7 @@ class BrowserAccessibilityService :
             }.onFailure {
                 BrowserWebPreferences(
                     applicationContext
-                ).recordSampleError(
+                ).recordVisualPipelineError(
                     it::class.java.simpleName
                 )
             }
@@ -790,21 +852,29 @@ class BrowserAccessibilityService :
             0L
     }
 
+    private fun resetVisualSession() {
+        candidateHost =
+            null
+
+        candidateHostCount =
+            0
+
+        privateModeLatched =
+            false
+
+        privateModeReason =
+            "NONE"
+    }
+
     companion object {
         private const val HEARTBEAT_MS =
-            5_000L
+            2500L
 
-        private const val EVENT_DEBOUNCE_MS =
-            200L
+        private const val SCREENSHOT_MIN_INTERVAL_MS =
+            3500L
 
-        private const val WINDOW_SCAN_MIN_INTERVAL_MS =
-            2_500L
-
-        private const val MAX_PENDING_EVENTS =
-            6
-
-        private const val MAX_PARENT_HOPS =
-            24
+        private const val REQUIRED_CONSECUTIVE_HOST_READS =
+            2
 
         private const val MAX_BANK_GAP_MS =
             15_000L

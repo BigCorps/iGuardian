@@ -21,8 +21,8 @@ android {
         applicationId = "com.bigcorps.guardian.dev"
         minSdk = 26
         targetSdk = 36
-        versionCode = 23
-        versionName = "0.1.22"
+        versionCode = 24
+        versionName = "0.1.23"
     }
 
     if (devSigningReady) {
@@ -62,5 +62,6 @@ android {
 
 dependencies {
     implementation("androidx.work:work-runtime:2.12.0")
+    implementation("com.google.mlkit:text-recognition:16.0.1")
     testImplementation("junit:junit:4.13.2")
 }

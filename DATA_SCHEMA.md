@@ -1,10 +1,16 @@
-# Data Schema — 0.1.21
+# Data Schema — 0.1.23
 
-- DB v8 unchanged
-- report v5 unchanged
-- diagnostic v20
-- validation pack v10
-- ValidationSuite v10
+DB v8 and report v5 are unchanged.
 
-Guardian Web storage remains host-only. Observer v3 changes the live capture
-path and performance model, not the browser database schema.
+Diagnostic v21 adds Guardian Web Visual counters:
+- screenshot requests/success/failure
+- last screenshot error code
+- OCR runs
+- OCR host detections
+- private-mode visual probes
+- pipeline error count/class
+- last sanitized visual host
+
+No image bytes or raw OCR strings are part of the schema.
+
+Validation pack v11 carries the compact diagnostic evidence.

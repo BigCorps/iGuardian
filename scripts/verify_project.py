@@ -57,10 +57,16 @@ else:
         errors.append(
             "Guardian Web must request flagRetrieveInteractiveWindows for browser-window fallback"
         )
+    if 'android:canTakeScreenshot="true"' not in web_xml:
+        errors.append(
+            "Guardian Web Visual must declare canTakeScreenshot=true"
+        )
 if "android.useAndroidX=true" not in gradle_properties:
     errors.append("0.1.8+ requires android.useAndroidX=true")
 if "androidx.work:work-runtime:2.12.0" not in app_gradle:
     errors.append("Required WorkManager 2.12.0 dependency missing")
+if "com.google.mlkit:text-recognition:16.0.1" not in app_gradle:
+    errors.append("Guardian Web Visual requires bundled ML Kit text-recognition 16.0.1")
 if ".core.GuardianJobService" in manifest:
     errors.append("Legacy direct GuardianJobService must not remain in manifest")
 
@@ -178,6 +184,7 @@ print("Privacy/project verification OK")
 print("- no INTERNET permission")
 print("- no QUERY_ALL_PACKAGES")
 print("- AccessibilityService isolated to opt-in Guardian Web browser observer")
+print("- Guardian Web Visual screenshot capability + bundled OCR contract present")
 print("- Guardian Web accessibility package allowlist present")
 print("- WorkManager background architecture present")
 print("- comprehensive local validation suite present")

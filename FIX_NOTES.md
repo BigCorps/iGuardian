@@ -1,14 +1,7 @@
-# Guardian 0.1.22 patch
+# Guardian Android 0.1.23
 
-Apply this ZIP over the current 0.1.21 repository.
+This is the visual fallback experiment after 0.1.22 proved Chrome's accessibility
+tree/event source unreliable on the physical Xiaomi/Android 16 device.
 
-Physical 0.1.21 result:
-- UI freeze fixed
-- Chrome Dev URL bar identified
-- only m.youtube.com stored for ~5 s
-- UOL/Globo not persisted
-- incognito still 0
-
-0.1.22 changes the capture source and duration accounting rather than changing
-the host sanitizer. Expected Actions artifact:
-guardian-android-0.1.22-fixed-signed-debug
+Expected Actions artifact:
+guardian-android-0.1.23-fixed-signed-debug

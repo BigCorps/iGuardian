@@ -45,7 +45,7 @@ class DiagnosticsGenerator(private val context: Context) {
         }
 
         return JSONObject().apply {
-            put("diagnostic_schema", 20)
+            put("diagnostic_schema", 21)
             put("generated_at", iso(nowMs))
 
             put(
@@ -520,16 +520,21 @@ class DiagnosticsGenerator(private val context: Context) {
                     put("validation_pack_full_evidence_on_failure", true)
                     put("validation_lineage_manifest", true)
                     put("validation_lineage_schema", ValidationLineage.SCHEMA)
-                    put("validation_suite_version", 10)
+                    put("validation_suite_version", 11)
                     put("browser_domains", true)
                     put("browser_domains_storage", "host_only")
                     put("browser_web_optional_accessibility", true)
-                    put("browser_web_observer_version", 3)
-                    put("browser_web_ui_safe_hybrid", true)
+                    put("browser_web_observer_version", 5)
+                    put("browser_web_off_main_thread", true)
                     put("browser_web_runtime_health_telemetry", true)
+                    put("browser_web_visual_ocr", true)
+                    put("browser_web_visual_ocr_model", "bundled_mlkit_latin")
+                    put("browser_web_visual_screenshot_memory_only", true)
+                    put("browser_web_raw_ocr_persisted", false)
+                    put("browser_web_visual_confirmation_reads", 2)
                     put("browser_web_supported_browser_count", BrowserCatalog.supported.size)
                     put("anonymous_browser_detection", true)
-                    put("anonymous_browser_detection_source", "browser_accessibility_indicators")
+                    put("anonymous_browser_detection_source", "visual_probe+usage_activity+accessibility_indicators")
                     put("anonymous_browser_schema_ready", true)
                     put("network_transport", false)
                 }
@@ -593,6 +598,21 @@ class DiagnosticsGenerator(private val context: Context) {
                             ?.let(::iso)
                             ?: JSONObject.NULL
                     )
+                    put("event_source_count", webPreferences.eventSourceCount())
+                    put("event_source_null_count", webPreferences.eventSourceNullCount())
+                    put("event_root_resolved_count", webPreferences.eventRootResolvedCount())
+                    put(
+                        "last_event_source_at",
+                        webPreferences.lastEventSourceAtMs()
+                            .takeIf { it > 0L }
+                            ?.let(::iso)
+                            ?: JSONObject.NULL
+                    )
+                    put(
+                        "last_event_source_browser_package",
+                        webPreferences.lastEventSourceBrowserPackage()
+                            ?: JSONObject.NULL
+                    )
                     put("sample_count", webPreferences.sampleCount())
                     put("host_found_count", webPreferences.hostFoundCount())
                     put("focused_skip_count", webPreferences.focusedSkipCount())
@@ -623,6 +643,57 @@ class DiagnosticsGenerator(private val context: Context) {
                         webPreferences.lastSampleErrorAtMs()
                             .takeIf { it > 0L }
                             ?.let(::iso)
+                            ?: JSONObject.NULL
+                    )
+                    put(
+                        "visual_screenshot_request_count",
+                        webPreferences.visualScreenshotRequestCount()
+                    )
+                    put(
+                        "visual_screenshot_success_count",
+                        webPreferences.visualScreenshotSuccessCount()
+                    )
+                    put(
+                        "visual_screenshot_failure_count",
+                        webPreferences.visualScreenshotFailureCount()
+                    )
+                    put(
+                        "visual_last_screenshot_error",
+                        webPreferences.visualLastScreenshotError()
+                    )
+                    put(
+                        "visual_ocr_run_count",
+                        webPreferences.visualOcrRunCount()
+                    )
+                    put(
+                        "visual_ocr_host_count",
+                        webPreferences.visualOcrHostCount()
+                    )
+                    put(
+                        "visual_private_probe_count",
+                        webPreferences.visualPrivateProbeCount()
+                    )
+                    put(
+                        "visual_pipeline_error_count",
+                        webPreferences.visualPipelineErrorCount()
+                    )
+                    put(
+                        "visual_last_host",
+                        webPreferences.visualLastHost()
+                            ?: JSONObject.NULL
+                    )
+                    put(
+                        "visual_last_private_detected",
+                        webPreferences.visualLastPrivateDetected()
+                    )
+                    put(
+                        "visual_last_private_reason",
+                        webPreferences.visualLastPrivateReason()
+                            ?: JSONObject.NULL
+                    )
+                    put(
+                        "visual_last_pipeline_error",
+                        webPreferences.visualLastPipelineError()
                             ?: JSONObject.NULL
                     )
                     put(
@@ -725,6 +796,10 @@ class DiagnosticsGenerator(private val context: Context) {
                     put("browser_page_title_exported", false)
                     put("browser_page_content_exported", false)
                     put("browser_text_input_exported", false)
+                    put("browser_screenshot_exported", false)
+                    put("browser_screenshot_persisted", false)
+                    put("browser_raw_ocr_exported", false)
+                    put("browser_raw_ocr_persisted", false)
                     put("screen_or_input_content_exported", false)
                 }
             )

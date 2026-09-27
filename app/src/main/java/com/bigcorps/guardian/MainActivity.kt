@@ -377,7 +377,7 @@ class MainActivity : Activity() {
 
                 addView(
                     textView(
-                        "O Guardian Web lê somente a barra de endereço dos navegadores compatíveis. Antes de salvar, remove caminho, busca, parâmetros, fragmento, título e conteúdo e mantém apenas o host, como youtube.com.",
+                        "Guardian Web Visual usa screenshot temporário + OCR local somente enquanto um navegador compatível está em primeiro plano. Imagem e OCR bruto não são salvos; apenas o host sanitizado entra no histórico.",
                         13f,
                         false,
                         TEXT_MUTED
@@ -837,7 +837,7 @@ class MainActivity : Activity() {
             appendLine("✓ Insights automáticos com proteção contra histórico incompleto")
             appendLine("✓ Painel selecionável 24h/7d + detalhe por app")
             appendLine("✓ Relatório com precisão em milissegundos")
-            appendLine("✓ Guardian Web v3: hosts por navegador sem bloquear a UI")
+            appendLine("✓ Guardian Web Visual v1: host por OCR local sem INTERNET")
             appendLine("✓ Guia anônima por indicadores confiáveis do navegador")
             appendLine("✓ URL completa, busca, título e conteúdo nunca armazenados")
             append("— Nuvem/API externa: não existe neste build")

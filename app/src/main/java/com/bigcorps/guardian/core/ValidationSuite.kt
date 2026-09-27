@@ -3,6 +3,7 @@ package com.bigcorps.guardian.core
 import android.content.Context
 import com.bigcorps.guardian.web.BrowserDomainSanitizer
 import com.bigcorps.guardian.web.BrowserReport
+import com.bigcorps.guardian.web.BrowserVisualTextParser
 import org.json.JSONArray
 import org.json.JSONObject
 import java.time.OffsetDateTime
@@ -15,7 +16,7 @@ object ValidationSuite {
     private const val PASS = "PASS"
     private const val WARN = "WARN"
     private const val FAIL = "FAIL"
-    private const val SUITE_VERSION = 10
+    private const val SUITE_VERSION = 11
 
     fun run(
         context: Context,
@@ -47,6 +48,7 @@ object ValidationSuite {
         validateTrendDashboardEngine(context, ::add)
         validateValidationLineage(context, ::add)
         validateBrowserWebPrivacy(context, daily, ::add)
+        validateGuardianWebVisualPrivacy(diagnostic, ::add)
         validateGuardianWebRuntimeHealth(diagnostic, ::add)
         validateGuardianWebPhysical(diagnostic, ::add)
         validateSystemSurfaceExclusion(daily, ::add)
@@ -401,6 +403,8 @@ object ValidationSuite {
                 "validation_pack_export",
                 "browser_domains",
                 "browser_web_optional_accessibility",
+                "browser_web_visual_ocr",
+                "browser_web_visual_screenshot_memory_only",
                 "anonymous_browser_detection"
             )
 
@@ -425,13 +429,13 @@ object ValidationSuite {
             hostOnly
         ) {
             add(
-                "product_capabilities_v9",
+                "product_capabilities_v10",
                 PASS,
-                "Engine v$engineVersion + Guardian Web host-only e detecção anônima opcional ativos."
+                "Engine v$engineVersion + Guardian Web Visual host-only, screenshot transitório e detecção anônima ativos."
             )
         } else {
             add(
-                "product_capabilities_v9",
+                "product_capabilities_v10",
                 FAIL,
                 "engine=$engineVersion;host_only=$hostOnly;missing=${missing.joinToString(",")}"
             )
@@ -1246,6 +1250,81 @@ object ValidationSuite {
         }
     }
 
+    private fun validateGuardianWebVisualPrivacy(
+        diagnostic: JSONObject,
+        add: (String, String, String) -> Unit
+    ) {
+        val parsed =
+            BrowserVisualTextParser.parse(
+                toolbarTexts =
+                    listOf(
+                        "https://www.google.com/search?q=segredo"
+                    ),
+                modeProbeText =
+                    "Página normal"
+            )
+
+        val privateProbe =
+            BrowserVisualTextParser.parse(
+                toolbarTexts =
+                    emptyList(),
+                modeProbeText =
+                    "Você entrou no modo de navegação anônima"
+            )
+
+        val capabilities =
+            diagnostic.optJSONObject(
+                "capabilities"
+            )
+
+        val privacy =
+            diagnostic.optJSONObject(
+                "privacy_guarantees"
+            )
+
+        val pass =
+            parsed.host ==
+                "google.com" &&
+                !parsed.privateModeDetected &&
+                privateProbe.privateModeDetected &&
+                capabilities?.optBoolean(
+                    "browser_web_visual_screenshot_memory_only",
+                    false
+                ) ==
+                true &&
+                capabilities.optBoolean(
+                    "browser_web_raw_ocr_persisted",
+                    true
+                ) ==
+                false &&
+                privacy?.optBoolean(
+                    "browser_screenshot_persisted",
+                    true
+                ) ==
+                false &&
+                privacy.optBoolean(
+                    "browser_raw_ocr_persisted",
+                    true
+                ) ==
+                false
+
+        if (
+            pass
+        ) {
+            add(
+                "guardian_web_visual_privacy",
+                PASS,
+                "Screenshot é transitório; OCR bruto não persiste; URL de teste reduzida para google.com antes do armazenamento."
+            )
+        } else {
+            add(
+                "guardian_web_visual_privacy",
+                FAIL,
+                "visual_host=${parsed.host};private_probe=${privateProbe.privateModeDetected}"
+            )
+        }
+    }
+
     private fun validateGuardianWebRuntimeHealth(
         diagnostic: JSONObject,
         add: (String, String, String) -> Unit
@@ -1255,7 +1334,10 @@ object ValidationSuite {
                 "browser_web"
             )
 
-        if (web == null) {
+        if (
+            web ==
+            null
+        ) {
             add(
                 "guardian_web_runtime_health",
                 FAIL,
@@ -1264,55 +1346,123 @@ object ValidationSuite {
             return
         }
 
-        val consent = web.optBoolean("consent_granted", false)
-        val enabled = web.optBoolean("accessibility_service_enabled", false)
-        val alive = web.optBoolean("accessibility_service_alive", false)
-        val connections = web.optInt("service_connection_count", 0)
-        val samples = web.optInt("sample_count", 0)
-        val errors = web.optInt("sample_error_count", 0)
-        val found = web.optInt("host_found_count", 0)
+        val consent =
+            web.optBoolean(
+                "consent_granted",
+                false
+            )
+
+        val enabled =
+            web.optBoolean(
+                "accessibility_service_enabled",
+                false
+            )
+
+        val alive =
+            web.optBoolean(
+                "accessibility_service_alive",
+                false
+            )
+
+        val connections =
+            web.optInt(
+                "service_connection_count",
+                0
+            )
+
+        val requests =
+            web.optInt(
+                "visual_screenshot_request_count",
+                0
+            )
+
+        val successes =
+            web.optInt(
+                "visual_screenshot_success_count",
+                0
+            )
+
+        val failures =
+            web.optInt(
+                "visual_screenshot_failure_count",
+                0
+            )
+
+        val ocrRuns =
+            web.optInt(
+                "visual_ocr_run_count",
+                0
+            )
+
+        val ocrHosts =
+            web.optInt(
+                "visual_ocr_host_count",
+                0
+            )
+
+        val pipelineErrors =
+            web.optInt(
+                "visual_pipeline_error_count",
+                0
+            )
 
         when {
             !consent ->
                 add(
                     "guardian_web_runtime_health",
                     WARN,
-                    "Guardian Web ainda sem consentimento."
+                    "Guardian Web Visual exige o novo consentimento de screenshot/OCR local."
                 )
 
             !enabled ->
                 add(
                     "guardian_web_runtime_health",
                     WARN,
-                    "Serviço ainda não aparece como habilitado no sistema."
+                    "Serviço de acessibilidade não está habilitado."
                 )
 
-            connections <= 0 ->
+            connections <=
+                0 ->
                 add(
                     "guardian_web_runtime_health",
                     WARN,
                     "Serviço habilitado, mas ainda sem conexão registrada."
                 )
 
-            errors > 0 ->
+            pipelineErrors >
+                0 ->
                 add(
                     "guardian_web_runtime_health",
                     WARN,
-                    "Observador ativo com errors=$errors;samples=$samples;hosts=$found."
+                    "Pipeline visual apresentou errors=$pipelineErrors;requests=$requests;success=$successes;ocr=$ocrRuns;hosts=$ocrHosts."
                 )
 
-            alive && samples > 0 ->
+            alive &&
+                successes >
+                    0 &&
+                ocrRuns >
+                    0 ->
                 add(
                     "guardian_web_runtime_health",
                     PASS,
-                    "Observador v3 vivo; leitura da janela no contexto do serviço de acessibilidade e gravação web fora da UI; connections=$connections;samples=$samples;hosts=$found;errors=0."
+                    "Guardian Web Visual ativo; screenshots=$successes/$requests;ocr=$ocrRuns;hosts=$ocrHosts;failures=$failures."
+                )
+
+            requests >
+                0 &&
+                successes ==
+                    0 ->
+                add(
+                    "guardian_web_runtime_health",
+                    WARN,
+                    "Screenshots solicitados, mas nenhum concluído; requests=$requests;failures=$failures."
                 )
 
             else ->
                 add(
                     "guardian_web_runtime_health",
                     WARN,
-                    "Serviço configurado, aguardando heartbeat/amostras; connections=$connections;samples=$samples;hosts=$found."
+                    "Serviço vivo, aguardando screenshot/OCR; requests=$requests;success=$successes;ocr=$ocrRuns."
                 )
         }
     }

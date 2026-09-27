@@ -1,48 +1,43 @@
 {
   "project_codename": "Guardian",
-  "version": "0.1.22",
+  "version": "0.1.23",
   "platform": "android",
   "phase": 2,
-  "phase_name": "Guardian Web v4 event-source + continuous foreground accrual",
+  "phase_name": "Guardian Web Visual v1 screenshot + bundled OCR",
   "schema_version": 5,
-  "diagnostic_schema_version": 20,
+  "diagnostic_schema_version": 21,
   "database_version": 8,
-  "validation_pack_schema": 10,
-  "validation_suite_version": 10,
+  "validation_pack_schema": 11,
+  "validation_suite_version": 11,
   "repository": "BigCorps/iGuardian",
   "backend": "none",
   "internet_permission": false,
   "dev_application_id": "com.bigcorps.guardian.dev",
   "last_physical_finding": {
-    "version": "0.1.21",
+    "version": "0.1.22",
     "guardian_web_enabled": true,
-    "guardian_web_alive": true,
-    "accessibility_events": 1777,
-    "samples": 95,
-    "hosts_found_samples": 5,
+    "accessibility_events": 2426,
+    "visual_or_tree_samples": 147,
     "stored_rows": 1,
     "distinct_hosts": 1,
     "normal_milliseconds": 5011,
     "anonymous_milliseconds": 0,
-    "detected_host": "m.youtube.com",
-    "last_url_bar_id": "com.chrome.dev:id/url_bar",
-    "last_state": "ROOT_NULL_MAIN",
-    "ui_freeze_fixed": true,
-    "reported_missing_sites": [
-      "globo.com",
-      "uol.com.br"
-    ]
+    "only_host": "m.youtube.com",
+    "chrome_dev_today_milliseconds": 2937253,
+    "last_state": "EVENT_SOURCE_NULL",
+    "conclusion": "Accessibility tree/event source is not reliable enough on this Xiaomi Android 16 device."
   },
-  "implemented_in_0_1_22": [
-    "copied AccessibilityEvent source processed off UI thread",
-    "flagRetrieveInteractiveWindows fallback",
-    "multi-event debounce queue",
-    "UsageStats incremental foreground confirmation",
-    "5-second continuous domain time banking without requiring a root every tick",
-    "direct Chromium location_bar_incognito_badge/incognito_indicator detection",
-    "expanded current-incognito accessibility labels",
-    "unit tests for globo.com and uol.com.br sanitization",
-    "CI guard for interactive-windows accessibility flag"
+  "implemented_in_0_1_23": [
+    "AccessibilityService takeScreenshot capability",
+    "bundled ML Kit Latin OCR with no model download",
+    "toolbar-first visual OCR",
+    "larger incognito start-page probe only when no host is known",
+    "two consecutive visual host reads before persistence",
+    "UsageStats foreground confirmation for continuous duration banking",
+    "incognito latch from visual text or Incognito activity class",
+    "consent v2 explicitly covering transient screenshots and OCR",
+    "visual privacy/runtime AutoTests and diagnostics",
+    "no screenshot or raw OCR persistence"
   ],
-  "next_task": "Overlay 0.1.22 patch on current main, wait for Actions, install over 0.1.21. Test globo.com, uol.com.br and youtube for 20-30s each in normal Chrome Dev, then one different site in incognito for 20-30s. Return to Guardian Web and export one JSON."
+  "next_task": "Upload 0.1.23, verify Actions, install over 0.1.22. Re-consent Guardian Web Visual. Test uol.com.br and globo.com normally for ~20s each; return to Guardian; then open incognito, wait ~4s on the incognito start page, visit another host ~20s, return and export one validation JSON."
 }

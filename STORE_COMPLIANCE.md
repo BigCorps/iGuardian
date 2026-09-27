@@ -1,16 +1,19 @@
-# Store Compliance — 0.1.21
+# Store Compliance — 0.1.23
 
-Guardian Web remains optional, explicitly consented and browser-package scoped.
+Guardian Web Visual uses AccessibilityService only after prominent disclosure and
+explicit consent. The service remains package-scoped to supported browsers.
 
-Observer v3 adds `flagIncludeNotImportantViews` so the browser URL bar remains
-discoverable on OEM/browser combinations where the view is not marked important
-for accessibility. It does not expand the package allowlist or persisted data.
+The AccessibilityService now declares `canTakeScreenshot=true`. Screenshot processing
+is local and transient; images and raw OCR text are not stored or transmitted.
 
 Still absent:
 - INTERNET
 - QUERY_ALL_PACKAGES
 - VPN
-- screenshots/media projection
+- MediaProjection
 - notification listener
 - input method
 - clipboard capture
+
+A public Play release will require the appropriate AccessibilityService declaration,
+prominent disclosure, consent flow and policy review.
