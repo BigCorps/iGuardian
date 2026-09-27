@@ -31,6 +31,23 @@
             android:exported="false" />
 
         <activity
+            android:name=".web.BrowserWebActivity"
+            android:exported="false" />
+
+        <service
+            android:name=".web.BrowserAccessibilityService"
+            android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE"
+            android:exported="true"
+            android:label="@string/guardian_web_service_label">
+            <intent-filter>
+                <action android:name="android.accessibilityservice.AccessibilityService" />
+            </intent-filter>
+            <meta-data
+                android:name="android.accessibilityservice"
+                android:resource="@xml/guardian_web_accessibility" />
+        </service>
+
+        <activity
             android:name=".MainActivity"
             android:exported="true">
             <intent-filter>

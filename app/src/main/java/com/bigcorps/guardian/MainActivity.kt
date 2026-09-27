@@ -25,6 +25,7 @@ import android.widget.TextView
 import android.widget.Toast
 import com.bigcorps.guardian.core.*
 import com.bigcorps.guardian.ui.PrivateAppsActivity
+import com.bigcorps.guardian.web.BrowserWebActivity
 import java.io.File
 import java.io.IOException
 import java.text.SimpleDateFormat
@@ -353,6 +354,56 @@ class MainActivity : Activity() {
 
                 addView(
                     automaticAppTrend7Text
+                )
+            }
+        )
+
+        root.addView(
+            sectionTitle(
+                "Guardian Web"
+            )
+        )
+
+        root.addView(
+            card().apply {
+                addView(
+                    textView(
+                        "Sites por domínio + navegação anônima • opcional • 100% local",
+                        13f,
+                        true,
+                        PRIMARY
+                    )
+                )
+
+                addView(
+                    textView(
+                        "O Guardian Web lê somente a barra de endereço dos navegadores compatíveis. Antes de salvar, remove caminho, busca, parâmetros, fragmento, título e conteúdo e mantém apenas o host, como youtube.com.",
+                        13f,
+                        false,
+                        TEXT_MUTED
+                    ).apply {
+                        setPadding(
+                            0,
+                            dp(8),
+                            0,
+                            0
+                        )
+                    }
+                )
+
+                addView(
+                    primaryButton(
+                        "Configurar Guardian Web"
+                    ) {
+                        startActivity(
+                            Intent(
+                                this@MainActivity,
+                                BrowserWebActivity::class.java
+                            )
+                        )
+                    }.apply {
+                        topMargin(12)
+                    }
                 )
             }
         )
@@ -786,8 +837,9 @@ class MainActivity : Activity() {
             appendLine("✓ Insights automáticos com proteção contra histórico incompleto")
             appendLine("✓ Painel selecionável 24h/7d + detalhe por app")
             appendLine("✓ Relatório com precisão em milissegundos")
-            appendLine("— Domínios: ainda não")
-            appendLine("— Guia anônima: schema pronto; detecção ainda não")
+            appendLine("✓ Guardian Web opcional: hosts por navegador")
+            appendLine("✓ Guia anônima por indicadores confiáveis do navegador")
+            appendLine("✓ URL completa, busca, título e conteúdo nunca armazenados")
             append("— Nuvem/API externa: não existe neste build")
         }
 

@@ -1,55 +1,62 @@
 {
   "project_codename": "Guardian",
-  "version": "0.1.18",
+  "version": "0.1.19",
   "platform": "android",
   "phase": 2,
-  "phase_name": "Lean validation + hash-bound validation inheritance",
-  "schema_version": 4,
-  "diagnostic_schema_version": 17,
-  "database_version": 7,
-  "validation_pack_schema": 7,
-  "validation_suite_version": 7,
+  "phase_name": "Guardian Web v1 final major Android validation",
+  "schema_version": 5,
+  "diagnostic_schema_version": 18,
+  "database_version": 8,
+  "validation_pack_schema": 8,
+  "validation_suite_version": 8,
   "repository": "BigCorps/iGuardian",
   "backend": "none",
   "internet_permission": false,
   "dev_application_id": "com.bigcorps.guardian.dev",
   "last_physically_validated_build": {
-    "version": "0.1.17",
-    "version_code": 18,
-    "generated_at": "2026-09-26T20:52:00.018-03:00",
+    "version": "0.1.18",
+    "version_code": 19,
+    "generated_at": "2026-09-26T21:56:28.950-03:00",
     "validation": {
       "critical_passed": true,
       "manual_test_required": false,
       "pass_count": 14,
-      "warning_count": 0,
+      "warning_count": 1,
       "fail_count": 0,
-      "coverage_percent": 99.2,
-      "timeline_intervals": 1173
+      "coverage_percent": 99.1
     },
-    "workmanager": {
-      "worker_run_count": 38,
-      "worker_success_count": 38,
+    "compact_validation": {
+      "estimated_bytes": 26354,
+      "full_daily_timeline_embedded": false,
+      "full_24h_snapshot_embedded": false
+    },
+    "scheduler": {
+      "worker_run_count": 43,
+      "worker_success_count": 39,
       "worker_retry_count": 0,
       "worker_failure_count": 0,
-      "worker_stopped_count": 0,
-      "unique_active_work": 1
-    },
-    "history": {
-      "last_24h_ready": true,
-      "previous_24h_ready": true,
-      "last_7d_history_percent": 29.9,
-      "previous_7d_history_percent": 0.0
+      "worker_stopped_count": 3,
+      "last_stop_reason": 13,
+      "later_success": true
     }
   },
-  "implemented_in_0_1_18": [
-    "circular export loader",
-    "compact-success validation pack",
-    "automatic full evidence on validation failure",
-    "single timestamp for pack comparisons",
-    "generation timing metrics",
-    "ValidationLineage runtime evidence",
-    "hash-bound CI validation inheritance",
-    "final built APK contract verification"
+  "privacy_contract_change": {
+    "accessibility_exception": "Guardian Web only",
+    "explicit_consent": true,
+    "browser_package_allowlist": true,
+    "persisted_web_value": "sanitized host only",
+    "full_url_stored": false,
+    "network_transport": false
+  },
+  "implemented_in_0_1_19": [
+    "Guardian Web v1",
+    "Chrome Dev physical target",
+    "host-only browser storage",
+    "anonymous/incognito marker detection",
+    "DB v8 browser sessions",
+    "report v5 browser overlay",
+    "ValidationSuite v8",
+    "recovered WorkManager stop semantics"
   ],
-  "next_task": "Upload 0.1.18 and verify Actions. If green, install over 0.1.17, use normally 60-90m, export one recommended validation JSON. Confirm compact_success and loader behavior through the pack/normal use; no question-by-question manual tests."
+  "next_task": "Upload 0.1.19, verify Actions, install over 0.1.18, enable Guardian Web, visit one normal and one incognito Chrome Dev domain for ~20s each, use 20-30m, export one validation JSON."
 }

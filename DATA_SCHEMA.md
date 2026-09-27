@@ -1,14 +1,15 @@
-# Data Schema — report v4 / DB v7 / diagnostic v17 / validation-pack v7
+# Data Schema — report v5 / DB v8 / diagnostic v18 / validation-pack v8
 
-Report schema remains v4.
-Database remains v7.
+DB v8 adds `browser_sessions` with only:
+- start/end time
+- sanitized host
+- supported browser package
+- private-mode boolean
 
-Diagnostic v17 can omit the heavy activity snapshot when used as a validation
-source. Explicit full diagnostic export still includes it.
+No full URL column exists.
 
-Validation pack v7 adds:
-- `pack_meta`
-- `generation_metrics`
-- `validation_lineage`
-- compact report timeline evidence on successful builds
-- automatic full evidence on failed builds
+Report v5 adds a `browser` overlay with host aggregates and normal/anonymous milliseconds. The overlay is not additive to APP total.
+
+Diagnostic v18 adds Guardian Web consent/service/storage audit evidence.
+
+Validation pack v8 adds top-level `guardian_web` + the one-round physical test contract.

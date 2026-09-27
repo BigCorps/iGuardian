@@ -1,6 +1,8 @@
 package com.bigcorps.guardian.core
 
 import android.content.Context
+import com.bigcorps.guardian.web.BrowserDomainSanitizer
+import com.bigcorps.guardian.web.BrowserReport
 import org.json.JSONArray
 import org.json.JSONObject
 import java.time.OffsetDateTime
@@ -13,7 +15,7 @@ object ValidationSuite {
     private const val PASS = "PASS"
     private const val WARN = "WARN"
     private const val FAIL = "FAIL"
-    private const val SUITE_VERSION = 7
+    private const val SUITE_VERSION = 8
 
     fun run(
         context: Context,
@@ -44,6 +46,8 @@ object ValidationSuite {
         validateAppTrendEngine(context, ::add)
         validateTrendDashboardEngine(context, ::add)
         validateValidationLineage(context, ::add)
+        validateBrowserWebPrivacy(context, daily, ::add)
+        validateGuardianWebPhysical(diagnostic, ::add)
         validateSystemSurfaceExclusion(daily, ::add)
         validateBackground(diagnostic, ::add)
         validateCoverage(daily, ::add)
@@ -62,8 +66,18 @@ object ValidationSuite {
 
         return JSONObject().apply {
             put("suite_version", SUITE_VERSION)
+            val webPhysicalPassed =
+                (0 until checks.length()).any { index ->
+                    val item = checks.getJSONObject(index)
+                    item.optString("id") == "guardian_web_physical_validation" &&
+                        item.optString("status") == PASS
+                }
+
             put("critical_passed", failCount == 0)
-            put("manual_test_required", failCount > 0)
+            put(
+                "manual_test_required",
+                failCount > 0 || !webPhysicalPassed
+            )
             put("pass_count", passCount)
             put("warning_count", warnCount)
             put("fail_count", failCount)
@@ -113,19 +127,20 @@ object ValidationSuite {
             )
 
         if (
-            schema == 4 &&
+            schema == 5 &&
             precision == "milliseconds" &&
             hasMs &&
-            historyAvailability
+            historyAvailability &&
+            daily.has("browser")
         ) {
             add(
-                "report_schema_v4",
+                "report_schema_v5",
                 PASS,
-                "Schema v4, milissegundos e disponibilidade de histórico ativos."
+                "Schema v5, milissegundos, disponibilidade de histórico e overlay web ativos."
             )
         } else {
             add(
-                "report_schema_v4",
+                "report_schema_v5",
                 FAIL,
                 "schema=$schema;precision=$precision;duration_ms=$hasMs;history_availability=$historyAvailability"
             )
@@ -382,7 +397,10 @@ object ValidationSuite {
                 "trend_dashboard_engine",
                 "trend_dashboard_selectable_periods",
                 "trend_dashboard_app_detail",
-                "validation_pack_export"
+                "validation_pack_export",
+                "browser_domains",
+                "browser_web_optional_accessibility",
+                "anonymous_browser_detection"
             )
 
         val missing =
@@ -393,21 +411,28 @@ object ValidationSuite {
                 )
             }
 
+        val hostOnly =
+            capabilities.optString(
+                "browser_domains_storage"
+            ) ==
+                "host_only"
+
         if (
             engineVersion >=
             8 &&
-            missing.isEmpty()
+            missing.isEmpty() &&
+            hostOnly
         ) {
             add(
-                "product_capabilities_v8",
+                "product_capabilities_v9",
                 PASS,
-                "Engine v$engineVersion com comparações maduras, tendências por app e painel selecionável."
+                "Engine v$engineVersion + Guardian Web host-only e detecção anônima opcional ativos."
             )
         } else {
             add(
-                "product_capabilities_v8",
+                "product_capabilities_v9",
                 FAIL,
-                "engine=$engineVersion;missing=${missing.joinToString(",")}"
+                "engine=$engineVersion;host_only=$hostOnly;missing=${missing.joinToString(",")}"
             )
         }
     }
@@ -1022,10 +1047,7 @@ object ValidationSuite {
         }
 
         val modes =
-            linkedMapOf<
-                String,
-                String
-                >()
+            linkedMapOf<String, String>()
 
         for (
             index in
@@ -1046,49 +1068,254 @@ object ValidationSuite {
                 )
         }
 
-        val inheritedRequired =
-            listOf(
-                "privacy_collection_core",
-                "database_report_core",
-                "background_scheduler_core",
-                "local_intelligence_core"
+        val expected =
+            linkedMapOf(
+                "usage_collection_core" to "inherited",
+                "background_scheduler_core" to "inherited",
+                "local_intelligence_core" to "inherited",
+                "database_report_browser_overlay" to "runtime_autotest",
+                "guardian_web_core" to "runtime_plus_physical",
+                "validation_export_ui" to "runtime_autotest",
+                "build_pipeline" to "ci_only"
             )
 
-        val inheritedOk =
-            inheritedRequired.all {
-                modes[
-                    it
-                ] ==
-                    "inherited"
+        val mismatches =
+            expected.filter {
+                (id, mode) ->
+                modes[id] !=
+                    mode
             }
 
-        val runtimeOk =
-            modes[
-                "validation_export_ui"
-            ] ==
-                "runtime_autotest"
-
-        val ciOk =
-            modes[
-                "build_pipeline"
-            ] ==
-                "ci_only"
-
         if (
-            inheritedOk &&
-            runtimeOk &&
-            ciOk
+            mismatches.isEmpty()
         ) {
             add(
                 "validation_lineage_contract",
                 PASS,
-                "4 núcleos herdados do último build físico; export/UI retestados automaticamente; pipeline protegido no CI."
+                "Coleta/scheduler/inteligência herdados; DB/report/web e export retestados; Guardian Web exige prova física; pipeline protegido no CI."
             )
         } else {
             add(
                 "validation_lineage_contract",
                 FAIL,
-                "Modos de validação divergentes do contrato esperado."
+                "Modos divergentes: ${mismatches.keys.joinToString(",")}"
+            )
+        }
+    }
+
+    private fun validateBrowserWebPrivacy(
+        context: Context,
+        daily: JSONObject,
+        add: (String, String, String) -> Unit
+    ) {
+        val sanitizerCases =
+            listOf(
+                "https://www.google.com/search?q=segredo#resultado" to "google.com",
+                "https://user:pass@example.com/private?token=1" to "example.com",
+                "mail.google.com/mail/u/0/#inbox" to "mail.google.com",
+                "https://www.youtube.com/watch?v=secret" to "youtube.com"
+            )
+
+        val sanitizerOk =
+            sanitizerCases.all {
+                (raw, expected) ->
+                BrowserDomainSanitizer.hostFromRaw(
+                    raw
+                ) ==
+                    expected
+            } &&
+                BrowserDomainSanitizer.hostFromRaw(
+                    "chrome://settings"
+                ) ==
+                    null &&
+                BrowserDomainSanitizer.hostFromRaw(
+                    "pesquisa com espaços"
+                ) ==
+                    null
+
+        val audit =
+            GuardianDatabase(
+                context
+            ).browserStorageAudit()
+
+        val browser =
+            daily.optJSONObject(
+                "browser"
+            )
+                ?: BrowserReport.todayJson(
+                    context
+                )
+
+        val domains =
+            browser.optJSONArray(
+                "domains"
+            )
+                ?: JSONArray()
+
+        var domainSum =
+            0L
+
+        var hostErrors =
+            0
+
+        for (
+            index in
+            0 until domains.length()
+        ) {
+            val item =
+                domains.getJSONObject(
+                    index
+                )
+
+            val host =
+                item.optString(
+                    "host"
+                )
+
+            if (
+                !BrowserDomainSanitizer.isSanitizedHost(
+                    host
+                )
+            ) {
+                hostErrors +=
+                    1
+            }
+
+            domainSum +=
+                item.optLong(
+                    "foreground_milliseconds",
+                    0L
+                )
+        }
+
+        val total =
+            browser.optLong(
+                "total_milliseconds",
+                -1L
+            )
+
+        val normal =
+            browser.optLong(
+                "normal_milliseconds",
+                -1L
+            )
+
+        val anonymous =
+            browser.optLong(
+                "anonymous_milliseconds",
+                -1L
+            )
+
+        val arithmeticOk =
+            total >=
+                0L &&
+                normal >=
+                    0L &&
+                anonymous >=
+                    0L &&
+                normal +
+                    anonymous ==
+                    total &&
+                domainSum ==
+                    total
+
+        if (
+            sanitizerOk &&
+            audit.invalidHosts ==
+                0 &&
+            audit.unsupportedBrowsers ==
+                0 &&
+            audit.badDurations ==
+                0 &&
+            hostErrors ==
+                0 &&
+            arithmeticOk
+        ) {
+            add(
+                "guardian_web_privacy_contract",
+                PASS,
+                "URLs são reduzidas a host antes do armazenamento; sem hosts inválidos e totais web fecham."
+            )
+        } else {
+            add(
+                "guardian_web_privacy_contract",
+                FAIL,
+                "sanitizer=$sanitizerOk;invalid=${audit.invalidHosts};unsupported=${audit.unsupportedBrowsers};bad_duration=${audit.badDurations};host_errors=$hostErrors;arithmetic=$arithmeticOk"
+            )
+        }
+    }
+
+    private fun validateGuardianWebPhysical(
+        diagnostic: JSONObject,
+        add: (String, String, String) -> Unit
+    ) {
+        val web =
+            diagnostic.optJSONObject(
+                "browser_web"
+            )
+
+        if (
+            web ==
+            null
+        ) {
+            add(
+                "guardian_web_physical_validation",
+                FAIL,
+                "Diagnóstico Guardian Web ausente."
+            )
+            return
+        }
+
+        val consent =
+            web.optBoolean(
+                "consent_granted",
+                false
+            )
+
+        val service =
+            web.optBoolean(
+                "accessibility_service_enabled",
+                false
+            )
+
+        val normal =
+            web.optInt(
+                "normal_rows",
+                0
+            )
+
+        val anonymous =
+            web.optInt(
+                "anonymous_rows",
+                0
+            )
+
+        val distinctHosts =
+            web.optInt(
+                "distinct_hosts",
+                0
+            )
+
+        if (
+            consent &&
+            service &&
+            normal >
+                0 &&
+            anonymous >
+                0 &&
+            distinctHosts >=
+                2
+        ) {
+            add(
+                "guardian_web_physical_validation",
+                PASS,
+                "Consentimento + serviço ativos; evidência normal=$normal, anônima=$anonymous, hosts=$distinctHosts."
+            )
+        } else {
+            add(
+                "guardian_web_physical_validation",
+                WARN,
+                "Teste físico pendente: consent=$consent;service=$service;normal=$normal;anonymous=$anonymous;hosts=$distinctHosts."
             )
         }
     }
@@ -1160,28 +1387,118 @@ object ValidationSuite {
         diagnostic: JSONObject,
         add: (String, String, String) -> Unit
     ) {
-        val scheduler = diagnostic.getJSONObject("scheduler")
-        val present = scheduler.optBoolean("periodic_work_present_now", false)
-        val infos = scheduler.optJSONArray("work_infos") ?: JSONArray()
-        var active = 0
+        val scheduler =
+            diagnostic.getJSONObject(
+                "scheduler"
+            )
 
-        for (index in 0 until infos.length()) {
-            val state = infos.getJSONObject(index).optString("state")
-            if (state == "ENQUEUED" || state == "RUNNING" || state == "BLOCKED") {
-                active += 1
+        val present =
+            scheduler.optBoolean(
+                "periodic_work_present_now",
+                false
+            )
+
+        val infos =
+            scheduler.optJSONArray(
+                "work_infos"
+            )
+                ?: JSONArray()
+
+        var active =
+            0
+
+        for (
+            index in
+            0 until infos.length()
+        ) {
+            val state =
+                infos.getJSONObject(
+                    index
+                )
+                    .optString(
+                        "state"
+                    )
+
+            if (
+                state ==
+                "ENQUEUED" ||
+                state ==
+                "RUNNING" ||
+                state ==
+                "BLOCKED"
+            ) {
+                active +=
+                    1
             }
         }
 
-        val failures = scheduler.optInt("worker_failure_count", 0)
-        val retries = scheduler.optInt("worker_retry_count", 0)
-        val stopped = scheduler.optInt("worker_stopped_count", 0)
+        val failures =
+            scheduler.optInt(
+                "worker_failure_count",
+                0
+            )
 
-        if (present && active == 1) {
-            val status = if (failures == 0 && retries == 0 && stopped == 0) PASS else WARN
+        val retries =
+            scheduler.optInt(
+                "worker_retry_count",
+                0
+            )
+
+        val stopped =
+            scheduler.optInt(
+                "worker_stopped_count",
+                0
+            )
+
+        val recovered =
+            scheduler.optBoolean(
+                "historical_stop_recovered",
+                false
+            )
+
+        val stopLabel =
+            scheduler.optString(
+                "last_worker_stop_reason_label",
+                ""
+            )
+
+        if (
+            present &&
+            active ==
+                1
+        ) {
+            val status =
+                if (
+                    failures ==
+                    0 &&
+                    retries ==
+                    0 &&
+                    (
+                        stopped ==
+                        0 ||
+                        recovered
+                        )
+                ) {
+                    PASS
+                } else {
+                    WARN
+                }
+
+            val detail =
+                if (
+                    stopped >
+                    0 &&
+                    recovered
+                ) {
+                    "active=$active;failure=$failures;retry=$retries;historical_stopped=$stopped;recovered=true;last_stop=$stopLabel"
+                } else {
+                    "active=$active;failure=$failures;retry=$retries;stopped=$stopped"
+                }
+
             add(
                 "workmanager_unique_periodic",
                 status,
-                "active=$active;failure=$failures;retry=$retries;stopped=$stopped"
+                detail
             )
         } else {
             add(

@@ -6,6 +6,10 @@ import android.content.Context
 import android.content.pm.PackageManager
 import android.os.PowerManager
 import android.os.UserManager
+import com.bigcorps.guardian.web.BrowserCatalog
+import com.bigcorps.guardian.web.BrowserReport
+import com.bigcorps.guardian.web.BrowserWebAccess
+import com.bigcorps.guardian.web.BrowserWebPreferences
 import org.json.JSONArray
 import org.json.JSONObject
 import java.text.SimpleDateFormat
@@ -41,7 +45,7 @@ class DiagnosticsGenerator(private val context: Context) {
         }
 
         return JSONObject().apply {
-            put("diagnostic_schema", 17)
+            put("diagnostic_schema", 18)
             put("generated_at", iso(nowMs))
 
             put(
@@ -362,6 +366,28 @@ class DiagnosticsGenerator(private val context: Context) {
                         "last_worker_stopped_attempt",
                         schedulerState.lastWorkerStoppedAttempt()
                     )
+                    val lastStopMs =
+                        schedulerState.lastWorkerStoppedMs()
+
+                    val lastFinishMs =
+                        schedulerState.lastWorkerFinishMs()
+
+                    put(
+                        "last_worker_stop_reason_label",
+                        when (
+                            schedulerState.lastWorkerStopReason()
+                        ) {
+                            13 -> "STOP_REASON_USER"
+                            -1 -> JSONObject.NULL
+                            else -> "STOP_REASON_${schedulerState.lastWorkerStopReason()}"
+                        }
+                    )
+                    put(
+                        "historical_stop_recovered",
+                        lastStopMs > 0L &&
+                            lastFinishMs > lastStopMs &&
+                            schedulerState.lastWorkerOutcome() == "success"
+                    )
                     val recentStarts =
                         schedulerState.recentWorkerStartsMs()
 
@@ -454,7 +480,7 @@ class DiagnosticsGenerator(private val context: Context) {
                     put("serialized_collection", true)
                     put("process_start_scheduler_guard", false)
                     put("millisecond_summary_aggregation", true)
-                    put("report_schema_version", 4)
+                    put("report_schema_version", 5)
                     put("chained_one_shot_scheduler", false)
                     put("workmanager_background", true)
                     put("workmanager_unique_periodic", true)
@@ -494,11 +520,94 @@ class DiagnosticsGenerator(private val context: Context) {
                     put("validation_pack_full_evidence_on_failure", true)
                     put("validation_lineage_manifest", true)
                     put("validation_lineage_schema", ValidationLineage.SCHEMA)
-                    put("validation_suite_version", 7)
-                    put("browser_domains", false)
-                    put("anonymous_browser_detection", false)
+                    put("validation_suite_version", 8)
+                    put("browser_domains", true)
+                    put("browser_domains_storage", "host_only")
+                    put("browser_web_optional_accessibility", true)
+                    put("browser_web_supported_browser_count", BrowserCatalog.supported.size)
+                    put("anonymous_browser_detection", true)
+                    put("anonymous_browser_detection_source", "browser_accessibility_indicators")
                     put("anonymous_browser_schema_ready", true)
                     put("network_transport", false)
+                }
+            )
+
+            val webPreferences =
+                BrowserWebPreferences(
+                    context
+                )
+
+            val webAudit =
+                db.browserStorageAudit()
+
+            put(
+                "browser_web",
+                JSONObject().apply {
+                    put("consent_granted", webPreferences.consented())
+                    put("consent_version", webPreferences.consentVersion())
+                    put(
+                        "consented_at",
+                        webPreferences.consentedAtMs()
+                            .takeIf { it > 0L }
+                            ?.let(::iso)
+                            ?: JSONObject.NULL
+                    )
+                    put(
+                        "accessibility_service_enabled",
+                        BrowserWebAccess.isEnabled(context)
+                    )
+                    put(
+                        "tracking_started_at",
+                        webPreferences.trackingStartedAtMs()
+                            .takeIf { it > 0L }
+                            ?.let(::iso)
+                            ?: JSONObject.NULL
+                    )
+                    put("stored_rows", webAudit.rows)
+                    put("normal_rows", webAudit.normalRows)
+                    put("anonymous_rows", webAudit.privateRows)
+                    put("distinct_hosts", webAudit.distinctHosts)
+                    put("invalid_hosts", webAudit.invalidHosts)
+                    put("unsupported_browsers", webAudit.unsupportedBrowsers)
+                    put("bad_durations", webAudit.badDurations)
+                    put(
+                        "last_browser_package",
+                        webPreferences.lastBrowserPackage() ?: JSONObject.NULL
+                    )
+                    put(
+                        "last_url_bar_id",
+                        webPreferences.lastUrlBarId() ?: JSONObject.NULL
+                    )
+                    put("last_private_mode", webPreferences.lastPrivateMode())
+                    put(
+                        "last_private_reason",
+                        webPreferences.lastPrivateReason() ?: JSONObject.NULL
+                    )
+                    put(
+                        "last_detection_at",
+                        webPreferences.lastDetectionAtMs()
+                            .takeIf { it > 0L }
+                            ?.let(::iso)
+                            ?: JSONObject.NULL
+                    )
+                    put(
+                        "today",
+                        BrowserReport.todayJson(context, nowMs)
+                    )
+                    put(
+                        "supported_browsers",
+                        JSONArray().apply {
+                            BrowserCatalog.supported.forEach { spec ->
+                                put(
+                                    JSONObject().apply {
+                                        put("package", spec.packageName)
+                                        put("label", spec.label)
+                                        put("family", spec.family)
+                                    }
+                                )
+                            }
+                        }
+                    )
                 }
             )
 
@@ -541,6 +650,12 @@ class DiagnosticsGenerator(private val context: Context) {
                     put("private_package_exported", false)
                     put("system_package_exported", false)
                     put("full_url_exported", false)
+                    put("browser_path_exported", false)
+                    put("browser_query_exported", false)
+                    put("browser_fragment_exported", false)
+                    put("browser_page_title_exported", false)
+                    put("browser_page_content_exported", false)
+                    put("browser_text_input_exported", false)
                     put("screen_or_input_content_exported", false)
                 }
             )

@@ -4,6 +4,8 @@ import android.content.ContentValues
 import android.content.Context
 import android.database.sqlite.SQLiteDatabase
 import android.database.sqlite.SQLiteOpenHelper
+import com.bigcorps.guardian.web.BrowserCatalog
+import com.bigcorps.guardian.web.BrowserDomainSanitizer
 
 class GuardianDatabase(context: Context) :
     SQLiteOpenHelper(context, DB_NAME, null, DB_VERSION) {
@@ -34,6 +36,10 @@ class GuardianDatabase(context: Context) :
             """.trimIndent()
         )
         db.execSQL("CREATE INDEX idx_technical_time ON technical_events(ts_ms)")
+
+        createBrowserSessionTable(
+            db
+        )
     }
 
     override fun onUpgrade(
@@ -187,6 +193,11 @@ class GuardianDatabase(context: Context) :
                 )
             )
         }
+        if (oldVersion < 8) {
+            createBrowserSessionTable(
+                db
+            )
+        }
     }
 
     @Synchronized
@@ -331,6 +342,407 @@ class GuardianDatabase(context: Context) :
         return result
     }
 
+    data class BrowserSession(
+        val id: Long,
+        val startMs: Long,
+        val endMs: Long,
+        val host: String,
+        val browserPackage: String,
+        val privateMode: Boolean
+    )
+
+    data class BrowserStorageAudit(
+        val rows: Int,
+        val normalRows: Int,
+        val privateRows: Int,
+        val distinctHosts: Int,
+        val invalidHosts: Int,
+        val unsupportedBrowsers: Int,
+        val badDurations: Int
+    )
+
+    @Synchronized
+    fun recordBrowserChunk(
+        startMs: Long,
+        endMs: Long,
+        host: String,
+        browserPackage: String,
+        privateMode: Boolean
+    ): Long {
+        if (
+            endMs <=
+            startMs
+        ) {
+            return -1L
+        }
+
+        val safeHost =
+            BrowserDomainSanitizer.hostFromRaw(
+                host
+            )
+                ?: return -1L
+
+        if (
+            !BrowserCatalog.isSupported(
+                browserPackage
+            )
+        ) {
+            return -1L
+        }
+
+        val db =
+            writableDatabase
+
+        var lastId =
+            -1L
+
+        var lastEnd =
+            0L
+
+        var lastHost: String? =
+            null
+
+        var lastBrowser: String? =
+            null
+
+        var lastPrivate =
+            false
+
+        db.rawQuery(
+            """
+            SELECT
+                id,
+                end_ms,
+                host,
+                browser_package,
+                private_mode
+            FROM browser_sessions
+            ORDER BY end_ms DESC, id DESC
+            LIMIT 1
+            """.trimIndent(),
+            null
+        ).use {
+            cursor ->
+            if (
+                cursor.moveToFirst()
+            ) {
+                lastId =
+                    cursor.getLong(
+                        0
+                    )
+
+                lastEnd =
+                    cursor.getLong(
+                        1
+                    )
+
+                lastHost =
+                    cursor.getString(
+                        2
+                    )
+
+                lastBrowser =
+                    cursor.getString(
+                        3
+                    )
+
+                lastPrivate =
+                    cursor.getInt(
+                        4
+                    ) !=
+                        0
+            }
+        }
+
+        val canMerge =
+            lastId >
+                0L &&
+                lastHost ==
+                    safeHost &&
+                lastBrowser ==
+                    browserPackage &&
+                lastPrivate ==
+                    privateMode &&
+                startMs <=
+                    lastEnd +
+                        BROWSER_MERGE_GAP_MS &&
+                endMs >=
+                    lastEnd -
+                        1_000L
+
+        if (
+            canMerge
+        ) {
+            val values =
+                ContentValues().apply {
+                    put(
+                        "end_ms",
+                        maxOf(
+                            lastEnd,
+                            endMs
+                        )
+                    )
+                }
+
+            db.update(
+                "browser_sessions",
+                values,
+                "id = ?",
+                arrayOf(
+                    lastId.toString()
+                )
+            )
+
+            return lastId
+        }
+
+        val values =
+            ContentValues().apply {
+                put(
+                    "start_ms",
+                    startMs
+                )
+
+                put(
+                    "end_ms",
+                    endMs
+                )
+
+                put(
+                    "host",
+                    safeHost
+                )
+
+                put(
+                    "browser_package",
+                    browserPackage
+                )
+
+                put(
+                    "private_mode",
+                    if (
+                        privateMode
+                    ) {
+                        1
+                    } else {
+                        0
+                    }
+                )
+            }
+
+        return db.insert(
+            "browser_sessions",
+            null,
+            values
+        )
+    }
+
+    fun browserSessionsBetween(
+        startMs: Long,
+        endMs: Long
+    ): List<BrowserSession> {
+        val result =
+            mutableListOf<
+                BrowserSession
+                >()
+
+        readableDatabase.query(
+            "browser_sessions",
+            arrayOf(
+                "id",
+                "start_ms",
+                "end_ms",
+                "host",
+                "browser_package",
+                "private_mode"
+            ),
+            "end_ms > ? AND start_ms < ?",
+            arrayOf(
+                startMs.toString(),
+                endMs.toString()
+            ),
+            null,
+            null,
+            "start_ms ASC"
+        ).use {
+            cursor ->
+            while (
+                cursor.moveToNext()
+            ) {
+                result +=
+                    BrowserSession(
+                        id =
+                            cursor.getLong(
+                                0
+                            ),
+                        startMs =
+                            cursor.getLong(
+                                1
+                            ),
+                        endMs =
+                            cursor.getLong(
+                                2
+                            ),
+                        host =
+                            cursor.getString(
+                                3
+                            ),
+                        browserPackage =
+                            cursor.getString(
+                                4
+                            ),
+                        privateMode =
+                            cursor.getInt(
+                                5
+                            ) !=
+                                0
+                    )
+            }
+        }
+
+        return result
+    }
+
+    fun browserStorageAudit(): BrowserStorageAudit {
+        var rows =
+            0
+
+        var normalRows =
+            0
+
+        var privateRows =
+            0
+
+        var invalidHosts =
+            0
+
+        var unsupportedBrowsers =
+            0
+
+        var badDurations =
+            0
+
+        val hosts =
+            mutableSetOf<
+                String
+                >()
+
+        readableDatabase.query(
+            "browser_sessions",
+            arrayOf(
+                "start_ms",
+                "end_ms",
+                "host",
+                "browser_package",
+                "private_mode"
+            ),
+            null,
+            null,
+            null,
+            null,
+            null
+        ).use {
+            cursor ->
+            while (
+                cursor.moveToNext()
+            ) {
+                rows +=
+                    1
+
+                val start =
+                    cursor.getLong(
+                        0
+                    )
+
+                val end =
+                    cursor.getLong(
+                        1
+                    )
+
+                val host =
+                    cursor.getString(
+                        2
+                    )
+
+                val browser =
+                    cursor.getString(
+                        3
+                    )
+
+                val privateMode =
+                    cursor.getInt(
+                        4
+                    ) !=
+                        0
+
+                if (
+                    privateMode
+                ) {
+                    privateRows +=
+                        1
+                } else {
+                    normalRows +=
+                        1
+                }
+
+                hosts +=
+                    host
+
+                if (
+                    !BrowserDomainSanitizer.isSanitizedHost(
+                        host
+                    )
+                ) {
+                    invalidHosts +=
+                        1
+                }
+
+                if (
+                    !BrowserCatalog.isSupported(
+                        browser
+                    )
+                ) {
+                    unsupportedBrowsers +=
+                        1
+                }
+
+                if (
+                    end <=
+                    start
+                ) {
+                    badDurations +=
+                        1
+                }
+            }
+        }
+
+        return BrowserStorageAudit(
+            rows =
+                rows,
+            normalRows =
+                normalRows,
+            privateRows =
+                privateRows,
+            distinctHosts =
+                hosts.size,
+            invalidHosts =
+                invalidHosts,
+            unsupportedBrowsers =
+                unsupportedBrowsers,
+            badDurations =
+                badDurations
+        )
+    }
+
+    @Synchronized
+    fun clearBrowserSessions() {
+        writableDatabase.delete(
+            "browser_sessions",
+            null,
+            null
+        )
+    }
+
     fun technicalCount(
         code: String,
         startMs: Long,
@@ -405,8 +817,34 @@ class GuardianDatabase(context: Context) :
         return runCatching { java.io.File(path).length() }.getOrDefault(0L)
     }
 
+    private fun createBrowserSessionTable(
+        db: SQLiteDatabase
+    ) {
+        db.execSQL(
+            """
+            CREATE TABLE IF NOT EXISTS browser_sessions (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                start_ms INTEGER NOT NULL,
+                end_ms INTEGER NOT NULL,
+                host TEXT NOT NULL,
+                browser_package TEXT NOT NULL,
+                private_mode INTEGER NOT NULL DEFAULT 0
+            )
+            """.trimIndent()
+        )
+
+        db.execSQL(
+            "CREATE INDEX IF NOT EXISTS idx_browser_sessions_time ON browser_sessions(start_ms, end_ms)"
+        )
+
+        db.execSQL(
+            "CREATE INDEX IF NOT EXISTS idx_browser_sessions_host ON browser_sessions(host, start_ms)"
+        )
+    }
+
     companion object {
         private const val DB_NAME = "guardian.db"
-        private const val DB_VERSION = 7
+        private const val DB_VERSION = 8
+        private const val BROWSER_MERGE_GAP_MS = 6_000L
     }
 }

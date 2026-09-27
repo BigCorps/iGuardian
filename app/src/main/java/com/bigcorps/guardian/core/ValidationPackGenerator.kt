@@ -1,6 +1,7 @@
 package com.bigcorps.guardian.core
 
 import android.content.Context
+import com.bigcorps.guardian.web.BrowserReport
 import org.json.JSONArray
 import org.json.JSONObject
 import java.text.SimpleDateFormat
@@ -9,7 +10,7 @@ import java.util.Locale
 
 object ValidationPackGenerator {
     const val PACK_SCHEMA =
-        7
+        8
 
     fun generate(
         context: Context
@@ -349,6 +350,23 @@ object ValidationPackGenerator {
                     }
                 )
                 put(
+                    "guardian_web",
+                    BrowserReport.todayJson(
+                        context,
+                        now
+                    )
+                )
+                put(
+                    "guardian_web_test",
+                    JSONObject().apply {
+                        put("required_this_round", true)
+                        put("normal_domain_seconds_target", 20)
+                        put("anonymous_domain_seconds_target", 20)
+                        put("recommended_browser", "Chrome Dev")
+                        put("full_url_stored", false)
+                    }
+                )
+                put(
                     "validation",
                     validation
                 )
@@ -405,7 +423,8 @@ object ValidationPackGenerator {
             "device",
             "summary",
             "capabilities",
-            "apps"
+            "apps",
+            "browser"
         ).forEach {
             key ->
             if (
@@ -464,6 +483,7 @@ object ValidationPackGenerator {
             "scheduler",
             "interval_counts",
             "capabilities",
+            "browser_web",
             "local_intelligence_self_check",
             "recent_technical_events",
             "privacy_guarantees"

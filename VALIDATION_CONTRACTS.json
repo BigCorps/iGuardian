@@ -1,41 +1,28 @@
 {
   "schema": 1,
-  "build_version": "0.1.18",
-  "base_physically_validated_version": "0.1.17",
-  "strategy": "Inherit physical validation only when source hashes are unchanged; continue cheap runtime AutoTests; retest changed validation/export UI automatically; guard build pipeline in CI.",
+  "build_version": "0.1.19",
+  "base_physically_validated_version": "0.1.18",
+  "strategy": "Inherit unchanged Android collection/scheduler/intelligence by source hash; runtime-test changed DB/report/export; require one physical normal+incognito browser proof for Guardian Web; protect build in CI.",
   "contracts": [
     {
-      "id": "privacy_collection_core",
+      "id": "usage_collection_core",
       "validation_mode": "inherited",
-      "validated_in": "0.1.17",
+      "validated_in": "0.1.18",
       "manual_retest_required": false,
       "continuous_autotest": true,
       "files": [
-        "app/src/main/AndroidManifest.xml",
         "app/src/main/java/com/bigcorps/guardian/core/Preferences.kt",
         "app/src/main/java/com/bigcorps/guardian/core/GuardianPrivacyOverride.kt",
         "app/src/main/java/com/bigcorps/guardian/core/SystemSurfaceClassifier.kt",
         "app/src/main/java/com/bigcorps/guardian/core/TimelineNormalizer.kt",
         "app/src/main/java/com/bigcorps/guardian/core/UsageCollector.kt"
       ],
-      "sha256": "010cd0fe9ee926d160d39fdc39b6d0c0a43bb4afc2d1b10e5a9003a9f594fd7b"
-    },
-    {
-      "id": "database_report_core",
-      "validation_mode": "inherited",
-      "validated_in": "0.1.17",
-      "manual_retest_required": false,
-      "continuous_autotest": true,
-      "files": [
-        "app/src/main/java/com/bigcorps/guardian/core/GuardianDatabase.kt",
-        "app/src/main/java/com/bigcorps/guardian/core/ReportGenerator.kt"
-      ],
-      "sha256": "0b3a0ebf1a34fd2e141beecce18bc3c98edf12f53180883a42b02f8d15e2f2b5"
+      "sha256": "e778eebe20be6976b4c0f5cd89477614073d56ca7057938837ed0bd652e80d5d"
     },
     {
       "id": "background_scheduler_core",
       "validation_mode": "inherited",
-      "validated_in": "0.1.17",
+      "validated_in": "0.1.18",
       "manual_retest_required": false,
       "continuous_autotest": true,
       "files": [
@@ -49,7 +36,7 @@
     {
       "id": "local_intelligence_core",
       "validation_mode": "inherited",
-      "validated_in": "0.1.17",
+      "validated_in": "0.1.18",
       "manual_retest_required": false,
       "continuous_autotest": true,
       "files": [
@@ -62,9 +49,45 @@
       "sha256": "25c052811406af3035467ff82382bbb9c438ec86ae5a0670f641b70a8c72cd32"
     },
     {
+      "id": "database_report_browser_overlay",
+      "validation_mode": "runtime_autotest",
+      "validated_in": "0.1.19",
+      "manual_retest_required": false,
+      "continuous_autotest": true,
+      "files": [
+        "app/src/main/java/com/bigcorps/guardian/core/GuardianDatabase.kt",
+        "app/src/main/java/com/bigcorps/guardian/core/ReportGenerator.kt",
+        "app/src/main/java/com/bigcorps/guardian/web/BrowserReport.kt"
+      ],
+      "sha256": "faa4b84d0b437f10053cb82f68b956248ac3724118b8d157d068d5c8644fdd28"
+    },
+    {
+      "id": "guardian_web_core",
+      "validation_mode": "runtime_plus_physical",
+      "validated_in": "0.1.19",
+      "manual_retest_required": true,
+      "continuous_autotest": true,
+      "files": [
+        "app/src/main/AndroidManifest.xml",
+        "app/src/main/res/xml/guardian_web_accessibility.xml",
+        "app/src/main/res/values/strings.xml",
+        "app/src/main/java/com/bigcorps/guardian/web/BrowserCatalog.kt",
+        "app/src/main/java/com/bigcorps/guardian/web/BrowserDomainSanitizer.kt",
+        "app/src/main/java/com/bigcorps/guardian/web/BrowserPrivateModeHeuristics.kt",
+        "app/src/main/java/com/bigcorps/guardian/web/BrowserWebPreferences.kt",
+        "app/src/main/java/com/bigcorps/guardian/web/BrowserWebAccess.kt",
+        "app/src/main/java/com/bigcorps/guardian/web/BrowserAccessibilityExtractor.kt",
+        "app/src/main/java/com/bigcorps/guardian/web/BrowserAccessibilityService.kt",
+        "app/src/main/java/com/bigcorps/guardian/web/BrowserWebActivity.kt",
+        "app/src/test/java/com/bigcorps/guardian/web/BrowserDomainSanitizerTest.kt",
+        "app/src/test/java/com/bigcorps/guardian/web/BrowserPrivateModeHeuristicsTest.kt"
+      ],
+      "sha256": "34105f8c424e6f586f6a8da75f0ae26f66d1f8a80f51e87c32c8fa1edf9fe4c1"
+    },
+    {
       "id": "validation_export_ui",
       "validation_mode": "runtime_autotest",
-      "validated_in": "0.1.18",
+      "validated_in": "0.1.19",
       "manual_retest_required": false,
       "continuous_autotest": true,
       "files": [
@@ -74,12 +97,12 @@
         "app/src/main/java/com/bigcorps/guardian/core/ValidationSuite.kt",
         "app/src/main/java/com/bigcorps/guardian/core/ValidationLineage.kt"
       ],
-      "sha256": "8480b105e8f6c13111aedc7507df6561d89189fe6220fa857ecfd5a2f55b2964"
+      "sha256": "eec653e2044fe07eb582cddb043983c1901223ff6b74c9f34924e6e8a393777d"
     },
     {
       "id": "build_pipeline",
       "validation_mode": "ci_only",
-      "validated_in": "0.1.18",
+      "validated_in": "0.1.19",
       "manual_retest_required": false,
       "continuous_autotest": false,
       "files": [
@@ -89,7 +112,7 @@
         "scripts/verify_validation_contracts.py",
         "scripts/verify_apk_contract.sh"
       ],
-      "sha256": "4f024b67ca6a9f4cdbbca268660fd56dc0a86aba39f1f0610f4968c748358db3"
+      "sha256": "6aca25ddb4cb7e02568639f7131ed305ece3ef2df52960debea25314d5d537a6"
     }
   ]
 }

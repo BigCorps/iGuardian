@@ -1,14 +1,8 @@
-# Guardian Android 0.1.18
+# Guardian Android 0.1.19
 
-This build keeps the already validated collection/scheduler/intelligence cores
-unchanged and advances validation infrastructure.
+Major final Android round: Guardian Web v1.
 
 Expected Actions artifact:
-guardian-android-0.1.18-fixed-signed-debug
+`guardian-android-0.1.19-fixed-signed-debug`
 
-Expected green runtime pack:
-- validation_pack_schema = 7
-- ValidationSuite = 7
-- pack_meta.mode = compact_success
-- validation_lineage_contract = PASS
-- materially smaller file
+Physical acceptance requires one normal Chrome Dev domain and one incognito domain plus a green validation pack.

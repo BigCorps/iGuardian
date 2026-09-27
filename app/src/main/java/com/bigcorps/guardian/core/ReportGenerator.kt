@@ -1,6 +1,7 @@
 package com.bigcorps.guardian.core
 
 import android.content.Context
+import com.bigcorps.guardian.web.BrowserReport
 import org.json.JSONArray
 import org.json.JSONObject
 import java.text.SimpleDateFormat
@@ -47,6 +48,12 @@ class ReportGenerator(private val context: Context) {
     fun periodJson(startMs: Long, endMs: Long): JSONObject {
         val intervals = normalizedIntervals(startMs, endMs)
         val summary = summarize(intervals, startMs, endMs)
+        val browser =
+            BrowserReport.periodJson(
+                context,
+                startMs,
+                endMs
+            )
 
         val apps = JSONArray()
         summary.topApps.forEach { app ->
@@ -128,7 +135,7 @@ class ReportGenerator(private val context: Context) {
             }
 
         return JSONObject().apply {
-            put("schema_version", 4)
+            put("schema_version", 5)
             put(
                 "date",
                 SimpleDateFormat("yyyy-MM-dd", Locale.US).format(Date(startMs))
@@ -181,9 +188,37 @@ class ReportGenerator(private val context: Context) {
                     put("system_milliseconds", summary.systemMilliseconds)
                     put("system_seconds", summary.systemSeconds)
                     put("system_minutes", summary.systemSeconds / 60L)
-                    put("anonymous_browser_milliseconds", JSONObject.NULL)
-                    put("anonymous_browser_seconds", JSONObject.NULL)
-                    put("anonymous_browser_minutes", JSONObject.NULL)
+                    val anonymousBrowserMs =
+                        browser.optLong(
+                            "anonymous_milliseconds",
+                            0L
+                        )
+
+                    put(
+                        "anonymous_browser_milliseconds",
+                        anonymousBrowserMs
+                    )
+                    put(
+                        "anonymous_browser_seconds",
+                        anonymousBrowserMs /
+                            1000L
+                    )
+                    put(
+                        "anonymous_browser_minutes",
+                        anonymousBrowserMs /
+                            60_000L
+                    )
+                    put(
+                        "browser_total_milliseconds",
+                        browser.optLong(
+                            "total_milliseconds",
+                            0L
+                        )
+                    )
+                    put(
+                        "browser_overlay_not_additive",
+                        true
+                    )
                     put("unlock_count", summary.unlockCount)
                 }
             )
@@ -211,13 +246,16 @@ class ReportGenerator(private val context: Context) {
                     put("history_availability_tracking", true)
                     put("session_definition", "normalized_foreground_intervals")
                     put("system_surface_separation", true)
-                    put("browser_domains", false)
-                    put("anonymous_browser_detection", false)
+                    put("browser_domains", true)
+                    put("browser_domains_storage", "host_only")
+                    put("anonymous_browser_detection", true)
                     put("anonymous_browser_schema_ready", true)
+                    put("browser_overlay_not_additive_to_app_total", true)
                 }
             )
 
             put("apps", apps)
+            put("browser", browser)
             put("timeline", timeline)
 
             put(

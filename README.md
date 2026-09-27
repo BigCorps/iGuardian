@@ -1,94 +1,68 @@
-# Guardian DEV — Android 0.1.18 — Lean Validation + Lineage
+# Guardian DEV — Android 0.1.19 — Guardian Web v1
 
-## 0.1.17 physical result
+## 0.1.18 physical result
 
-The one-file AutoTest passed completely:
+The compact validation architecture passed. The recommended pack dropped from ~768 KB to ~26 KB while retaining all green evidence. Validation lineage also passed.
 
-- `critical_passed=true`
-- `manual_test_required=false`
-- 14 PASS
-- 0 WARN
-- 0 FAIL
-- coverage 99.2%
-- 1173 timeline intervals validated
-- 24h trend/dashboard ready with 100% vs 100% history
-- 7d trend correctly blocked at 29.9% vs 0%
-- WorkManager 38/38 successes, zero retry/failure/stopped
+The only warning was historical WorkManager stop telemetry after BOOT_COMPLETED. Android stop reason 13 is `STOP_REASON_USER`; the same unique work later completed successfully, with no retry/failure and remained ENQUEUED. 0.1.19 therefore keeps the telemetry but classifies a later successful completion as recovered.
 
-## Why 0.1.18 exists
+## Guardian Web v1
 
-The validation JSON had grown to roughly 768 KB because it embedded:
-1. the full daily timeline; and
-2. another full 24h activity snapshot inside diagnostics.
+0.1.19 intentionally introduces one narrow exception to the previous no-Accessibility rule. Guardian Web is optional, requires a separate prominent disclosure/consent, and the service is limited in XML to supported browser packages.
 
-Those large sections were useful while stabilizing the timeline, but they are
-redundant on a green build because ValidationSuite has already checked them.
+It observes only browser chrome needed to read the address bar and strong private/incognito UI indicators. Before any persistence, a full URL is reduced to a sanitized host.
 
-## Lean validation pack v7
+Example:
 
-Recommended export now uses two modes:
+`https://www.google.com/search?q=segredo#x` -> `google.com`
 
-### `compact_success`
-When all AutoTests pass:
-- full timelines are omitted;
-- report summaries/apps/tracking remain;
-- timeline evidence/counts remain;
-- scheduler, permissions, capabilities, privacy guarantees and self-checks remain;
-- app trends/dashboard remain;
-- validation lineage remains.
+Never stored:
+- path
+- query/search terms
+- fragment
+- page title
+- page content
+- typed text/passwords
+- data from non-browser apps
 
-Expected size is tens of KB rather than hundreds of KB.
+The app still has no INTERNET permission.
 
-### `full_failure_evidence`
-If any critical check fails:
-- full daily timeline is kept automatically;
-- full 24h diagnostic snapshot is kept automatically.
+### Initial browser adapters
 
-No user decision is required.
+- Chrome
+- Chrome Dev
+- Brave
+- Microsoft Edge
+- Vivaldi
+- Opera
+- Firefox
+- Samsung Internet
+- DuckDuckGo
 
-## Export feedback
+Chrome Dev is the physical validation target for this round. Other adapters remain best-effort until individually exercised.
 
-The recommended export button now contains a circular indeterminate loader while
-the package is being processed and is disabled until the operation finishes.
+### Anonymous/incognito
 
-## Validation lineage
+Private mode is never inferred from color or network traffic. It is marked only when strong browser-owned accessibility labels/resource indicators are present. The host remains local and is marked anonymous in the separate browser overlay.
 
-0.1.18 adopts a pattern already proven in the other BigCorps repositories:
-stable subsystems can inherit physical validation only when their source hashes
-are unchanged.
+Browser data is an overlay and is not added to APP time a second time.
 
-Inherited from physically validated 0.1.17:
-- privacy/collection core
-- database/report core
-- background scheduler core
-- local intelligence core
+## Validation
 
-Retested automatically in 0.1.18:
-- validation/export/UI
+ValidationSuite v8 adds:
+- Guardian Web host-only privacy contract
+- browser arithmetic/storage audit
+- physical normal + anonymous evidence check
+- recovered WorkManager stop semantics
 
-CI-only validation:
-- build pipeline
+A successful physical test should produce no FAIL and `guardian_web_physical_validation=PASS`.
 
-`scripts/verify_validation_contracts.py` fails the build if an inherited source
-changes without an intentional contract update.
+## Physical test
 
-## Final APK guard
-
-After Gradle builds the APK, CI now checks the finished artifact itself:
-- applicationId
-- versionName
-- versionCode
-- absence of prohibited permissions/services
-
-The fixed signing certificate verification remains separate and unchanged.
-
-## Test flow
-
-Upload 0.1.18.
-
-If Actions is green, install directly over 0.1.17.
-
-Use normally for ~60–90 minutes and export only the recommended validation JSON.
-
-The loader should be visible during processing, and a green pack should be much
-smaller/faster to save and share.
+1. Open Guardian Web and consent.
+2. If sideload restrictions appear, allow restricted settings for Guardian.
+3. Enable Guardian Web in Accessibility.
+4. In Chrome Dev normal mode, visit one domain for ~20 seconds.
+5. In Chrome Dev incognito mode, visit a different domain for ~20 seconds.
+6. Return to Guardian Web; both hosts should appear and the second should show anonymous time.
+7. Use the phone normally for another 20–30 minutes and export one recommended validation JSON.

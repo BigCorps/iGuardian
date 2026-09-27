@@ -1,15 +1,19 @@
-# Store Compliance Design Notes — 0.1.18
+# Store Compliance Design Notes — 0.1.19
 
-No permission expansion.
+Guardian Web uses AccessibilityService as an optional non-accessibility-tool feature.
 
-CI now verifies the final built APK in addition to source-level checks.
+Requirements before public Play release:
+- complete the AccessibilityService declaration in Play Console;
+- prominent in-app disclosure before consent;
+- affirmative consent;
+- explain web browsing history access and host-only local processing;
+- do not present the app as hidden monitoring/stalkerware;
+- keep Guardian Web for the device owner only.
 
-The APK guard confirms:
-- expected applicationId/version
-- no INTERNET
-- no QUERY_ALL_PACKAGES
-- no Accessibility binding permission
-- no Notification Listener binding permission
-- no MediaProjection foreground-service permission
-
-Existing fixed DEV certificate verification remains active.
+Technical guardrails:
+- `android:isAccessibilityTool=false`
+- browser package allowlist in service config
+- BIND_ACCESSIBILITY_SERVICE protects service binding
+- no INTERNET / QUERY_ALL_PACKAGES / VPN / MediaProjection / NotificationListener / IME / Clipboard capture
+- focused URL bar ignored
+- host-only persistence before SQLite

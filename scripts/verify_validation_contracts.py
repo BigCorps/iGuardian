@@ -77,10 +77,11 @@ for contract in contracts:
         )
 
 required_modes = {
-    "privacy_collection_core": "inherited",
-    "database_report_core": "inherited",
+    "usage_collection_core": "inherited",
     "background_scheduler_core": "inherited",
     "local_intelligence_core": "inherited",
+    "database_report_browser_overlay": "runtime_autotest",
+    "guardian_web_core": "runtime_plus_physical",
     "validation_export_ui": "runtime_autotest",
     "build_pipeline": "ci_only",
 }

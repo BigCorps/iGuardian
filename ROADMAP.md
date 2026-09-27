@@ -1,33 +1,20 @@
 # Guardian Roadmap
 
-## Phase 1 — Android Foundation
-Approved.
+## Phase 1 — Android foundation
+Validated.
 
-## Phase 2 — Local Intelligence / Insights — ACTIVE
+## Phase 2 — Android intelligence + Guardian Web — FINAL VALIDATION
 
-Validated through 0.1.17:
-- sanitized local timeline/report v4
-- history-safe comparisons
-- app trends
-- selectable trend dashboard
-- per-app detail
-- one-file runtime AutoTest
+0.1.19 adds the major missing product value:
+- domain/host usage
+- normal vs anonymous/incognito browser time
+- host-only privacy-before-storage
+- optional browser-scoped AccessibilityService
 
-0.1.18:
-- compact green validation packs
-- full evidence automatically retained only on failure
-- circular export progress indicator
-- hash-bound validation inheritance
-- final APK contract verification
+If this physical round passes, Android enters final polish rather than another architecture phase.
 
-Next after validation:
-- richer per-app detail/history presentation
-- selectable custom comparison ranges
-- daily/weekly cards
-- UI polish toward public beta
+## Next
 
-## Phase 3 — Android hardening / Store
-Additional OEMs, timezone/date changes, final branding/signing/AAB.
+0.1.20 only if needed for final polish/fixes discovered in 0.1.19. Then start Windows.
 
-## Phase 4 — Windows
-Same privacy contract with Windows-native collector.
+Windows should reproduce the same product semantics with Windows-native collection plus browser integration/extension rather than Android AccessibilityService. Shared concepts: host sanitizer, browser-domain schema, anonymous/private flag, reports, local intelligence and validation contracts.

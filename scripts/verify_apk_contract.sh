@@ -49,7 +49,6 @@ XMLTREE="$("$AAPT" dump xmltree "$APK" AndroidManifest.xml)"
 for forbidden in \
   "android.permission.INTERNET" \
   "android.permission.QUERY_ALL_PACKAGES" \
-  "android.permission.BIND_ACCESSIBILITY_SERVICE" \
   "android.permission.BIND_NOTIFICATION_LISTENER_SERVICE" \
   "android.permission.FOREGROUND_SERVICE_MEDIA_PROJECTION"; do
   if grep -Fq "$forbidden" <<<"$PERMISSIONS"$'\n'"$XMLTREE"; then
@@ -57,8 +56,16 @@ for forbidden in \
   fi
 done
 
+
+grep -Fq "com.bigcorps.guardian.web.BrowserAccessibilityService" <<<"$XMLTREE" \
+  || fail "Guardian Web AccessibilityService ausente no APK final"
+
+grep -Fq "android.permission.BIND_ACCESSIBILITY_SERVICE" <<<"$XMLTREE" \
+  || fail "Guardian Web service não está protegido por BIND_ACCESSIBILITY_SERVICE"
+
 echo "Final APK contract OK"
 echo "- package: com.bigcorps.guardian.dev"
 echo "- versionName: $EXPECTED_NAME"
 echo "- versionCode: $EXPECTED_CODE"
 echo "- forbidden permissions/services: absent"
+echo "- Guardian Web AccessibilityService: present and signature-permission protected"

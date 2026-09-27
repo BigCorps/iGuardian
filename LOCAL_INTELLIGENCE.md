@@ -1,9 +1,5 @@
-# Local Intelligence v8 — 0.1.18
+# Local Intelligence — 0.1.19
 
-No semantic engine change from physically validated 0.1.17.
+Core Local Intelligence v8 is unchanged and inherited from physically validated 0.1.18.
 
-The Local Intelligence source group is inherited only while its source hash
-matches the validation contract.
-
-Continuous runtime self-checks still execute in every recommended validation
-pack, so inheritance does not remove cheap automatic regression checks.
+Guardian Web data is introduced first as a separate browser report overlay. After physical validation, the next polish can expose deterministic questions such as top domain and anonymous browsing time without changing the privacy model.

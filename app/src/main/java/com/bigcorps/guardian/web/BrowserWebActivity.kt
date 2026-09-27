@@ -1,0 +1,849 @@
+package com.bigcorps.guardian.web
+
+import android.app.Activity
+import android.app.AlertDialog
+import android.content.Intent
+import android.graphics.Color
+import android.graphics.Typeface
+import android.graphics.drawable.GradientDrawable
+import android.os.Bundle
+import android.provider.Settings
+import android.view.View
+import android.view.ViewGroup
+import android.widget.Button
+import android.widget.LinearLayout
+import android.widget.ScrollView
+import android.widget.TextView
+import android.widget.Toast
+import com.bigcorps.guardian.core.GuardianDatabase
+
+class BrowserWebActivity :
+    Activity() {
+    private lateinit var root: LinearLayout
+
+    override fun onCreate(
+        savedInstanceState: Bundle?
+    ) {
+        super.onCreate(
+            savedInstanceState
+        )
+
+        window.statusBarColor =
+            BACKGROUND
+
+        window.navigationBarColor =
+            BACKGROUND
+
+        root =
+            LinearLayout(
+                this
+            ).apply {
+                orientation =
+                    LinearLayout.VERTICAL
+
+                setPadding(
+                    dp(
+                        18
+                    ),
+                    dp(
+                        22
+                    ),
+                    dp(
+                        18
+                    ),
+                    dp(
+                        40
+                    )
+                )
+            }
+
+        val scroll =
+            ScrollView(
+                this
+            ).apply {
+                setBackgroundColor(
+                    BACKGROUND
+                )
+
+                addView(
+                    root
+                )
+            }
+
+        setContentView(
+            scroll
+        )
+    }
+
+    override fun onResume() {
+        super.onResume()
+        render()
+    }
+
+    private fun render() {
+        root.removeAllViews()
+
+        root.addView(
+            text(
+                "GUARDIAN WEB • BETA",
+                11f,
+                true,
+                PRIMARY
+            )
+        )
+
+        root.addView(
+            text(
+                "Sites, sem guardar sua URL completa.",
+                25f,
+                true,
+                TEXT_PRIMARY
+            ).apply {
+                setPadding(
+                    0,
+                    dp(
+                        5
+                    ),
+                    0,
+                    dp(
+                        8
+                    )
+                )
+            }
+        )
+
+        root.addView(
+            text(
+                "O Guardian lê somente a barra de endereço de navegadores compatíveis, descarta caminho, parâmetros, buscas, título e conteúdo e grava apenas o host, como youtube.com ou mail.google.com.",
+                14f,
+                false,
+                TEXT_MUTED
+            )
+        )
+
+        val prefs =
+            BrowserWebPreferences(
+                this
+            )
+
+        val enabled =
+            BrowserWebAccess.isEnabled(
+                this
+            )
+
+        root.addView(
+            card().apply {
+                addView(
+                    text(
+                        when {
+                            !prefs.consented() ->
+                                "• Consentimento ainda não concedido"
+
+                            enabled ->
+                                "✓ Guardian Web ativo"
+
+                            else ->
+                                "• Guardian Web autorizado, mas o serviço de acessibilidade está desligado"
+                        },
+                        14f,
+                        true,
+                        if (
+                            enabled
+                        ) {
+                            PRIMARY
+                        } else {
+                            WARNING_TEXT
+                        }
+                    )
+                )
+
+                addView(
+                    text(
+                        "Compatibilidade inicial: Chrome, Chrome Dev, Brave, Edge, Vivaldi, Opera, Firefox, Samsung Internet e DuckDuckGo. A validação física desta rodada é focada em Chrome Dev.",
+                        12f,
+                        false,
+                        TEXT_MUTED
+                    ).apply {
+                        setPadding(
+                            0,
+                            dp(
+                                8
+                            ),
+                            0,
+                            0
+                        )
+                    }
+                )
+
+                addView(
+                    primaryButton(
+                        when {
+                            !prefs.consented() ->
+                                "Ativar Guardian Web"
+
+                            enabled ->
+                                "Abrir configurações de acessibilidade"
+
+                            else ->
+                                "Concluir ativação na Acessibilidade"
+                        }
+                    ) {
+                        if (
+                            prefs.consented()
+                        ) {
+                            openAccessibility()
+                        } else {
+                            showDisclosure()
+                        }
+                    }.apply {
+                        topMargin(
+                            12
+                        )
+                    }
+                )
+
+                addView(
+                    outlineButton(
+                        "Ajuda: configuração restrita"
+                    ) {
+                        showRestrictedHelp()
+                    }.apply {
+                        topMargin(
+                            8
+                        )
+                    }
+                )
+            }.apply {
+                topMargin(
+                    14
+                )
+            }
+        )
+
+        val today =
+            BrowserReport.todayJson(
+                this
+            )
+
+        val total =
+            today.optLong(
+                "total_milliseconds",
+                0L
+            )
+
+        val anonymous =
+            today.optLong(
+                "anonymous_milliseconds",
+                0L
+            )
+
+        val domains =
+            today.optJSONArray(
+                "domains"
+            )
+
+        root.addView(
+            text(
+                "Hoje",
+                18f,
+                true,
+                TEXT_PRIMARY
+            ).apply {
+                setPadding(
+                    0,
+                    dp(
+                        22
+                    ),
+                    0,
+                    dp(
+                        8
+                    )
+                )
+            }
+        )
+
+        root.addView(
+            card().apply {
+                addView(
+                    text(
+                        "Sites detectados: ${
+                            durationLabel(
+                                total
+                            )
+                        } • anônimo: ${
+                            durationLabel(
+                                anonymous
+                            )
+                        }",
+                        15f,
+                        true,
+                        TEXT_PRIMARY
+                    )
+                )
+
+                val detail =
+                    if (
+                        domains ==
+                        null ||
+                        domains.length() ==
+                        0
+                    ) {
+                        "Ainda não há domínios registrados. Depois de ativar, abra um site no Chrome Dev por alguns segundos."
+                    } else {
+                        buildString {
+                            appendLine(
+                                "Mais usados:"
+                            )
+
+                            for (
+                                index in
+                                0 until minOf(
+                                    10,
+                                    domains.length()
+                                )
+                            ) {
+                                val item =
+                                    domains.getJSONObject(
+                                        index
+                                    )
+
+                                append(
+                                    "• ${
+                                        item.optString(
+                                            "host"
+                                        )
+                                    }: ${
+                                        durationLabel(
+                                            item.optLong(
+                                                "foreground_milliseconds",
+                                                0L
+                                            )
+                                        )
+                                    }"
+                                )
+
+                                val privateMs =
+                                    item.optLong(
+                                        "anonymous_milliseconds",
+                                        0L
+                                    )
+
+                                if (
+                                    privateMs >
+                                    0L
+                                ) {
+                                    append(
+                                        " • anônimo ${
+                                            durationLabel(
+                                                privateMs
+                                            )
+                                        }"
+                                    )
+                                }
+
+                                if (
+                                    index <
+                                    minOf(
+                                        10,
+                                        domains.length()
+                                    ) -
+                                    1
+                                ) {
+                                    appendLine()
+                                }
+                            }
+                        }
+                    }
+
+                addView(
+                    text(
+                        detail,
+                        13f,
+                        false,
+                        TEXT_MUTED
+                    ).apply {
+                        setPadding(
+                            0,
+                            dp(
+                                10
+                            ),
+                            0,
+                            0
+                        )
+                    }
+                )
+
+                addView(
+                    outlineButton(
+                        "Limpar histórico de sites"
+                    ) {
+                        confirmClear()
+                    }.apply {
+                        topMargin(
+                            12
+                        )
+                    }
+                )
+            }
+        )
+
+        root.addView(
+            text(
+                "Teste desta rodada",
+                18f,
+                true,
+                TEXT_PRIMARY
+            ).apply {
+                setPadding(
+                    0,
+                    dp(
+                        22
+                    ),
+                    0,
+                    dp(
+                        8
+                    )
+                )
+            }
+        )
+
+        root.addView(
+            card().apply {
+                addView(
+                    text(
+                        "1. Ative o Guardian Web.\n2. No Chrome Dev normal, abra um domínio simples por ~20 s.\n3. Abra uma guia anônima e visite outro domínio por ~20 s.\n4. Volte aqui e confira se os dois apareceram, com o segundo marcado como anônimo.\n5. Depois exporte o pacote de validação normal.",
+                        13f,
+                        false,
+                        TEXT_MUTED
+                    )
+                )
+            }
+        )
+    }
+
+    private fun showDisclosure() {
+        AlertDialog.Builder(
+            this
+        )
+            .setTitle(
+                "Ativar Guardian Web"
+            )
+            .setMessage(
+                "Para registrar o tempo por site, o Guardian precisa do serviço de Acessibilidade.\n\n" +
+                    "O serviço é limitado a navegadores compatíveis e existe somente para ler a barra de endereço e indicadores confiáveis de navegação anônima.\n\n" +
+                    "ANTES DE SALVAR, o Guardian reduz o valor ao host. Ex.: https://www.google.com/search?q=segredo vira google.com.\n\n" +
+                    "Não são armazenados: caminho, parâmetros, pesquisas, fragmentos, título da página, conteúdo da página, texto digitado, senhas ou dados de outros apps.\n\n" +
+                    "Tudo permanece neste aparelho e o Guardian continua sem permissão de INTERNET.\n\n" +
+                    "Em guia anônima, o host também será registrado localmente e marcado como anônimo para que o relatório consiga contabilizar esse uso."
+            )
+            .setNegativeButton(
+                "Cancelar",
+                null
+            )
+            .setPositiveButton(
+                "Concordo e continuar"
+            ) {
+                _,
+                _ ->
+                BrowserWebPreferences(
+                    this
+                ).grantConsent()
+
+                openAccessibility()
+            }
+            .show()
+    }
+
+    private fun showRestrictedHelp() {
+        AlertDialog.Builder(
+            this
+        )
+            .setTitle(
+                "Se o Android bloquear a ativação"
+            )
+            .setMessage(
+                "Em APK instalado manualmente, Android 13+ pode bloquear a Acessibilidade como configuração restrita.\n\n" +
+                    "1. Abra Informações do app Guardian.\n" +
+                    "2. Na tela principal, toque em ⋮.\n" +
+                    "3. Escolha “Permitir configurações restritas”.\n" +
+                    "4. Volte para Acessibilidade e ative Guardian Web."
+            )
+            .setNegativeButton(
+                "Fechar",
+                null
+            )
+            .setPositiveButton(
+                "Abrir Informações do app"
+            ) {
+                _,
+                _ ->
+                startActivity(
+                    Intent(
+                        Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                        android.net.Uri.parse(
+                            "package:$packageName"
+                        )
+                    )
+                )
+            }
+            .show()
+    }
+
+    private fun openAccessibility() {
+        startActivity(
+            Intent(
+                Settings.ACTION_ACCESSIBILITY_SETTINGS
+            )
+        )
+    }
+
+    private fun confirmClear() {
+        AlertDialog.Builder(
+            this
+        )
+            .setTitle(
+                "Limpar histórico de sites?"
+            )
+            .setMessage(
+                "Apaga somente os hosts e tempos coletados pelo Guardian Web. O histórico de apps do Guardian não é afetado."
+            )
+            .setNegativeButton(
+                "Cancelar",
+                null
+            )
+            .setPositiveButton(
+                "Limpar"
+            ) {
+                _,
+                _ ->
+                GuardianDatabase(
+                    applicationContext
+                ).clearBrowserSessions()
+
+                BrowserWebPreferences(
+                    applicationContext
+                ).clearRuntimeEvidence()
+
+                Toast.makeText(
+                    this,
+                    "Histórico web local limpo.",
+                    Toast.LENGTH_SHORT
+                ).show()
+
+                render()
+            }
+            .show()
+    }
+
+    private fun text(
+        value: String,
+        sizeSp: Float,
+        bold: Boolean,
+        color: Int
+    ) =
+        TextView(
+            this
+        ).apply {
+            text =
+                value
+
+            textSize =
+                sizeSp
+
+            setTextColor(
+                color
+            )
+
+            if (
+                bold
+            ) {
+                setTypeface(
+                    typeface,
+                    Typeface.BOLD
+                )
+            }
+        }
+
+    private fun card() =
+        LinearLayout(
+            this
+        ).apply {
+            orientation =
+                LinearLayout.VERTICAL
+
+            setPadding(
+                dp(
+                    16
+                ),
+                dp(
+                    16
+                ),
+                dp(
+                    16
+                ),
+                dp(
+                    16
+                )
+            )
+
+            background =
+                rounded(
+                    CARD,
+                    18f
+                )
+
+            layoutParams =
+                LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT,
+                    ViewGroup.LayoutParams.WRAP_CONTENT
+                ).apply {
+                    bottomMargin =
+                        dp(
+                            10
+                        )
+                }
+        }
+
+    private fun primaryButton(
+        label: String,
+        action: (View) -> Unit
+    ) =
+        Button(
+            this
+        ).apply {
+            text =
+                label
+
+            isAllCaps =
+                false
+
+            textSize =
+                14f
+
+            setTextColor(
+                Color.WHITE
+            )
+
+            minHeight =
+                dp(
+                    52
+                )
+
+            stateListAnimator =
+                null
+
+            background =
+                rounded(
+                    PRIMARY,
+                    14f
+                )
+
+            setOnClickListener {
+                action(
+                    it
+                )
+            }
+
+            layoutParams =
+                matchWidth()
+        }
+
+    private fun outlineButton(
+        label: String,
+        action: (View) -> Unit
+    ) =
+        Button(
+            this
+        ).apply {
+            text =
+                label
+
+            isAllCaps =
+                false
+
+            textSize =
+                14f
+
+            setTextColor(
+                PRIMARY
+            )
+
+            minHeight =
+                dp(
+                    50
+                )
+
+            stateListAnimator =
+                null
+
+            background =
+                rounded(
+                    CARD,
+                    14f,
+                    PRIMARY,
+                    1
+                )
+
+            setOnClickListener {
+                action(
+                    it
+                )
+            }
+
+            layoutParams =
+                matchWidth()
+        }
+
+    private fun rounded(
+        fillColor: Int,
+        radiusDp: Float,
+        strokeColor: Int? =
+            null,
+        strokeDp: Int =
+            0
+    ) =
+        GradientDrawable().apply {
+            shape =
+                GradientDrawable.RECTANGLE
+
+            setColor(
+                fillColor
+            )
+
+            cornerRadius =
+                dp(
+                    radiusDp.toInt()
+                ).toFloat()
+
+            if (
+                strokeColor !=
+                null &&
+                strokeDp >
+                0
+            ) {
+                setStroke(
+                    dp(
+                        strokeDp
+                    ),
+                    strokeColor
+                )
+            }
+        }
+
+    private fun matchWidth() =
+        LinearLayout.LayoutParams(
+            ViewGroup.LayoutParams.MATCH_PARENT,
+            ViewGroup.LayoutParams.WRAP_CONTENT
+        )
+
+    private fun View.topMargin(
+        valueDp: Int
+    ) {
+        val lp =
+            (
+                layoutParams as?
+                    LinearLayout.LayoutParams
+                )
+                ?: matchWidth()
+
+        lp.topMargin =
+            dp(
+                valueDp
+            )
+
+        layoutParams =
+            lp
+    }
+
+    private fun durationLabel(
+        milliseconds: Long
+    ): String {
+        val seconds =
+            milliseconds /
+                1000L
+
+        if (
+            seconds <
+            60L
+        ) {
+            return "${seconds}s"
+        }
+
+        val minutes =
+            seconds /
+                60L
+
+        if (
+            minutes <
+            60L
+        ) {
+            return "${minutes}m"
+        }
+
+        val hours =
+            minutes /
+                60L
+
+        val rest =
+            minutes %
+                60L
+
+        return if (
+            rest ==
+            0L
+        ) {
+            "${hours}h"
+        } else {
+            "${hours}h ${rest}m"
+        }
+    }
+
+    private fun dp(
+        value: Int
+    ) =
+        (
+            value *
+                resources.displayMetrics.density
+            )
+            .toInt()
+
+    companion object {
+        private val BACKGROUND =
+            Color.rgb(
+                245,
+                248,
+                251
+            )
+
+        private val CARD =
+            Color.WHITE
+
+        private val TEXT_PRIMARY =
+            Color.rgb(
+                24,
+                33,
+                43
+            )
+
+        private val TEXT_MUTED =
+            Color.rgb(
+                99,
+                115,
+                129
+            )
+
+        private val PRIMARY =
+            Color.rgb(
+                18,
+                111,
+                137
+            )
+
+        private val WARNING_TEXT =
+            Color.rgb(
+                112,
+                75,
+                16
+            )
+    }
+}

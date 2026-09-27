@@ -1,3 +1,5 @@
 <resources>
     <string name="app_name">Guardian DEV</string>
+    <string name="guardian_web_service_label">Guardian Web</string>
+    <string name="guardian_web_accessibility_description">Opcional: lê apenas a barra de endereço de navegadores compatíveis para registrar localmente o host do site e detectar navegação anônima. Não armazena caminho, parâmetros, pesquisa, título, conteúdo ou texto digitado.</string>
 </resources>
