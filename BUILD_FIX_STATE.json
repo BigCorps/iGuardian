@@ -1,34 +1,32 @@
 {
   "version": "0.1.24",
   "version_code": 25,
-  "base_actions_run": 59,
-  "base_actions_status": "success",
-  "current_work": "Guardian Web Hybrid v3",
-  "reason": "0.1.23 proved screenshot/OCR but persisted only one host; tree extractor was disconnected and private visual probe telemetry was ambiguous.",
-  "changes": [
-    "tree first, OCR fallback",
-    "remove URL-bar isVisibleToUser requirement",
-    "preserve last host with UsageStats",
-    "resource-ID-only diagnostics",
-    "API 34+ window screenshot secure-window signal",
-    "expanded browser catalog",
-    "private probe attempts separated from detections",
-    "same-timestamp accessibility status snapshot reuse",
-    "positive Chromium normal-mode marker clears private latch; missing marker never does"
+  "base_green_actions_run": 59,
+  "latest_failed_actions_run": 63,
+  "latest_failed_commit": "090f339246f5c15a8edeffd83c9f5b9e77a3155e",
+  "latest_failed_step": "Verify privacy/project invariants",
+  "root_cause": "verify_project.py still searched for the literal AccessibilityService text, so a harmless BrowserAccessibilityService mention inside BrowserAccessibilityExtractor comments was treated as Android API usage.",
+  "ci_fix": [
+    "detect actual import android.accessibilityservice.* declarations only",
+    "retain API allowlist for BrowserAccessibilityService.kt and BrowserWebAccess.kt",
+    "add Bank Mode static contract checks"
   ],
+  "bank_mode": {
+    "enabled": true,
+    "strategy": "preventive manual mode before opening financial apps",
+    "accessibility_shutdown": "AccessibilityService.disableSelf()",
+    "success_confirmation": "AccessibilityManager=false AND secure_setting=false",
+    "usage_access_remains_active": true,
+    "automatic_reenable": false,
+    "technical_event": "WEB_BANK_MODE_DISABLE"
+  },
   "database_migration_required": false,
   "new_consent_required": false,
   "physical_retest_required": true,
   "local_validation": {
-    "hybrid_kotlin_structural_compile": "pass",
-    "guardian_web_ui_structural_compile": "pass",
-    "ocr_mlkit_stub_compile": "pass",
-    "extractor_behavior": "pass",
-    "ocr_deep_private_probe_behavior": "pass",
-    "preferences_telemetry_behavior": "pass",
-    "access_status_snapshot_behavior": "pass",
-    "catalog_runtime": "pass",
-    "json_xml_lineage_workflow_invariants": "pass"
+    "bank_mode_kotlin_structural_compile": "pass",
+    "ci_guard_logic_review": "pass",
+    "privacy_contract_review": "pass"
   },
-  "expected_actions_artifact": "guardian-android-0.1.24-fixed-signed-debug"
+  "next_ci_expectation": "privacy/project guard passes and Actions proceeds to validation lineage, signing, unit tests and Android build"
 }

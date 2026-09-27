@@ -83,6 +83,22 @@ Guardian remains local-only:
   history;
 - no path, query, fragment, title, page content or typed text is stored.
 
+## Bank compatibility mode
+
+0.1.24 now includes a preventive **Modo Banco** inside Guardian Web. Before
+opening a banking/financial app, the user can ask Guardian Web to call Android
+`disableSelf()`. Guardian then waits for the Accessibility service to disappear
+from both AccessibilityManager and the secure setting before confirming that the
+mode is active.
+
+Only Guardian Web is disabled. App-usage monitoring through Usage Access keeps
+working. Android does not allow Guardian to silently re-enable Accessibility
+afterwards, so the user must explicitly reactivate Guardian Web in Accessibility
+settings when banking is finished.
+
+This is deliberately preventive rather than trying to detect a bank after it has
+already opened; a financial app may evaluate device risk immediately at startup.
+
 ## Next physical validation
 
 After GitHub Actions builds 0.1.24:

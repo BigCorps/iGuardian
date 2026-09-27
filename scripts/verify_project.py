@@ -26,12 +26,13 @@ required_docs = [
     "SIGNING_DEV.md",
     "LOCAL_INTELLIGENCE.md",
     "VALIDATION_CONTRACTS.json",
+    "BANK_MODE.md",
 ]
 
 errors = []
 
 internet_permission_tags = re.findall(
-    r"<uses-permission\\b[^>]*android:name=[\"']android\\.permission\\.INTERNET[\"'][^>]*>",
+    r"<uses-permission\b[^>]*android:name=[\"']android\.permission\.INTERNET[\"'][^>]*>",
     manifest,
     flags=re.IGNORECASE,
 )
@@ -43,7 +44,7 @@ for tag in internet_permission_tags:
         )
 
 network_state_tags = re.findall(
-    r"<uses-permission\\b[^>]*android:name=[\"']android\\.permission\\.ACCESS_NETWORK_STATE[\"'][^>]*>",
+    r"<uses-permission\b[^>]*android:name=[\"']android\.permission\.ACCESS_NETWORK_STATE[\"'][^>]*>",
     manifest,
     flags=re.IGNORECASE,
 )
@@ -55,15 +56,19 @@ for tag in network_state_tags:
 
 if "android.permission.QUERY_ALL_PACKAGES" in manifest:
     errors.append("MVP must not declare QUERY_ALL_PACKAGES")
+
 web_service_name = ".web.BrowserAccessibilityService"
 web_accessibility_xml = root / "app/src/main/res/xml/guardian_web_accessibility.xml"
 
 if manifest.count("android.permission.BIND_ACCESSIBILITY_SERVICE") != 1:
-    errors.append("Guardian Web must declare exactly one BIND_ACCESSIBILITY_SERVICE service permission")
+    errors.append(
+        "Guardian Web must declare exactly one BIND_ACCESSIBILITY_SERVICE service permission"
+    )
 if web_service_name not in manifest:
     errors.append("Guardian Web accessibility service missing from manifest")
 if 'android:exported="true"' not in manifest:
     errors.append("Guardian Web service must be exported for Android system binding")
+
 if not web_accessibility_xml.exists():
     errors.append("Guardian Web accessibility config missing")
 else:
@@ -71,7 +76,9 @@ else:
     if 'android:isAccessibilityTool="false"' not in web_xml:
         errors.append("Guardian Web must declare isAccessibilityTool=false")
     if 'com.chrome.dev' not in web_xml:
-        errors.append("Guardian Web accessibility package allowlist must include Chrome Dev")
+        errors.append(
+            "Guardian Web accessibility package allowlist must include Chrome Dev"
+        )
     if 'android:packageNames=' not in web_xml:
         errors.append("Guardian Web accessibility package allowlist missing")
     if 'flagRetrieveInteractiveWindows' not in web_xml:
@@ -79,21 +86,23 @@ else:
             "Guardian Web must request flagRetrieveInteractiveWindows for browser-window fallback"
         )
     if 'android:canTakeScreenshot="true"' not in web_xml:
-        errors.append(
-            "Guardian Web Visual must declare canTakeScreenshot=true"
-        )
+        errors.append("Guardian Web Visual must declare canTakeScreenshot=true")
+
 if "android.useAndroidX=true" not in gradle_properties:
     errors.append("0.1.8+ requires android.useAndroidX=true")
 if "androidx.work:work-runtime:2.12.0" not in app_gradle:
     errors.append("Required WorkManager 2.12.0 dependency missing")
 if "com.google.mlkit:text-recognition:16.0.1" not in app_gradle:
-    errors.append("Guardian Web Visual requires bundled ML Kit text-recognition 16.0.1")
+    errors.append(
+        "Guardian Web Visual requires bundled ML Kit text-recognition 16.0.1"
+    )
 if ".core.GuardianJobService" in manifest:
     errors.append("Legacy direct GuardianJobService must not remain in manifest")
 
+kotlin_files = list((root / "app/src/main/java").rglob("*.kt"))
 source = "\n".join(
     p.read_text(encoding="utf-8", errors="ignore")
-    for p in (root / "app/src/main/java").rglob("*.kt")
+    for p in kotlin_files
 )
 
 for forbidden in [
@@ -106,35 +115,59 @@ for forbidden in [
     if forbidden in source:
         errors.append(f"Forbidden MVP API found in source: {forbidden}")
 
-
 if "BrowserDomainSanitizer.isValidStoredHost" in source:
     errors.append(
         "Stale Guardian Web sanitizer helper reference: "
         "use BrowserDomainSanitizer.isSanitizedHost"
     )
 
-accessibility_sources = [
-    p.relative_to(root).as_posix()
-    for p in (root / "app/src/main/java").rglob("*.kt")
-    if "AccessibilityService" in p.read_text(encoding="utf-8", errors="ignore")
-]
+# IMPORTANT: detect actual android.accessibilityservice imports, not the plain
+# text "AccessibilityService". Hybrid v3 documents BrowserAccessibilityService
+# inside BrowserAccessibilityExtractor comments; the old substring guard treated
+# that harmless comment as API usage and made Actions #61 fail before Gradle.
+# Keeping this import-based guard preserves the intended isolation contract while
+# avoiding comment/string false positives.
+accessibility_sources = []
+for path in kotlin_files:
+    content = path.read_text(encoding="utf-8", errors="ignore")
+    if re.search(
+        r"^\s*import\s+android\.accessibilityservice\.",
+        content,
+        flags=re.MULTILINE,
+    ):
+        accessibility_sources.append(path.relative_to(root).as_posix())
+
 allowed_accessibility_sources = {
     "app/src/main/java/com/bigcorps/guardian/web/BrowserAccessibilityService.kt",
     "app/src/main/java/com/bigcorps/guardian/web/BrowserWebAccess.kt",
 }
 if set(accessibility_sources) != allowed_accessibility_sources:
     errors.append(
-        "AccessibilityService usage must be isolated to Guardian Web only: "
+        "android.accessibilityservice imports must be isolated to Guardian Web only: "
         + ",".join(accessibility_sources)
     )
 
+web_service_source = (
+    root / "app/src/main/java/com/bigcorps/guardian/web/BrowserAccessibilityService.kt"
+).read_text(encoding="utf-8", errors="ignore")
+web_activity_source = (
+    root / "app/src/main/java/com/bigcorps/guardian/web/BrowserWebActivity.kt"
+).read_text(encoding="utf-8", errors="ignore")
+
+if "fun requestBankModeDisable(): Boolean" not in web_service_source:
+    errors.append("Guardian Web bank mode disable entrypoint missing")
+if "disableSelf()" not in web_service_source:
+    errors.append("Guardian Web bank mode must disable the AccessibilityService via disableSelf()")
+if '"Modo Banco"' not in web_activity_source:
+    errors.append("Guardian Web bank mode UI missing")
+
 version_match = re.search(
     r'versionName\s*=\s*"([^"]+)"',
-    app_gradle
+    app_gradle,
 )
 code_match = re.search(
     r'versionCode\s*=\s*(\d+)',
-    app_gradle
+    app_gradle,
 )
 
 if version_match is None:
@@ -211,9 +244,10 @@ if errors:
 print("Privacy/project verification OK")
 print("- no effective INTERNET permission (transitive declaration removed at manifest merge)")
 print("- no QUERY_ALL_PACKAGES")
-print("- AccessibilityService isolated to opt-in Guardian Web browser observer")
+print("- android.accessibilityservice imports isolated to Guardian Web service/status code")
 print("- Guardian Web Visual screenshot capability + bundled OCR contract present")
 print("- Guardian Web accessibility package allowlist present")
+print("- Guardian Web bank mode disableSelf contract present")
 print("- WorkManager background architecture present")
 print("- comprehensive local validation suite present")
 print("- one-file validation pack generator present")

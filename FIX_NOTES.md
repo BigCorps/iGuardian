@@ -1,31 +1,34 @@
-# Guardian Android 0.1.24 — Hybrid v3 implementation notes
+# Guardian Android 0.1.24 — Actions #63 + Modo Banco
 
-Base: 0.1.23 repository HEAD `aaad03f8527ee2ce3a19a58ee2cfb17f166a327c`.
-That base's Android APK workflow #59 completed successfully after the bundled OCR
-manifest-merger network-permission correction.
+Current repository failure inspected on 2026-09-27:
 
-Why 0.1.24 exists:
-- physical 0.1.23 evidence showed screenshots/OCR work technically;
-- host-shaped OCR reads were much more frequent than persisted host rows;
-- private visual probing could remain at zero because the mode probe was disabled
-  after a normal host observation existed;
-- accessibility extractor code still existed but was disconnected from the
-  running service pipeline.
+- GitHub Actions run: #63
+- commit: `090f339246f5c15a8edeffd83c9f5b9e77a3155e`
+- failed step: `Verify privacy/project invariants`
+- Gradle/unit tests/APK were never reached.
 
-Hybrid v3 reconnects the tree as the primary source without returning heavy work
-to the Accessibility callback. Direct known IDs are read synchronously; bounded
-fallback, resource-ID inventory, OCR and SQLite remain off the callback hot path.
+Exact failure:
 
-Important deliberate choices:
-- URL bar visibility is not required, focus/typing is still rejected;
-- a missing toolbar never clears the last valid host while UsageStats says the
-  same browser is foreground;
-- tree hosts are strong, OCR hosts still need two consecutive reads;
-- secure-window screenshot error is not automatically incognito;
-- private → normal transition requires a positive Chromium standard-mode accessibility marker;
-- a window-screenshot failure falls back to the 0.1.23 display-screenshot path;
-- Mi Browser is observed without inventing a resource ID;
-- Device Owner is not introduced into normal Guardian onboarding.
+`AccessibilityService usage must be isolated to Guardian Web only: BrowserAccessibilityExtractor.kt,BrowserAccessibilityService.kt,BrowserWebAccess.kt`
 
-Expected GitHub Actions artifact after upload:
-`guardian-android-0.1.24-fixed-signed-debug`.
+Root cause:
+
+The `scripts/verify_project.py` file in `main` was still the old version. It searched every Kotlin file for the literal text `AccessibilityService`. Hybrid v3 legitimately mentions `BrowserAccessibilityService` in an extractor comment, so the guard produced a false positive even though the extractor does not import the Android AccessibilityService API.
+
+Correction in this package:
+
+- detect only actual `import android.accessibilityservice.*` lines;
+- keep the allowed API surface restricted to BrowserAccessibilityService + BrowserWebAccess;
+- add Modo Banco static invariants;
+- include `scripts/verify_project.py` again in this self-contained ZIP so the fix cannot depend on a previous patch being applied.
+
+Modo Banco:
+
+- user activates it before opening a bank;
+- Guardian Web banks/stops the current web interval, clears the Hybrid session and calls `disableSelf()`;
+- Guardian Web UI waits until both AccessibilityManager and secure settings report the service OFF;
+- only then does the UI say it is safe to open the banking app;
+- Usage Access/app monitoring is not disabled;
+- Guardian Web must be manually re-enabled after banking.
+
+No attempt is made to inspect banking screens or to hide an enabled AccessibilityService from a bank.

@@ -2,49 +2,58 @@
 
 ## 0.1.24 — 2026-09-27
 
+### Guardian Web Hybrid v3
+
 - versionCode 25 / versionName 0.1.24.
-- Guardian Web Hybrid v3: accessibility tree first, screenshot/OCR fallback.
+- Accessibility tree first, screenshot/OCR fallback.
 - Direct known URL-bar IDs are read while AccessibilityEvent/source is valid.
-- URL-bar host extraction no longer requires `isVisibleToUser`; focused typing
-  remains rejected.
-- Bounded tree fallback and resource-ID-only diagnostics run off the callback
-  hot path, with bounded per-browser normal/private inventories when mode is known.
-- Last valid host continues accruing while UsageStats confirms the same browser
-  remains foreground.
-- Tree-derived sanitized hosts are strong signals; visual fallback still needs
-  two consecutive host reads.
-- Visual private-mode probing is no longer disabled merely because a normal host
-  is already known.
-- Private-to-normal Chromium transitions now require a positive standard-mode
-  accessibility marker; absence of a private marker never clears the private latch.
-- Fixed telemetry semantics: `visual_private_probe_count` now counts attempts;
-  `visual_private_detected_count` counts positive detections.
-- API 34+ prefers `takeScreenshotOfWindow()` when a browser window ID is known.
-- Per-window screenshot failures are recorded, then the proven display screenshot
-  path is retried as visual fallback.
-- `ERROR_TAKE_SCREENSHOT_SECURE_WINDOW` is exported as a diagnostic signal only;
-  it never automatically marks browsing as incognito.
-- Expanded supported browser/package catalog and AccessibilityService allowlist.
-- Opera stable prefers `com.opera.browser:id/url_field`.
-- Mi Browser (`com.android.browser`) is allowlisted without a guessed URL-bar ID
-  so physical resource-ID diagnostics can calibrate it safely.
-- Repeated browser-access status calls using the validation pack's single
-  timestamp reuse one immutable snapshot, eliminating contradictory alive flags.
-- No database schema change, no new persisted user-content category, no network
-  transport.
+- URL-bar host extraction no longer requires `isVisibleToUser`; focused typing remains rejected.
+- Bounded tree fallback/resource-ID-only diagnostics remain off the callback hot path.
+- Last valid host continues accruing while UsageStats confirms the same browser remains foreground.
+- Tree hosts are strong signals; visual fallback still needs two consecutive host reads.
+- Private visual probing can run after a normal host is known.
+- Private-to-normal Chromium transitions require positive standard-mode evidence.
+- `visual_private_probe_count` counts attempts; `visual_private_detected_count` counts positives.
+- API 34+ prefers `takeScreenshotOfWindow()` and falls back to display screenshot on failure.
+- secure-window error is diagnostic evidence only, never automatic incognito.
+- Expanded browser catalog/AccessibilityService allowlist; Opera uses `url_field` and Mi Browser is calibrated without guessed IDs.
+- Same-timestamp BrowserWebAccess snapshot reuse prevents contradictory validation flags.
+
+### Bank compatibility mode
+
+- Added preventive **Modo Banco** to Guardian Web.
+- Modo Banco requests a real Accessibility shutdown with `AccessibilityService.disableSelf()`.
+- Before confirming success, Guardian verifies both AccessibilityManager and Android secure settings no longer report Guardian Web enabled.
+- The normal Guardian app-usage collector remains active through Usage Access.
+- Guardian does not silently re-enable Accessibility after banking; the user reactivates Guardian Web explicitly in Android Settings.
+- The mode is preventive: it must be activated before opening the financial app rather than reacting after the bank has already started its security checks.
+- Technical event `WEB_BANK_MODE_DISABLE` records the local mode transition without banking content.
+
+### CI guard correction — Actions #61 / #63
+
+- Actions #61 and #63 stopped at `Verify privacy/project invariants` before Gradle.
+- Root cause: `verify_project.py` treated any plain-text occurrence of `AccessibilityService` as API usage. A harmless Hybrid-v3 comment in `BrowserAccessibilityExtractor.kt` therefore triggered a false positive.
+- Guard now detects real `import android.accessibilityservice.*` declarations instead of comments/strings.
+- Allowed API use remains restricted to `BrowserAccessibilityService.kt` and `BrowserWebAccess.kt`; the privacy boundary is not relaxed.
+- Added static Modo Banco guard for `requestBankModeDisable()`, `disableSelf()` and the Guardian Web UI entrypoint.
+
+### Privacy contract unchanged
+
+- No database schema change.
+- No INTERNET or ACCESS_NETWORK_STATE in the merged APK contract.
+- No screenshot/OCR/tree text persistence.
+- Browser history remains host-only.
 
 ## 0.1.23 — 2026-09-27
 
 - Guardian Web Visual v1: transient screenshot + bundled ML Kit OCR.
 - Two consecutive visual host reads before persistence.
 - UsageStats foreground confirmation for continuous duration banking.
-- Explicitly remove transitive INTERNET and ACCESS_NETWORK_STATE permissions
-  introduced by bundled OCR dependencies.
+- Explicitly remove transitive INTERNET and ACCESS_NETWORK_STATE permissions.
 - Final APK guard verifies the merged artifact remains offline.
 
 ## 0.1.22 — 2026-09-27
 
-- versionCode 23 / versionName 0.1.22.
 - Guardian Web v4 capture path.
 - Copied AccessibilityEvent source before interactive-window fallback.
 - Browser tree work kept off the app UI thread.

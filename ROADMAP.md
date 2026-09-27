@@ -23,6 +23,14 @@ Must prove on the Redmi/Android 16 device:
 - UI stays responsive;
 - final APK remains fully offline and stores host-only web history.
 
+### Banking compatibility gate
+
+Before public release, validate **Modo Banco** with Inter/Inter Empresas and a
+small representative set of other financial apps. Acceptance: Guardian Web must
+be truly OFF in Android Accessibility before the banking app is opened, while
+normal Guardian Usage Access collection remains active. Repeat the test later
+with a Play-distributed build to separate sideload risk from Accessibility risk.
+
 ### Gate B — calibration follow-up only if the JSON requires it
 
 Pin any newly proven Mi Browser/variant URL-bar IDs from physical evidence. Do

@@ -11,6 +11,9 @@ Expected before installing:
 - final APK contains neither INTERNET nor ACCESS_NETWORK_STATE;
 - Guardian Web accessibility config retains screenshot + interactive-window
   capabilities and the expanded package allowlist.
+- privacy/project guard detects real `android.accessibilityservice.*` imports,
+  not the plain text `AccessibilityService` inside comments/strings.
+- Modo Banco contract contains `requestBankModeDisable()` + `disableSelf()`.
 
 ## Physical target — Redmi / Android 16
 
@@ -40,3 +43,16 @@ Expected before installing:
 - no invalid hosts/bad durations;
 - full URL/content/screenshot/raw OCR remain unpersisted;
 - exported access-status fields agree for the same validation snapshot.
+
+## Modo Banco physical check
+
+1. With Guardian Web enabled, open Guardian Web and tap **Ativar Modo Banco**.
+2. Wait for the confirmation that Guardian Web is OFF.
+3. Verify Android Accessibility shows Guardian Web disabled.
+4. Open Inter/Inter Empresas only after that confirmation.
+5. Confirm normal Guardian app-usage history still updates through Usage Access.
+6. After leaving the bank, re-enable Guardian Web manually and confirm its
+   heartbeat/browser collection returns.
+
+A bank must never be launched based only on a stale heartbeat flag; the UI uses
+AccessibilityManager + secure-setting state to confirm the service is actually off.

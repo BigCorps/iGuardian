@@ -15,3 +15,10 @@ transport, QUERY_ALL_PACKAGES, page-content storage or a new backend.
 
 The final merged APK must continue to be CI-checked to ensure transitive OCR
 dependencies do not reintroduce INTERNET or ACCESS_NETWORK_STATE.
+
+## Banking compatibility
+
+Modo Banco explicitly disables Guardian Web Accessibility before financial-app
+use. It does not inspect banking apps, does not spoof the service state and does
+not silently reactivate Accessibility. The independent Usage Access collector
+continues to operate at app-level only.

@@ -1,38 +1,36 @@
-# Static validation — 0.1.24 Hybrid v3
+# Static validation — 0.1.24 Hybrid v3 + Bank Mode
 
-Prepared against repository HEAD `aaad03f8527ee2ce3a19a58ee2cfb17f166a327c`
-(the 0.1.23 state whose Android APK Actions #59 passed).
+Base runtime files match repository commit `090f339246f5c15a8edeffd83c9f5b9e77a3155e` before this patch.
 
-Changed contract:
-- version 0.1.24 / code 25;
-- tree-first URL extraction with no visibility requirement for address bars;
-- bounded worker-tree fallback;
-- OCR remains fallback;
-- API 34+ per-window screenshot diagnostic;
-- resource-ID-only tree telemetry;
-- expanded browser allowlist/catalog;
-- corrected private-probe counters;
-- positive private → normal Chromium transition evidence and separate normal/private marker telemetry;
-- same-timestamp BrowserWebAccess snapshot reuse.
+## Actions #63 diagnosis
 
-Unchanged privacy contract:
-- host-only browser storage;
+- failing step: privacy/project guard;
+- failure occurred before validation lineage, signing, unit tests, Kotlin compile and APK build;
+- repository still contained the old substring-based AccessibilityService guard;
+- corrected guard uses real Android accessibilityservice imports and retains the narrow allowlist.
+
+## Bank Mode structural checks
+
+- `BrowserAccessibilityService.requestBankModeDisable()` present;
+- real Android `disableSelf()` call present;
+- current browser interval is stopped before disabling;
+- Hybrid host/private state is reset;
+- `WEB_BANK_MODE_DISABLE` technical event contains no banking content;
+- Guardian Web UI confirms AccessibilityManager=false AND secureSetting=false before reporting success;
+- recent heartbeat alone is deliberately not accepted as proof that Bank Mode is active;
+- reactivation is explicit/user-controlled.
+
+## Local compile validation
+
+Modified BrowserAccessibilityService + BrowserWebActivity compile successfully in the existing Hybrid-v3 Android structural harness, including `disableSelf()`, main Looper/Handler and the Bank Mode verification loop. Only stub unused-parameter warnings were produced.
+
+## Unchanged privacy contract
+
+- host-only web persistence;
 - no raw screenshot/OCR/tree text persistence;
 - no INTERNET;
 - no ACCESS_NETWORK_STATE;
 - no QUERY_ALL_PACKAGES;
 - no database schema expansion.
 
-Local structural Kotlin validation completed for the Hybrid service/extractor/
-preferences/access/report/Guardian Web UI group using Android API stubs, and
-BrowserVisualOcr was compiled separately against ML Kit stubs. Behavioral harnesses
-also passed for: hidden-toolbar URL extraction, focused-field rejection, bounded
-fallback extraction, positive Chromium normal-mode transition evidence, deep private OCR after a host is already known, corrected
-private-probe counters, per-browser resource-ID grouping, secure-window telemetry,
-and same-timestamp accessibility status snapshot reuse. Browser catalog runtime
-checks and JSON/lineage/XML/workflow invariants also passed. This process caught
-and corrected implementation errors before packaging.
-
-The authoritative Android SDK/Gradle/APK/merged-manifest check remains GitHub
-Actions because this artifact environment has no networked Android/Gradle dependency
-resolution.
+Authoritative Android SDK/Gradle/APK/merged-manifest validation remains GitHub Actions.

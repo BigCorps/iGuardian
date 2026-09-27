@@ -35,3 +35,9 @@ schema. New/clarified SharedPreferences diagnostics include:
 
 These are technical compatibility diagnostics. Resource-ID inventories never
 contain node text, URL values or page content.
+
+## Bank Mode — 0.1.24
+
+No database migration and no new persisted user-content category.
+`WEB_BANK_MODE_DISABLE` is a technical event only; it contains no bank name,
+account information, screen content, credentials or transaction data.

@@ -8,6 +8,7 @@ import android.graphics.ColorSpace
 import android.os.Build
 import android.os.Handler
 import android.os.HandlerThread
+import android.os.Looper
 import android.os.PowerManager
 import android.os.SystemClock
 import android.view.Display
@@ -213,6 +214,9 @@ class BrowserAccessibilityService :
     override fun onServiceConnected() {
         super.onServiceConnected()
 
+        activeInstance =
+            this
+
         val prefs =
             BrowserWebPreferences(
                 applicationContext
@@ -340,6 +344,14 @@ class BrowserAccessibilityService :
     }
 
     override fun onDestroy() {
+        if (
+            activeInstance ===
+            this
+        ) {
+            activeInstance =
+                null
+        }
+
         if (
             ::observer.isInitialized
         ) {
@@ -1797,6 +1809,46 @@ class BrowserAccessibilityService :
             0L
     }
 
+    private fun disableForBankMode() {
+        val shutdown =
+            Runnable {
+                if (
+                    ::observer.isInitialized
+                ) {
+                    observer.removeCallbacks(
+                        heartbeat
+                    )
+                }
+
+                stopAccruing()
+                resetHybridSession()
+
+                runCatching {
+                    GuardianDatabase(
+                        applicationContext
+                    ).logTechnical(
+                        "WEB_BANK_MODE_DISABLE"
+                    )
+                }
+
+                Handler(
+                    Looper.getMainLooper()
+                ).post {
+                    disableSelf()
+                }
+            }
+
+        if (
+            ::observer.isInitialized
+        ) {
+            observer.post(
+                shutdown
+            )
+        } else {
+            shutdown.run()
+        }
+    }
+
     private fun resetHybridSession() {
         candidateHost =
             null
@@ -1815,6 +1867,20 @@ class BrowserAccessibilityService :
     }
 
     companion object {
+        @Volatile
+        private var activeInstance:
+            BrowserAccessibilityService? =
+            null
+
+        fun requestBankModeDisable(): Boolean {
+            val service =
+                activeInstance
+                    ?: return false
+
+            service.disableForBankMode()
+            return true
+        }
+
         private const val HEARTBEAT_MS =
             2500L
 

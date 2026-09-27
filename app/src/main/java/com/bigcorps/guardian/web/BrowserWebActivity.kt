@@ -7,6 +7,8 @@ import android.graphics.Color
 import android.graphics.Typeface
 import android.graphics.drawable.GradientDrawable
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.provider.Settings
 import android.view.View
 import android.view.ViewGroup
@@ -20,6 +22,11 @@ import com.bigcorps.guardian.core.GuardianDatabase
 class BrowserWebActivity :
     Activity() {
     private lateinit var root: LinearLayout
+
+    private val bankModeHandler =
+        Handler(
+            Looper.getMainLooper()
+        )
 
     override fun onCreate(
         savedInstanceState: Bundle?
@@ -250,6 +257,71 @@ class BrowserWebActivity :
                 topMargin(
                     14
                 )
+            }
+        )
+
+        val bankSystemEnabled =
+            accessStatus.managerReported ||
+                accessStatus.secureSettingReported
+
+        root.addView(
+            card().apply {
+                addView(
+                    text(
+                        "Modo Banco",
+                        15f,
+                        true,
+                        TEXT_PRIMARY
+                    )
+                )
+
+                addView(
+                    text(
+                        if (
+                            bankSystemEnabled
+                        ) {
+                            "Antes de abrir Inter, Nubank, Itaú ou outro app financeiro, use este modo. O Guardian desliga completamente apenas o Guardian Web/Acessibilidade e mantém o monitoramento normal de uso de apps. Depois do banco, você pode reativar o Guardian Web manualmente."
+                        } else {
+                            "Guardian Web está desligado no Android. O monitoramento normal de apps continua funcionando e não há serviço de Acessibilidade do Guardian ativo neste momento."
+                        },
+                        12f,
+                        false,
+                        TEXT_MUTED
+                    ).apply {
+                        setPadding(
+                            0,
+                            dp(8),
+                            0,
+                            0
+                        )
+                    }
+                )
+
+                if (
+                    bankSystemEnabled
+                ) {
+                    addView(
+                        primaryButton(
+                            "Ativar Modo Banco"
+                        ) {
+                            showBankModeDisclosure()
+                        }.apply {
+                            topMargin(12)
+                        }
+                    )
+                } else {
+                    addView(
+                        outlineButton(
+                            "Reativar Guardian Web depois"
+                        ) {
+                            openAccessibility()
+                        }.apply {
+                            topMargin(12)
+                        }
+                    )
+                }
+            }.apply {
+                topMargin(10)
             }
         )
 
@@ -571,6 +643,118 @@ class BrowserWebActivity :
                     )
                 )
             }
+        )
+    }
+
+    private fun showBankModeDisclosure() {
+        AlertDialog.Builder(
+            this
+        )
+            .setTitle(
+                "Ativar Modo Banco"
+            )
+            .setMessage(
+                "O Guardian Web será realmente desligado na Acessibilidade antes de você abrir o banco. O Guardian continuará registrando normalmente o tempo de uso dos aplicativos pelo Usage Access.\n\n" +
+                    "Aguarde a confirmação de que o Guardian Web ficou desligado antes de abrir o app financeiro. Depois, para voltar a registrar sites, será necessário reativar o Guardian Web manualmente nas Configurações de Acessibilidade."
+            )
+            .setNegativeButton(
+                "Cancelar",
+                null
+            )
+            .setPositiveButton(
+                "Desligar Guardian Web"
+            ) {
+                _,
+                _ ->
+                activateBankMode()
+            }
+            .show()
+    }
+
+    private fun activateBankMode() {
+        val before =
+            BrowserWebAccess.status(
+                this
+            )
+
+        val alreadyOff =
+            !before.managerReported &&
+                !before.secureSettingReported
+
+        if (
+            alreadyOff
+        ) {
+            Toast.makeText(
+                this,
+                "Guardian Web já está desligado. Agora você pode abrir seu banco.",
+                Toast.LENGTH_SHORT
+            ).show()
+            render()
+            return
+        }
+
+        val requested =
+            BrowserAccessibilityService
+                .requestBankModeDisable()
+
+        if (
+            !requested
+        ) {
+            Toast.makeText(
+                this,
+                "Não foi possível desligar automaticamente. Desative Guardian Web na Acessibilidade antes de abrir o banco.",
+                Toast.LENGTH_SHORT
+            ).show()
+            openAccessibility()
+            return
+        }
+
+        verifyBankModeDisabled(
+            0
+        )
+    }
+
+    private fun verifyBankModeDisabled(
+        attempt: Int
+    ) {
+        bankModeHandler.postDelayed(
+            {
+                val status =
+                    BrowserWebAccess.status(
+                        this
+                    )
+
+                val systemOff =
+                    !status.managerReported &&
+                        !status.secureSettingReported
+
+                if (
+                    systemOff
+                ) {
+                    Toast.makeText(
+                        this,
+                        "Modo Banco ativo: Guardian Web desligado. Agora você pode abrir seu banco.",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                    render()
+                } else if (
+                    attempt <
+                    BANK_MODE_MAX_VERIFY_ATTEMPTS
+                ) {
+                    verifyBankModeDisabled(
+                        attempt +
+                            1
+                    )
+                } else {
+                    Toast.makeText(
+                        this,
+                        "Confirme manualmente que Guardian Web está desligado antes de abrir o banco.",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                    openAccessibility()
+                }
+            },
+            BANK_MODE_VERIFY_INTERVAL_MS
         )
     }
 
@@ -963,6 +1147,12 @@ class BrowserWebActivity :
             .toInt()
 
     companion object {
+        private const val BANK_MODE_VERIFY_INTERVAL_MS =
+            250L
+
+        private const val BANK_MODE_MAX_VERIFY_ATTEMPTS =
+            8
+
         private val BACKGROUND =
             Color.rgb(
                 245,
