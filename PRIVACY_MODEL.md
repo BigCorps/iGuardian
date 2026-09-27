@@ -1,45 +1,33 @@
-# Privacy Model — Guardian 0.1.24
+# Privacy Model — Guardian 0.1.25
 
-No new persisted user-data category is introduced by Hybrid v3.
+Guardian remains local-first and the final APK remains offline.
 
-Guardian Web may transiently inspect the accessibility tree of allowlisted
-browsers and may transiently screenshot the active browser window/display for
-local bundled OCR. The processing order is tree first, visual fallback.
+## Guardian Web
 
-Persisted browser history remains strictly:
-- sanitized host;
-- supported browser package;
-- time interval;
-- private-mode boolean.
+- Accessibility is scoped to supported browser packages.
+- Tree-derived address values are sanitized to host before storage.
+- Visual OCR uses a stricter host gate than tree values because OCR is noisy.
+- Screenshots live only in memory and are recycled.
+- Raw OCR and accessibility node text are not persisted.
+- Browser storage contains only host, supported browser package, interval and private boolean.
+- No path, query, fragment, search, title, page content or typed input is stored.
 
-Never persisted/exported as user content:
-- full URL/path/query/fragment;
-- browser search text or typed text;
-- page title/content;
-- screenshot pixels;
-- raw OCR text;
-- accessibility node text/contentDescription.
+## Clean validation reset
 
-The DEV calibration diagnostic may persist/export browser accessibility
-`viewIdResourceName` values only (for example `com.chrome.dev:id/url_bar`). No
-node text accompanies those IDs. Bounded resource-ID inventories may be grouped
-by browser package and by normal/private state when that private state was
-independently detected.
+`Iniciar teste limpo` clears only Guardian Web browser sessions and technical web
+runtime evidence after the active browser interval has been stopped. Normal app
+history is not erased.
 
-`ERROR_TAKE_SCREENSHOT_SECURE_WINDOW` is diagnostic evidence about Android's
-window security state, not proof of incognito by itself.
+## Financial apps
 
-Bundled OCR dependencies may declare network-related permissions in library
-manifests. Guardian explicitly removes INTERNET and ACCESS_NETWORK_STATE during
-manifest merge and CI verifies they are absent from the final APK.
+FinancialAppCatalog is a local package/label classifier. Financial apps are a
+subset of PRIVATE and are not exported as normal identifiable APP usage after
+PrivacyClassifier v3 repair.
 
+Protected launch does not inspect or intercept bank UI. It disables the Guardian
+Web AccessibilityService and waits for Android to report that service OFF before
+starting the chosen financial app. The automatic direct-open failsafe uses only
+the foreground package reported by UsageStats; it does not read financial screens.
 
-## Banking compatibility
-
-Modo Banco does not try to hide Guardian from financial apps and does not inspect
-banking app screens. It explicitly disables the Guardian Web AccessibilityService
-with Android `disableSelf()` before the user opens a financial app. The regular
-Usage Access collector remains independent and continues to record app-level usage.
-
-Guardian does not auto-enable Accessibility afterwards; reactivation remains an
-explicit user action in Android Settings.
+No account number, Pix data, bank screen content, credential or transaction detail
+is stored by these features.

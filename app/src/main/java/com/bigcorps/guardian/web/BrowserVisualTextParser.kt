@@ -1,5 +1,6 @@
 package com.bigcorps.guardian.web
 
+import java.text.Normalizer
 import java.util.Locale
 
 data class BrowserVisualParseResult(
@@ -24,7 +25,7 @@ object BrowserVisualTextParser {
                 }
                 .mapNotNull {
                     candidate ->
-                    BrowserDomainSanitizer.hostFromRaw(
+                    BrowserDomainSanitizer.hostFromVisualOcr(
                         candidate
                     )
                 }
@@ -70,34 +71,58 @@ object BrowserVisualTextParser {
                 )
                 .trim()
 
-        val tokens =
-            normalized.split(
-                Regex(
-                    """[\s|]+"""
+        // OCR may insert spaces around URL punctuation. Tighten only punctuation
+        // that is meaningful inside an address before extracting candidates.
+        val tightened =
+            normalized
+                .replace(
+                    Regex(
+                        "(?i)https?\\s*:\\s*/\\s*/"
+                    )
+                ) {
+                    match ->
+                    match.value
+                        .replace(
+                            Regex("\\s+") ,
+                            ""
+                        )
+                }
+                .replace(
+                    Regex(
+                        "\\s*\\.\\s*"
+                    ),
+                    "."
                 )
-            )
 
-        return tokens
-            .map {
-                token ->
-                token.trim(
-                    ' ',
-                    '"',
-                    '\'',
-                    '(',
-                    ')',
-                    '[',
-                    ']',
-                    '{',
-                    '}',
-                    ',',
-                    ';',
-                    '!',
-                    '?',
-                    '•',
-                    '·'
+        val tokenized =
+            tightened
+                .split(
+                    Regex(
+                        """[\s|]+"""
+                    )
                 )
-            }
+                .map {
+                    cleanCandidate(
+                        it
+                    )
+                }
+
+        val regexCandidates =
+            DOMAIN_LIKE_REGEX
+                .findAll(
+                    tightened
+                )
+                .map {
+                    cleanCandidate(
+                        it.value
+                    )
+                }
+                .toList()
+
+        return (
+            tokenized +
+                regexCandidates
+            )
             .filter {
                 token ->
                 token.length in
@@ -112,76 +137,165 @@ object BrowserVisualTextParser {
                         '@'
                     )
             }
+            .distinct()
     }
+
+    private fun cleanCandidate(
+        token: String
+    ): String =
+        token.trim(
+            ' ',
+            '"',
+            '\'',
+            '(',
+            ')',
+            '[',
+            ']',
+            '{',
+            '}',
+            ',',
+            ';',
+            '!',
+            '?',
+            '•',
+            '·'
+        )
 
     fun detectsPrivateModeText(
         raw: String
     ): Boolean {
         val value =
-            raw
-                .lowercase(
-                    Locale.ROOT
+            normalizePrivateText(
+                raw
+            )
+
+        if (
+            value.isBlank()
+        ) {
+            return false
+        }
+
+        val strongMarkers =
+            listOf(
+                "youve gone incognito",
+                "you are incognito",
+                "now you can browse privately",
+                "browsing privately",
+                "leave incognito mode",
+                "selected incognito tab",
+                "voce entrou no modo de navegacao anonima",
+                "voce entrou na navegacao anonima",
+                "voce esta no modo de navegacao anonima",
+                "voce esta na navegacao anonima",
+                "modo de navegacao anonima",
+                "modo anonimo",
+                "agora voce pode navegar com privacidade",
+                "guia anonima selecionada",
+                "aba anonima selecionada"
+            )
+
+        if (
+            strongMarkers.any {
+                marker ->
+                value.contains(
+                    marker
                 )
-                .replace(
-                    'á',
-                    'a'
+            }
+        ) {
+            return true
+        }
+
+        // These are actions that can be visible while the user is still in a
+        // normal tab. Never treat them alone as proof that the current tab is
+        // private/incognito.
+        val actionOnlyMarkers =
+            listOf(
+                "new incognito tab",
+                "new private tab",
+                "enter incognito mode",
+                "nova guia anonima",
+                "nova aba anonima",
+                "abrir guia anonima",
+                "abrir aba anonima",
+                "entrar no modo anonimo",
+                "entrar no modo de navegacao anonima"
+            )
+
+        if (
+            actionOnlyMarkers.any {
+                marker ->
+                value.contains(
+                    marker
                 )
-                .replace(
-                    'â',
-                    'a'
-                )
-                .replace(
-                    'ã',
-                    'a'
-                )
-                .replace(
-                    'é',
-                    'e'
-                )
-                .replace(
-                    'ê',
-                    'e'
-                )
-                .replace(
-                    'í',
-                    'i'
-                )
-                .replace(
-                    'ó',
-                    'o'
-                )
-                .replace(
-                    'ô',
-                    'o'
-                )
-                .replace(
-                    'õ',
-                    'o'
-                )
-                .replace(
-                    'ú',
-                    'u'
-                )
-                .replace(
-                    'ç',
-                    'c'
+            }
+        ) {
+            return false
+        }
+
+        // Chromium's current redesigned incognito NTP can expose its privacy
+        // explanation even when the title OCR is imperfect. Require a pair of
+        // contextual phrases rather than the ambiguous word "private" alone.
+        val englishContext =
+            value.contains(
+                "other people who use this device"
+            ) &&
+                value.contains(
+                    "activity"
+                ) &&
+                (
+                    value.contains(
+                        "privately"
+                    ) ||
+                    value.contains(
+                        "incognito"
+                    )
                 )
 
-        return listOf(
-            "you've gone incognito",
-            "you are incognito",
-            "incognito mode",
-            "leave incognito mode",
-            "selected incognito tab",
-            "modo de navegacao anonima",
-            "voce entrou no modo de navegacao anonima",
-            "guia anonima selecionada",
-            "aba anonima selecionada"
-        ).any {
-            marker ->
+        val portugueseContext =
             value.contains(
-                marker
-            )
-        }
+                "outras pessoas que usarem este dispositivo"
+            ) &&
+                value.contains(
+                    "atividade"
+                ) &&
+                value.contains(
+                    "privacidade"
+                )
+
+        return englishContext ||
+            portugueseContext
     }
+
+    private fun normalizePrivateText(
+        raw: String
+    ): String =
+        Normalizer.normalize(
+            raw,
+            Normalizer.Form.NFD
+        )
+            .replace(
+                Regex("\\p{Mn}+") ,
+                ""
+            )
+            .lowercase(
+                Locale.ROOT
+            )
+            .replace(
+                '’',
+                '\''
+            )
+            .replace(
+                "'",
+                ""
+            )
+            .replace(
+                Regex("\\s+") ,
+                " "
+            )
+            .trim()
+
+    private val DOMAIN_LIKE_REGEX =
+        Regex(
+            "(?i)(?:https?://)?(?:www\\.)?[a-z0-9](?:[a-z0-9.-]{0,251}[a-z0-9])?\\.[a-z]{2,}(?:[/?:#][^\\s]*)?"
+        )
 }

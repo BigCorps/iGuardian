@@ -1,32 +1,55 @@
-# Guardian — Modo Banco
+# Guardian — Modo Banco 0.1.25
 
-## Purpose
+## Goal
 
-Some financial apps may treat an enabled AccessibilityService as a device-risk signal even when Guardian is package-scoped to browsers and never reads the banking app. Modo Banco removes that capability before the user opens a financial app.
+Some financial apps can treat an enabled AccessibilityService as a device-risk
+signal. Guardian therefore removes the Guardian Web capability before a protected
+financial launch instead of trying to hide it from the bank.
 
-## Behavior
+## Financial classification
 
-1. User opens Guardian Web and taps **Ativar Modo Banco**.
-2. Guardian stops/banks the active browser interval and clears transient Hybrid state.
-3. Guardian Web calls Android `AccessibilityService.disableSelf()`.
-4. UI checks the Android AccessibilityManager and secure accessibility setting.
-5. Success is shown only when both no longer report Guardian Web enabled.
-6. The user can then open the financial app normally.
-7. App-level Guardian monitoring through Usage Access remains active.
-8. After banking, the user explicitly re-enables Guardian Web in Android Accessibility settings if web monitoring is desired again.
+`FinancialAppCatalog` is a narrower subset of the broader PRIVATE policy.
+Confirmed packages include:
 
-## Why preventive
+- Inter Empresas: `br.com.Inter.CDPro`;
+- Inter: `br.com.intermedium`;
+- Nubank: `com.nu.production`;
+- InfinitePay: `io.cloudwalk.infinitepaydash`.
 
-Guardian does not attempt to wait until a bank is already foreground. A bank may evaluate device risk immediately during startup, so disabling Accessibility after launch can be too late.
+Additional banks/wallets can be recognized by conservative package/label patterns.
+Financial apps are also classified as PRIVATE by PrivacyClassifier v3.
 
-## Security/privacy boundary
+## Protected launch — preferred path
 
-- Modo Banco does not inspect banking-app screens.
-- It does not spoof or hide Guardian from another app.
-- It actually disables the Guardian Web AccessibilityService.
-- It does not persist bank credentials, bank screen content or banking activity details.
-- It does not disable the independent Usage Access collector.
+1. Guardian Web enumerates launcher-visible financial apps already installed.
+2. User taps **Abrir <banco> com proteção**.
+3. Guardian stops/banks the current web interval and clears transient Hybrid state.
+4. Guardian calls Android `AccessibilityService.disableSelf()`.
+5. Guardian polls both AccessibilityManager and Android's secure enabled-service setting.
+6. Only when both report Guardian Web OFF does Guardian launch the selected bank.
+7. Normal app-level monitoring continues through Usage Access.
+8. Guardian never silently re-enables Accessibility afterwards.
 
-## Physical validation
+## Direct-launch automatic failsafe
 
-Test first with Inter/Inter Empresas because that device produced the real warning. Verify Android shows Guardian Web OFF before starting the bank. Repeat later with a Play-distributed build to distinguish sideload-related risk from Accessibility-related risk.
+If the user opens a recognized financial app directly, Guardian Web checks the
+foreground package through UsageStats and requests `disableSelf()` when the bank
+is observed. This is **best effort only** because the financial process has already
+started by the time UsageStats can report it. It is not a replacement for
+**Abrir com proteção**.
+
+## Privacy boundary
+
+- Guardian Web remains package-scoped to browsers and does not inspect bank screens.
+- Financial classification uses package/launcher label only.
+- `WEB_BANK_MODE_DISABLE` may record only a generic reason such as manual/protected
+  launch or automatic financial foreground; it never records account, screen,
+  credential, Pix or transaction content.
+- No new network permission is introduced.
+
+## Physical test
+
+First test `Abrir Inter Empresas com proteção`. Confirm the bank opens only after
+Guardian Web is OFF. If desired, perform one separate direct-open test after
+reactivating Guardian Web to observe whether the automatic failsafe disables it.
+Do not repeatedly perform banking transactions merely to exercise the failsafe.

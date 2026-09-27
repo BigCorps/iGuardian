@@ -1,32 +1,29 @@
 {
-  "version": "0.1.24",
-  "version_code": 25,
-  "base_green_actions_run": 59,
-  "latest_failed_actions_run": 63,
-  "latest_failed_commit": "090f339246f5c15a8edeffd83c9f5b9e77a3155e",
-  "latest_failed_step": "Verify privacy/project invariants",
-  "root_cause": "verify_project.py still searched for the literal AccessibilityService text, so a harmless BrowserAccessibilityService mention inside BrowserAccessibilityExtractor comments was treated as Android API usage.",
-  "ci_fix": [
-    "detect actual import android.accessibilityservice.* declarations only",
-    "retain API allowlist for BrowserAccessibilityService.kt and BrowserWebAccess.kt",
-    "add Bank Mode static contract checks"
+  "version": "0.1.25",
+  "version_code": 26,
+  "base_green_actions_run": 64,
+  "base_green_commit": "1e196d5fd32d4e25e73ad1ffe85db8e90b623959",
+  "current_work": "Guardian Web visual hardening + protected financial launch",
+  "physical_evidence_source": "guardian-validacao-20260927-162708.json",
+  "problems_addressed": [
+    "0.1.24 tree probes 618 with zero host/root hits on Redmi Android 16",
+    "0.1.24 private visual probes 4 with zero private detections",
+    "0.1.24 display mixed old persisted rows with the new physical test",
+    "legacy/noisy visual host candidates could survive permissive host syntax",
+    "Inter Empresas real package br.com.Inter.CDPro was not in the automatic PRIVATE/financial classifier",
+    "manual Bank Mode required an extra app-switch step"
   ],
-  "bank_mode": {
-    "enabled": true,
-    "strategy": "preventive manual mode before opening financial apps",
-    "accessibility_shutdown": "AccessibilityService.disableSelf()",
-    "success_confirmation": "AccessibilityManager=false AND secure_setting=false",
-    "usage_access_remains_active": true,
-    "automatic_reenable": false,
-    "technical_event": "WEB_BANK_MODE_DISABLE"
-  },
+  "fixes": [
+    "strict OCR-only host gate",
+    "Chromium current incognito pt-BR/en text markers",
+    "90-percent private visual probe",
+    "clean web validation reset",
+    "FinancialAppCatalog + PrivacyClassifier v3",
+    "protected financial launcher after confirmed Accessibility OFF",
+    "best-effort automatic financial foreground disable failsafe"
+  ],
   "database_migration_required": false,
   "new_consent_required": false,
   "physical_retest_required": true,
-  "local_validation": {
-    "bank_mode_kotlin_structural_compile": "pass",
-    "ci_guard_logic_review": "pass",
-    "privacy_contract_review": "pass"
-  },
-  "next_ci_expectation": "privacy/project guard passes and Actions proceeds to validation lineage, signing, unit tests and Android build"
+  "expected_actions_artifact": "guardian-android-0.1.25-fixed-signed-debug"
 }

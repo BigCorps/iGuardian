@@ -1,5 +1,33 @@
 # Changelog
 
+## 0.1.25 — 2026-09-27
+
+- versionCode 26 / versionName 0.1.25; base Actions #64 green.
+- Added strict OCR-only host acceptance. Visual noise such as `kit`, `fallback`,
+  `https`, `app`, `quiser` and implausible long-TLD artifacts such as
+  `midia.prosu` are rejected before persistence. Tree-derived values keep the
+  general URL sanitizer.
+- Visual parser now recognizes current Chromium private-tab redesign evidence in
+  pt-BR (`Agora você pode navegar com privacidade...`) and English, while
+  `Nova guia anônima` / `New incognito tab` remain action-only and do not prove
+  that the current tab is private.
+- Host OCR crop reduced from 22% to 16% of the display to stay inside browser chrome; private OCR probe enlarged from 62% to 90% of the display.
+- Added **Iniciar teste limpo**: web-only history/telemetry and in-memory Hybrid
+  state are reset in deterministic order; normal app history is untouched.
+- Added `FinancialAppCatalog`; confirmed Inter packages include
+  `br.com.Inter.CDPro` (Inter Empresas) and `br.com.intermedium` (Inter).
+- `PrivacyClassifier` v3 treats financial apps as PRIVATE and triggers the
+  existing privacy repair on upgrade.
+- Modo Banco now discovers installed financial launcher apps and offers
+  **Abrir <banco> com proteção**. Guardian confirms Accessibility is OFF before
+  launching the selected financial app.
+- Added a best-effort UsageStats financial foreground failsafe for direct bank
+  launches. It is secondary to protected launch because it reacts only after the
+  financial process becomes foreground.
+- No DB schema change, no new network permission, no bank/account/transaction
+  content storage.
+
+
 ## 0.1.24 — 2026-09-27
 
 ### Guardian Web Hybrid v3

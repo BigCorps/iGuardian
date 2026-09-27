@@ -1,55 +1,46 @@
 # Guardian Roadmap
 
-## Android — current: 0.1.24 Hybrid v3
+## Android — current: 0.1.25
 
-The Android core is now in the final Guardian Web hardware-validation stage.
-0.1.24 combines accessibility-tree URL extraction, UsageStats duration banking
-and screenshot/OCR fallback instead of betting on one browser signal.
+Actions #64 established a green 0.1.24 baseline. The latest physical JSON showed
+that the Redmi/Android 16 accessibility tree still returns no usable browser root,
+while screenshot/OCR works. 0.1.25 therefore hardens the proven visual path and
+turns Bank Mode into a protected financial launcher.
 
-### Gate A — 0.1.24 physical validation
+### Gate A — clean Guardian Web proof
 
-Must prove on the Redmi/Android 16 device:
+Must prove after **Iniciar teste limpo**:
 
-- two different normal Chrome Dev hosts are stored;
-- a third incognito host is stored as anonymous;
-- returning to a normal Chromium tab closes anonymous banking only from positive normal-mode evidence;
-- last valid host continues accruing when the toolbar disappears;
-- tree direct/fallback counters explain which source worked;
-- `visual_private_probe_count` counts attempts and private detection is observable;
-- API 34+ window screenshot result/secure error is observable without assuming
-  secure == incognito;
-- resource-ID-only diagnostic identifies Chrome normal/incognito IDs and, when
-  tested, Mi Browser IDs;
-- UI stays responsive;
-- final APK remains fully offline and stores host-only web history.
+- `uol.com.br` and `globo.com` are newly stored as normal;
+- no single-word/implausible-TLD OCR junk reaches storage;
+- the current Chromium incognito start page is detected;
+- a host visited while incognito receives anonymous time;
+- tree telemetry may remain zero on this OEM, but must not block OCR fallback;
+- UI remains responsive and final APK stays offline.
 
-### Banking compatibility gate
+### Gate B — banking compatibility
 
-Before public release, validate **Modo Banco** with Inter/Inter Empresas and a
-small representative set of other financial apps. Acceptance: Guardian Web must
-be truly OFF in Android Accessibility before the banking app is opened, while
-normal Guardian Usage Access collection remains active. Repeat the test later
-with a Play-distributed build to separate sideload risk from Accessibility risk.
+- Inter Empresas must be discovered as `br.com.Inter.CDPro`;
+- protected launch must establish Guardian Web OFF before starting the bank;
+- direct-open UsageStats failsafe is supplemental only;
+- PrivacyClassifier v3 must keep financial-app identity out of normal APP history;
+- later repeat on a Play-distributed build to distinguish sideload risk from Accessibility risk.
 
-### Gate B — calibration follow-up only if the JSON requires it
+### Gate C — browser calibration only from evidence
 
-Pin any newly proven Mi Browser/variant URL-bar IDs from physical evidence. Do
-not guess IDs. Tighten private-mode transition heuristics only from observed
-resource/class/window evidence.
+If a future device exposes tree/resource IDs, pin them only from exported physical
+evidence. Do not invent Mi Browser or Chromium variant IDs.
 
-### Gate C — Android release cleanup
+### Gate D — Android release cleanup
 
-After Gate A (and B if necessary): final UX copy, Play disclosure/data-safety
-review, long-run OEM/battery test, clean validation pack, signing/release prep.
+After A/B: final UX copy, Play Accessibility declaration/disclosure, data-safety
+review, long-run OEM/battery tests and release signing.
 
 ## Managed / Family / Enterprise later
 
-Device Owner / managed Chrome policy can be evaluated as a separate Guardian
-Managed product path. It is not part of normal Guardian onboarding and must not
-be required to make the consumer app work.
+Device Owner / managed-browser policy remains a separate future path and is not
+required for the consumer Guardian.
 
 ## Windows
 
-After Android Guardian Web passes hardware validation, reuse the validated
-product contract: app usage, host-only web activity, normal/private browsing,
-privacy-before-storage, local trends/intelligence and compact validation.
+After Android web/bank gates pass, reuse the host-only/local-first product contract.

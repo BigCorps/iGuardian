@@ -17,10 +17,16 @@ import android.widget.LinearLayout
 import android.widget.ScrollView
 import android.widget.TextView
 import android.widget.Toast
+import com.bigcorps.guardian.core.FinancialAppCatalog
 import com.bigcorps.guardian.core.GuardianDatabase
 
 class BrowserWebActivity :
     Activity() {
+    private data class FinancialAppEntry(
+        val packageName: String,
+        val label: String
+    )
+
     private lateinit var root: LinearLayout
 
     private val bankModeHandler =
@@ -264,6 +270,9 @@ class BrowserWebActivity :
             accessStatus.managerReported ||
                 accessStatus.secureSettingReported
 
+        val financialApps =
+            installedFinancialApps()
+
         root.addView(
             card().apply {
                 addView(
@@ -280,9 +289,9 @@ class BrowserWebActivity :
                         if (
                             bankSystemEnabled
                         ) {
-                            "Antes de abrir Inter, Nubank, Itaú ou outro app financeiro, use este modo. O Guardian desliga completamente apenas o Guardian Web/Acessibilidade e mantém o monitoramento normal de uso de apps. Depois do banco, você pode reativar o Guardian Web manualmente."
+                            "Apps financeiros reconhecidos ficam automaticamente classificados como PRIVATE no histórico geral. Para compatibilidade bancária, use ‘Abrir com proteção’: o Guardian desliga completamente apenas o Guardian Web/Acessibilidade, confirma que ficou OFF e só então abre o banco."
                         } else {
-                            "Guardian Web está desligado no Android. O monitoramento normal de apps continua funcionando e não há serviço de Acessibilidade do Guardian ativo neste momento."
+                            "Guardian Web está desligado no Android. O monitoramento normal de apps continua funcionando; você pode abrir um banco abaixo sem nenhum serviço de Acessibilidade do Guardian ativo."
                         },
                         12f,
                         false,
@@ -298,15 +307,88 @@ class BrowserWebActivity :
                 )
 
                 if (
+                    financialApps.isNotEmpty()
+                ) {
+                    addView(
+                        text(
+                            "Apps financeiros encontrados neste aparelho:",
+                            12f,
+                            true,
+                            TEXT_PRIMARY
+                        ).apply {
+                            setPadding(
+                                0,
+                                dp(12),
+                                0,
+                                0
+                            )
+                        }
+                    )
+
+                    financialApps.forEach {
+                        app ->
+                        addView(
+                            outlineButton(
+                                if (
+                                    bankSystemEnabled
+                                ) {
+                                    "Abrir ${app.label} com proteção"
+                                } else {
+                                    "Abrir ${app.label}"
+                                }
+                            ) {
+                                showProtectedLaunchDisclosure(
+                                    app
+                                )
+                            }.apply {
+                                topMargin(8)
+                            }
+                        )
+                    }
+                } else {
+                    addView(
+                        text(
+                            "Nenhum app financeiro reconhecido foi encontrado pelo launcher. O desligamento manual continua disponível abaixo.",
+                            12f,
+                            false,
+                            TEXT_MUTED
+                        ).apply {
+                            setPadding(
+                                0,
+                                dp(12),
+                                0,
+                                0
+                            )
+                        }
+                    )
+                }
+
+                if (
                     bankSystemEnabled
                 ) {
                     addView(
-                        primaryButton(
-                            "Ativar Modo Banco"
+                        outlineButton(
+                            "Desligar Guardian Web sem abrir banco"
                         ) {
                             showBankModeDisclosure()
                         }.apply {
                             topMargin(12)
+                        }
+                    )
+
+                    addView(
+                        text(
+                            "Proteção automática extra: se você abrir diretamente um app financeiro reconhecido, o Guardian tenta desligar o Guardian Web assim que o UsageStats detectar esse app em primeiro plano. Como essa detecção ocorre depois que o processo do banco começou, ‘Abrir com proteção’ continua sendo o fluxo recomendado.",
+                            11f,
+                            false,
+                            TEXT_MUTED
+                        ).apply {
+                            setPadding(
+                                0,
+                                dp(10),
+                                0,
+                                0
+                            )
                         }
                     )
                 } else {
@@ -635,12 +717,27 @@ class BrowserWebActivity :
         root.addView(
             card().apply {
                 addView(
+                    primaryButton(
+                        "Iniciar teste limpo"
+                    ) {
+                        confirmStartCleanTest()
+                    }
+                )
+
+                addView(
                     text(
-                        "1. Confirme que o Guardian Web e a Acessibilidade continuam ativos.\n2. No Chrome Dev normal, abra uol.com.br por ~20 s e depois globo.com por ~20 s.\n3. Role uma página para recolher a barra e permaneça alguns segundos no mesmo site.\n4. Abra uma nova guia anônima, aguarde ~4–6 s na tela inicial e então visite outro domínio por ~20 s.\n5. Opcional: repita normal/anônimo no Mi Browser para capturar somente os resource IDs.\n6. Volte aqui, confira árvore/OCR/tempo anônimo e exporte o pacote de validação.",
+                        "Use o botão acima antes desta rodada. Ele apaga somente histórico/telemetria web e reseta o host/incógnito mantidos em memória; o histórico geral dos aplicativos não é apagado.\n\n1. Confirme que Guardian Web/Acessibilidade estão ativos.\n2. Chrome Dev normal: uol.com.br por ~20 s e globo.com por ~20 s.\n3. Abra uma nova guia anônima e permaneça ~8 s na tela inicial antes de navegar.\n4. Ainda anônimo, visite github.com por ~20 s.\n5. Volte aqui: a lista deve conter apenas os sites desta rodada e ‘anônimo’ deve ser maior que 0 s.\n6. Teste banco: use ‘Abrir Inter Empresas com proteção’. Depois, se quiser testar o failsafe automático, reative Guardian Web e abra o Inter diretamente uma única vez.\n7. Exporte um novo pacote de validação.",
                         13f,
                         false,
                         TEXT_MUTED
-                    )
+                    ).apply {
+                        setPadding(
+                            0,
+                            dp(12),
+                            0,
+                            0
+                        )
+                    }
                 )
             }
         )
@@ -672,6 +769,73 @@ class BrowserWebActivity :
     }
 
     private fun activateBankMode() {
+        ensureBankModeDisabled {
+            Toast.makeText(
+                this,
+                "Modo Banco ativo: Guardian Web desligado. Agora você pode abrir seu banco.",
+                Toast.LENGTH_SHORT
+            ).show()
+
+            render()
+        }
+    }
+
+    private fun showProtectedLaunchDisclosure(
+        app: FinancialAppEntry
+    ) {
+        val status =
+            BrowserWebAccess.status(
+                this
+            )
+
+        if (
+            !status.managerReported &&
+            !status.secureSettingReported
+        ) {
+            launchFinancialApp(
+                app
+            )
+            return
+        }
+
+        AlertDialog.Builder(
+            this
+        )
+            .setTitle(
+                "Abrir ${app.label} com proteção"
+            )
+            .setMessage(
+                "O Guardian Web será desligado de verdade na Acessibilidade. O app ${app.label} só será aberto depois que o Android confirmar que o serviço ficou OFF. O monitoramento normal de tempo de uso continua pelo Usage Access."
+            )
+            .setNegativeButton(
+                "Cancelar",
+                null
+            )
+            .setPositiveButton(
+                "Desligar e abrir"
+            ) {
+                _,
+                _ ->
+                openFinancialWithProtection(
+                    app
+                )
+            }
+            .show()
+    }
+
+    private fun openFinancialWithProtection(
+        app: FinancialAppEntry
+    ) {
+        ensureBankModeDisabled {
+            launchFinancialApp(
+                app
+            )
+        }
+    }
+
+    private fun ensureBankModeDisabled(
+        onReady: () -> Unit
+    ) {
         val before =
             BrowserWebAccess.status(
                 this
@@ -684,12 +848,7 @@ class BrowserWebActivity :
         if (
             alreadyOff
         ) {
-            Toast.makeText(
-                this,
-                "Guardian Web já está desligado. Agora você pode abrir seu banco.",
-                Toast.LENGTH_SHORT
-            ).show()
-            render()
+            onReady()
             return
         }
 
@@ -710,12 +869,14 @@ class BrowserWebActivity :
         }
 
         verifyBankModeDisabled(
-            0
+            attempt = 0,
+            onReady = onReady
         )
     }
 
     private fun verifyBankModeDisabled(
-        attempt: Int
+        attempt: Int,
+        onReady: () -> Unit
     ) {
         bankModeHandler.postDelayed(
             {
@@ -731,19 +892,17 @@ class BrowserWebActivity :
                 if (
                     systemOff
                 ) {
-                    Toast.makeText(
-                        this,
-                        "Modo Banco ativo: Guardian Web desligado. Agora você pode abrir seu banco.",
-                        Toast.LENGTH_SHORT
-                    ).show()
-                    render()
+                    onReady()
                 } else if (
                     attempt <
                     BANK_MODE_MAX_VERIFY_ATTEMPTS
                 ) {
                     verifyBankModeDisabled(
-                        attempt +
-                            1
+                        attempt =
+                            attempt +
+                                1,
+                        onReady =
+                            onReady
                     )
                 } else {
                     Toast.makeText(
@@ -755,6 +914,188 @@ class BrowserWebActivity :
                 }
             },
             BANK_MODE_VERIFY_INTERVAL_MS
+        )
+    }
+
+    private fun installedFinancialApps():
+        List<FinancialAppEntry> {
+        val launcherIntent =
+            Intent(
+                Intent.ACTION_MAIN
+            ).apply {
+                addCategory(
+                    Intent.CATEGORY_LAUNCHER
+                )
+            }
+
+        @Suppress("DEPRECATION")
+        val resolved =
+            packageManager.queryIntentActivities(
+                launcherIntent,
+                0
+            )
+
+        return resolved
+            .mapNotNull {
+                info ->
+                val packageName =
+                    info.activityInfo
+                        ?.packageName
+                        ?.trim()
+                        .orEmpty()
+
+                if (
+                    packageName.isBlank() ||
+                    packageName ==
+                        this.packageName
+                ) {
+                    return@mapNotNull null
+                }
+
+                val label =
+                    runCatching {
+                        info.loadLabel(
+                            packageManager
+                        )
+                            ?.toString()
+                            ?.trim()
+                    }.getOrNull()
+                        .orEmpty()
+                        .ifBlank {
+                            packageName
+                        }
+
+                if (
+                    !FinancialAppCatalog.isFinancial(
+                        packageName,
+                        label
+                    )
+                ) {
+                    return@mapNotNull null
+                }
+
+                FinancialAppEntry(
+                    packageName =
+                        packageName,
+                    label =
+                        label
+                )
+            }
+            .distinctBy {
+                it.packageName
+            }
+            .sortedBy {
+                it.label.lowercase()
+            }
+    }
+
+    private fun launchFinancialApp(
+        app: FinancialAppEntry
+    ) {
+        val direct =
+            packageManager.getLaunchIntentForPackage(
+                app.packageName
+            )
+
+        val fallback =
+            Intent(
+                Intent.ACTION_MAIN
+            ).apply {
+                addCategory(
+                    Intent.CATEGORY_LAUNCHER
+                )
+                setPackage(
+                    app.packageName
+                )
+            }.takeIf {
+                it.resolveActivity(
+                    packageManager
+                ) !=
+                    null
+            }
+
+        val launch =
+            direct
+                ?: fallback
+
+        if (
+            launch ==
+            null
+        ) {
+            Toast.makeText(
+                this,
+                "Não foi possível abrir ${app.label}. Guardian Web já está desligado; abra o banco manualmente.",
+                Toast.LENGTH_LONG
+            ).show()
+            return
+        }
+
+        startActivity(
+            launch
+        )
+    }
+
+    private fun confirmStartCleanTest() {
+        AlertDialog.Builder(
+            this
+        )
+            .setTitle(
+                "Iniciar teste limpo?"
+            )
+            .setMessage(
+                "Isso apaga somente os hosts/tempos e a telemetria do Guardian Web desta instalação. O histórico normal dos aplicativos não será apagado."
+            )
+            .setNegativeButton(
+                "Cancelar",
+                null
+            )
+            .setPositiveButton(
+                "Limpar e iniciar"
+            ) {
+                _,
+                _ ->
+                startCleanValidationTest()
+            }
+            .show()
+    }
+
+    private fun startCleanValidationTest() {
+        val requested =
+            BrowserAccessibilityService
+                .requestValidationReset()
+
+        if (
+            !requested
+        ) {
+            GuardianDatabase(
+                applicationContext
+            ).clearBrowserSessions()
+
+            BrowserWebPreferences(
+                applicationContext
+            ).apply {
+                clearRuntimeEvidence()
+                markTrackingStartedIfMissing()
+            }
+
+            GuardianDatabase(
+                applicationContext
+            ).logTechnical(
+                "WEB_TEST_RESET"
+            )
+        }
+
+        Toast.makeText(
+            this,
+            "Teste web zerado. Comece agora pelo Chrome Dev normal.",
+            Toast.LENGTH_SHORT
+        ).show()
+
+        bankModeHandler.postDelayed(
+            {
+                render()
+            },
+            CLEAN_TEST_RENDER_DELAY_MS
         )
     }
 
@@ -1149,6 +1490,9 @@ class BrowserWebActivity :
     companion object {
         private const val BANK_MODE_VERIFY_INTERVAL_MS =
             250L
+
+        private const val CLEAN_TEST_RENDER_DELAY_MS =
+            900L
 
         private const val BANK_MODE_MAX_VERIFY_ATTEMPTS =
             8

@@ -192,11 +192,17 @@ class BrowserVisualOcr {
     }
 
     companion object {
+        // Keep host OCR inside the browser chrome. 0.1.24 used 22% of the
+        // display, which reached page content on tall phones and produced false
+        // host-shaped words. Private-mode probing uses a separate deep crop.
         private const val TOOLBAR_HEIGHT_RATIO =
-            0.22
+            0.16
 
+        // Chromium's redesigned private-tab explanation can extend below
+        // the first 62% of the display. Keep the toolbar crop small for host
+        // recognition, but use a deeper one-off private-mode probe.
         private const val MODE_PROBE_HEIGHT_RATIO =
-            0.62
+            0.90
 
         private const val OCR_TIMEOUT_SECONDS =
             3L

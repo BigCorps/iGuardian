@@ -100,6 +100,7 @@ required_modes = {
     "background_scheduler_core": "inherited",
     "local_intelligence_core": "inherited",
     "database_report_browser_overlay": "runtime_autotest",
+    "privacy_classification_core": "runtime_autotest",
     "guardian_web_core": "runtime_plus_physical",
     "validation_export_ui": "runtime_autotest",
     "build_pipeline": "ci_only",

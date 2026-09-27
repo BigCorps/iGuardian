@@ -1,7 +1,7 @@
 package com.bigcorps.guardian.core
 
 object PrivacyClassifier {
-    const val CLASSIFIER_VERSION = 2
+    const val CLASSIFIER_VERSION = 3
 
     private val exactPrivatePackages = setOf(
         // Android/system settings
@@ -16,28 +16,10 @@ object PrivacyClassifier {
         "com.bitwarden.app",
         "com.onepassword.android",
         "com.lastpass.lpandroid",
-        "com.kunzisoft.keepass.free",
-
-        // Confirmed financial apps from real-device testing
-        "com.nu.production",
-        "io.cloudwalk.infinitepaydash"
+        "com.kunzisoft.keepass.free"
     )
 
     private val packageTokens = listOf(
-        "bank",
-        "banco",
-        "banking",
-        "nubank",
-        "intermedium",
-        "bancointer",
-        "itau",
-        "bradesco",
-        "santander",
-        "bancodobrasil",
-        "bb.android",
-        "caixa",
-        "picpay",
-        "mercadopago",
         "wallet",
         "authenticator",
         "authy",
@@ -48,22 +30,10 @@ object PrivacyClassifier {
         "keepass",
         "password",
         "passwd",
-        "settings",
-        "finance"
+        "settings"
     )
 
     private val labelTokens = listOf(
-        "banco",
-        "bank",
-        "nubank",
-        "infinitepay",
-        "itaú",
-        "itau",
-        "bradesco",
-        "santander",
-        "caixa",
-        "mercado pago",
-        "picpay",
         "carteira",
         "wallet",
         "autenticador",
@@ -88,6 +58,15 @@ object PrivacyClassifier {
         if (
             normalizedPackage == "com.android.settings" ||
             normalizedPackage.startsWith("com.android.settings.")
+        ) {
+            return true
+        }
+
+        if (
+            FinancialAppCatalog.isFinancial(
+                packageName,
+                appLabel
+            )
         ) {
             return true
         }

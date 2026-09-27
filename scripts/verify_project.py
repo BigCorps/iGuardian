@@ -153,6 +153,15 @@ web_service_source = (
 web_activity_source = (
     root / "app/src/main/java/com/bigcorps/guardian/web/BrowserWebActivity.kt"
 ).read_text(encoding="utf-8", errors="ignore")
+financial_catalog_source = (
+    root / "app/src/main/java/com/bigcorps/guardian/core/FinancialAppCatalog.kt"
+).read_text(encoding="utf-8", errors="ignore")
+visual_sanitizer_source = (
+    root / "app/src/main/java/com/bigcorps/guardian/web/BrowserDomainSanitizer.kt"
+).read_text(encoding="utf-8", errors="ignore")
+visual_parser_source = (
+    root / "app/src/main/java/com/bigcorps/guardian/web/BrowserVisualTextParser.kt"
+).read_text(encoding="utf-8", errors="ignore")
 
 if "fun requestBankModeDisable(): Boolean" not in web_service_source:
     errors.append("Guardian Web bank mode disable entrypoint missing")
@@ -160,6 +169,18 @@ if "disableSelf()" not in web_service_source:
     errors.append("Guardian Web bank mode must disable the AccessibilityService via disableSelf()")
 if '"Modo Banco"' not in web_activity_source:
     errors.append("Guardian Web bank mode UI missing")
+if "fun requestValidationReset(): Boolean" not in web_service_source:
+    errors.append("Guardian Web clean-test reset entrypoint missing")
+if "AUTO_FINANCIAL_FOREGROUND" not in web_service_source or "FinancialAppCatalog.isFinancial" not in web_service_source:
+    errors.append("Guardian Web automatic financial-app failsafe missing")
+if "Abrir ${app.label} com proteção" not in web_activity_source:
+    errors.append("Guardian protected financial-app launcher UI missing")
+if "hostFromVisualOcr" not in visual_sanitizer_source:
+    errors.append("Guardian Web visual OCR must use stricter host acceptance")
+if "agora voce pode navegar com privacidade" not in visual_parser_source:
+    errors.append("Guardian Web private OCR parser missing current Chromium pt-BR marker")
+if "br.com.inter.cdpro" not in financial_catalog_source or "br.com.intermedium" not in financial_catalog_source:
+    errors.append("Financial app catalog must include confirmed Inter PF/PJ packages")
 
 version_match = re.search(
     r'versionName\s*=\s*"([^"]+)"',
@@ -221,6 +242,7 @@ required_sources = [
     "app/src/main/java/com/bigcorps/guardian/web/BrowserDomainSanitizer.kt",
     "app/src/main/java/com/bigcorps/guardian/web/BrowserAccessibilityService.kt",
     "app/src/main/java/com/bigcorps/guardian/web/BrowserReport.kt",
+    "app/src/main/java/com/bigcorps/guardian/core/FinancialAppCatalog.kt",
 ]
 
 for name in required_sources:
@@ -248,6 +270,9 @@ print("- android.accessibilityservice imports isolated to Guardian Web service/s
 print("- Guardian Web Visual screenshot capability + bundled OCR contract present")
 print("- Guardian Web accessibility package allowlist present")
 print("- Guardian Web bank mode disableSelf contract present")
+print("- protected financial-app launcher + automatic foreground failsafe present")
+print("- clean Guardian Web validation reset present")
+print("- strict visual-OCR host gate + current Chromium private markers present")
 print("- WorkManager background architecture present")
 print("- comprehensive local validation suite present")
 print("- one-file validation pack generator present")

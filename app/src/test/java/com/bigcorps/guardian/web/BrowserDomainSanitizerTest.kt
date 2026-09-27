@@ -41,6 +41,7 @@ class BrowserDomainSanitizerTest {
         assertTrue(BrowserDomainSanitizer.isSanitizedHost("youtube.com"))
         assertTrue(BrowserDomainSanitizer.isSanitizedHost("mail.google.com"))
     }
+
     @Test
     fun brazilianPortalUrlsBecomeHosts() {
         assertEquals(
@@ -57,4 +58,34 @@ class BrowserDomainSanitizerTest {
         )
     }
 
+    @Test
+    fun visualOcrRejectsSingleWordAndImplausibleSuffixNoise() {
+        listOf(
+            "kit",
+            "fallback",
+            "https",
+            "app",
+            "quiser",
+            "midia.prosu"
+        ).forEach {
+            assertNull(
+                BrowserDomainSanitizer.hostFromVisualOcr(
+                    it
+                )
+            )
+        }
+
+        assertEquals(
+            "midia.pro",
+            BrowserDomainSanitizer.hostFromVisualOcr(
+                "midia.pro"
+            )
+        )
+        assertEquals(
+            "uol.com.br",
+            BrowserDomainSanitizer.hostFromVisualOcr(
+                "www.uol.com.br"
+            )
+        )
+    }
 }

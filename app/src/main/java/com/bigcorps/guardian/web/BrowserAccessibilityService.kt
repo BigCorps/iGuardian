@@ -15,6 +15,7 @@ import android.view.Display
 import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityNodeInfo
 import android.view.accessibility.AccessibilityWindowInfo
+import com.bigcorps.guardian.core.FinancialAppCatalog
 import com.bigcorps.guardian.core.GuardianDatabase
 import java.util.concurrent.Executor
 
@@ -102,6 +103,10 @@ class BrowserAccessibilityService :
     private var privateModeReason =
         "NONE"
 
+    @Volatile
+    private var bankModeDisableRequested =
+        false
+
     private val observerExecutor =
         Executor {
             command ->
@@ -170,7 +175,8 @@ class BrowserAccessibilityService :
                 }
 
                 if (
-                    ::observer.isInitialized
+                    ::observer.isInitialized &&
+                    !bankModeDisableRequested
                 ) {
                     observer.postDelayed(
                         this,
@@ -217,6 +223,9 @@ class BrowserAccessibilityService :
         activeInstance =
             this
 
+        bankModeDisableRequested =
+            false
+
         val prefs =
             BrowserWebPreferences(
                 applicationContext
@@ -251,7 +260,8 @@ class BrowserAccessibilityService :
     ) {
         if (
             event ==
-            null
+            null ||
+            bankModeDisableRequested
         ) {
             return
         }
@@ -1517,6 +1527,31 @@ class BrowserAccessibilityService :
             usageForegroundPackage =
                 newestPackage
 
+            // Best-effort automatic banking failsafe. It does not replace the
+            // protected launcher because the financial process is already in
+            // foreground at this point; it simply minimizes how long Guardian
+            // Web remains enabled if the user opens a recognized bank directly.
+            if (
+                FinancialAppCatalog.isFinancial(
+                    newestPackage
+                )
+            ) {
+                disableForBankMode(
+                    "AUTO_FINANCIAL_FOREGROUND"
+                )
+
+                usageCursorMs =
+                    (
+                        now -
+                            1000L
+                        )
+                        .coerceAtLeast(
+                            0L
+                        )
+
+                return
+            }
+
             if (
                 previous !=
                     newestPackage &&
@@ -1809,7 +1844,18 @@ class BrowserAccessibilityService :
             0L
     }
 
-    private fun disableForBankMode() {
+    private fun disableForBankMode(
+        reason: String
+    ) {
+        if (
+            bankModeDisableRequested
+        ) {
+            return
+        }
+
+        bankModeDisableRequested =
+            true
+
         val shutdown =
             Runnable {
                 if (
@@ -1827,7 +1873,8 @@ class BrowserAccessibilityService :
                     GuardianDatabase(
                         applicationContext
                     ).logTechnical(
-                        "WEB_BANK_MODE_DISABLE"
+                        "WEB_BANK_MODE_DISABLE",
+                        reason
                     )
                 }
 
@@ -1846,6 +1893,51 @@ class BrowserAccessibilityService :
             )
         } else {
             shutdown.run()
+        }
+    }
+
+    private fun resetForValidation() {
+        val reset =
+            Runnable {
+                stopAccruing()
+                resetHybridSession()
+
+                lastScreenshotElapsedMs =
+                    0L
+
+                lastResourceIdProbeElapsedMs =
+                    0L
+
+                // bankCurrent() posts its final chunk to storage. Queue the
+                // clear after it so pre-test data cannot reappear after reset.
+                storage.post {
+                    GuardianDatabase(
+                        applicationContext
+                    ).clearBrowserSessions()
+
+                    BrowserWebPreferences(
+                        applicationContext
+                    ).apply {
+                        clearRuntimeEvidence()
+                        markTrackingStartedIfMissing()
+                    }
+
+                    GuardianDatabase(
+                        applicationContext
+                    ).logTechnical(
+                        "WEB_TEST_RESET"
+                    )
+                }
+            }
+
+        if (
+            ::observer.isInitialized
+        ) {
+            observer.post(
+                reset
+            )
+        } else {
+            reset.run()
         }
     }
 
@@ -1877,7 +1969,18 @@ class BrowserAccessibilityService :
                 activeInstance
                     ?: return false
 
-            service.disableForBankMode()
+            service.disableForBankMode(
+                "MANUAL_OR_PROTECTED_LAUNCH"
+            )
+            return true
+        }
+
+        fun requestValidationReset(): Boolean {
+            val service =
+                activeInstance
+                    ?: return false
+
+            service.resetForValidation()
             return true
         }
 

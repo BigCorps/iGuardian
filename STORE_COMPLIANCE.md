@@ -1,24 +1,25 @@
-# Store Compliance — Guardian 0.1.24
+# Store Compliance — Guardian 0.1.25
 
-Guardian Web remains optional, browser-package scoped and gated by explicit
-in-app consent. It uses Android Accessibility only for the disclosed Guardian Web
-function: reading browser UI needed to reduce the current address to a host and
-to detect private-browsing signals. When the tree is insufficient, it may take a
-transient local screenshot for bundled OCR; image and raw OCR are not stored.
+Guardian Web remains optional, browser-package scoped, local-only and gated by
+explicit disclosure/consent. `android:isAccessibilityTool` remains false.
 
-The AccessibilityService description now states both tree/address-bar reading
-and transient screenshot/OCR behavior. `android:isAccessibilityTool` remains
-false.
+Accessibility is used only for the disclosed web-monitoring function: address-bar
+host extraction, browser private-mode signals and transient local screenshot/OCR
+fallback. Screenshot/raw OCR/tree text are not persisted. The final APK remains
+CI-guarded against INTERNET, ACCESS_NETWORK_STATE and QUERY_ALL_PACKAGES.
 
-Hybrid v3 expands only the browser package allowlist. It does not add network
-transport, QUERY_ALL_PACKAGES, page-content storage or a new backend.
+## Financial-app compatibility
 
-The final merged APK must continue to be CI-checked to ensure transitive OCR
-dependencies do not reintroduce INTERNET or ACCESS_NETWORK_STATE.
+0.1.25 does not inspect financial-app UI. The protected launcher:
 
-## Banking compatibility
+1. classifies launcher-visible apps locally from package/label;
+2. disables Guardian Web with Android `disableSelf()`;
+3. waits until Android reports the Accessibility service OFF;
+4. launches the selected financial app.
 
-Modo Banco explicitly disables Guardian Web Accessibility before financial-app
-use. It does not inspect banking apps, does not spoof the service state and does
-not silently reactivate Accessibility. The independent Usage Access collector
-continues to operate at app-level only.
+The broader installed-app list was already required by Guardian's existing
+privacy/app-selection experience through launcher visibility; no QUERY_ALL_PACKAGES
+permission is added. The direct-open UsageStats failsafe is only a supplemental
+shutdown mechanism and is disclosed as best-effort.
+
+Guardian never spoofs the Accessibility state and never silently re-enables it.

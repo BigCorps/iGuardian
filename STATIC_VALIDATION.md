@@ -1,36 +1,37 @@
-# Static validation — 0.1.24 Hybrid v3 + Bank Mode
+# Static validation — Guardian Android 0.1.25
 
-Base runtime files match repository commit `090f339246f5c15a8edeffd83c9f5b9e77a3155e` before this patch.
+Baseline: Actions #64 green on commit `1e196d5fd32d4e25e73ad1ffe85db8e90b623959`.
 
-## Actions #63 diagnosis
+## Changed contracts
 
-- failing step: privacy/project guard;
-- failure occurred before validation lineage, signing, unit tests, Kotlin compile and APK build;
-- repository still contained the old substring-based AccessibilityService guard;
-- corrected guard uses real Android accessibilityservice imports and retains the narrow allowlist.
+- versionName 0.1.25 / versionCode 26;
+- stricter OCR-only host acceptance;
+- current Chromium private-tab pt-BR/en visual markers;
+- host OCR crop 16% + private visual crop 90%;
+- deterministic clean web-test reset;
+- FinancialAppCatalog + PrivacyClassifier v3;
+- protected financial launcher after confirmed Accessibility shutdown;
+- best-effort automatic financial foreground shutdown;
+- validation lineage now includes `privacy_classification_core`.
 
-## Bank Mode structural checks
+## Unchanged privacy/security contracts
 
-- `BrowserAccessibilityService.requestBankModeDisable()` present;
-- real Android `disableSelf()` call present;
-- current browser interval is stopped before disabling;
-- Hybrid host/private state is reset;
-- `WEB_BANK_MODE_DISABLE` technical event contains no banking content;
-- Guardian Web UI confirms AccessibilityManager=false AND secureSetting=false before reporting success;
-- recent heartbeat alone is deliberately not accepted as proof that Bank Mode is active;
-- reactivation is explicit/user-controlled.
-
-## Local compile validation
-
-Modified BrowserAccessibilityService + BrowserWebActivity compile successfully in the existing Hybrid-v3 Android structural harness, including `disableSelf()`, main Looper/Handler and the Bank Mode verification loop. Only stub unused-parameter warnings were produced.
-
-## Unchanged privacy contract
-
-- host-only web persistence;
-- no raw screenshot/OCR/tree text persistence;
-- no INTERNET;
-- no ACCESS_NETWORK_STATE;
+- no INTERNET permission in merged APK;
+- no ACCESS_NETWORK_STATE permission in merged APK;
 - no QUERY_ALL_PACKAGES;
-- no database schema expansion.
+- no full URL/path/query/title/page-content persistence;
+- no screenshot or raw OCR persistence;
+- no bank/account/Pix/transaction content persistence;
+- database schema remains v8.
 
-Authoritative Android SDK/Gradle/APK/merged-manifest validation remains GitHub Actions.
+## Local pre-package checks
+
+- BrowserDomainSanitizer + BrowserVisualTextParser + FinancialAppCatalog compile with Kotlin JVM compiler;
+- behavior harness passes for OCR junk rejection, URL spacing repair, Chromium pt-BR/en private markers and Inter/Pinterest/Internet-label classification separation;
+- modified Guardian Web Activity + financial catalog compile in Android structural harness;
+- modified service differs from the Actions-#64-compiled service only in localized financial-failsafe/reset code plus one pure-Kotlin catalog import; no new Kotlin parser errors were introduced;
+- root and Android asset validation contracts are byte-identical;
+- workflow artifact name matches 0.1.25;
+- Python CI guards compile syntactically.
+
+The authoritative Android SDK, unit-test, merged-manifest, signing and APK checks remain GitHub Actions.

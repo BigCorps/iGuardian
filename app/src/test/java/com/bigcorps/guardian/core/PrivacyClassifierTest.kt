@@ -15,11 +15,23 @@ class PrivacyClassifierTest {
     fun bankingLikePackageIsPrivate() {
         assertTrue(PrivacyClassifier.isPrivate("br.com.example.bank.mobile"))
         assertTrue(PrivacyClassifier.isPrivate("br.com.intermedium"))
+        assertTrue(
+            PrivacyClassifier.isPrivate(
+                "br.com.Inter.CDPro",
+                appLabel = "Inter Empresas"
+            )
+        )
     }
 
     @Test
     fun normalPackageIsNotPrivateByDefault() {
         assertFalse(PrivacyClassifier.isPrivate("com.example.social"))
+        assertFalse(
+            PrivacyClassifier.isPrivate(
+                "com.pinterest",
+                appLabel = "Pinterest"
+            )
+        )
     }
 
     @Test
