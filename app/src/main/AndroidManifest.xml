@@ -6,9 +6,9 @@
         android:name="android.permission.PACKAGE_USAGE_STATS"
         tools:ignore="ProtectedPermissions" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
-    <!-- ConfIA.vc remains fully offline in this Android build. Some bundled OCR
-         dependencies declare network permissions transitively; remove them from
-         the final merged APK because the OCR model is bundled locally. -->
+
+    <!-- A dependência OCR antiga ainda existe no código legado desta transição,
+         mas a arquitetura ativa ConfIA Web não usa OCR nem rede no APK. -->
     <uses-permission
         android:name="android.permission.INTERNET"
         tools:node="remove" />
@@ -45,21 +45,8 @@
             android:name=".web.BrowserWebActivity"
             android:exported="false" />
 
-        <service
-            android:name=".web.BrowserAccessibilityService"
-            android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE"
-            android:exported="true"
-            android:label="@string/guardian_web_service_label">
-            <intent-filter>
-                <action android:name="android.accessibilityservice.AccessibilityService" />
-            </intent-filter>
-            <meta-data
-                android:name="android.accessibilityservice"
-                android:resource="@xml/guardian_web_accessibility" />
-        </service>
-
         <activity
-            android:name=".MainActivity"
+            android:name=".ConfiaMainActivity"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />

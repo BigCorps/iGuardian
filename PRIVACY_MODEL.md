@@ -1,33 +1,23 @@
-# Privacy Model — Guardian 0.1.25
+# Privacy Model — ConfIA.vc 0.1.27
 
-Guardian remains local-first and the final APK remains offline.
+## Android
 
-## Guardian Web
+O APK mantém coleta local de tempo por aplicativo via Usage Access.
 
-- Accessibility is scoped to supported browser packages.
-- Tree-derived address values are sanitized to host before storage.
-- Visual OCR uses a stricter host gate than tree values because OCR is noisy.
-- Screenshots live only in memory and are recycled.
-- Raw OCR and accessibility node text are not persisted.
-- Browser storage contains only host, supported browser package, interval and private boolean.
-- No path, query, fragment, search, title, page content or typed input is stored.
+A build ativa não registra AccessibilityService, não usa screenshot/OCR e não usa VPN.
 
-## Clean validation reset
+Apps financeiros continuam classificados como PRIVATE pelo classificador local, mas não existe mais Modo Banco: como não há serviço de Acessibilidade registrado, o usuário abre o banco normalmente.
 
-`Iniciar teste limpo` clears only Guardian Web browser sessions and technical web
-runtime evidence after the active browser interval has been stopped. Normal app
-history is not erased.
+## ConfIA Web POC
 
-## Financial apps
+O navegador compatível será a fonte do domínio.
 
-FinancialAppCatalog is a local package/label classifier. Financial apps are a
-subset of PRIVATE and are not exported as normal identifiable APP usage after
-PrivacyClassifier v3 repair.
+Antes de qualquer transmissão, a extensão deve transformar a URL completa em apenas host, por exemplo:
 
-Protected launch does not inspect or intercept bank UI. It disables the Guardian
-Web AccessibilityService and waits for Android to report that service OFF before
-starting the chosen financial app. The automatic direct-open failsafe uses only
-the foreground package reported by UsageStats; it does not read financial screens.
+`https://github.com/BigCorps/iGuardian/issues?x=1` → `github.com`
 
-No account number, Pix data, bank screen content, credential or transaction detail
-is stored by these features.
+O backend não possui colunas para URL completa, path, query, fragment, título, HTML, senha ou texto digitado.
+
+## Supabase
+
+O schema `confia` é server-only no POC. `anon` e `authenticated` não possuem grants diretos nas tabelas. Tokens de ingestão são armazenados somente como SHA-256.

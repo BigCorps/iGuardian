@@ -32,7 +32,7 @@ class ExportStorage(private val context: Context) {
             put(MediaStore.Downloads.MIME_TYPE, "application/json")
             put(
                 MediaStore.Downloads.RELATIVE_PATH,
-                Environment.DIRECTORY_DOWNLOADS + "/iGuardian"
+                Environment.DIRECTORY_DOWNLOADS + "/ConfIA"
             )
             put(MediaStore.Downloads.IS_PENDING, 1)
         }
@@ -51,8 +51,6 @@ class ExportStorage(private val context: Context) {
                 stream.flush()
             }
 
-            // Do not trust provider metadata alone. Read the destination back and
-            // compare byte-for-byte before claiming that export succeeded.
             val actual = resolver.openInputStream(uri)?.use { it.readBytes() }
                 ?: throw IOException("downloads_readback_unavailable")
 
@@ -70,7 +68,7 @@ class ExportStorage(private val context: Context) {
             return SavedFile(
                 uri = uri,
                 bytes = actual.size.toLong(),
-                locationLabel = "Downloads/iGuardian/$filename"
+                locationLabel = "Downloads/ConfIA/$filename"
             )
         } catch (t: Throwable) {
             runCatching { resolver.delete(uri, null, null) }

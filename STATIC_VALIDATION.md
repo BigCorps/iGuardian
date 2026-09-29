@@ -1,50 +1,16 @@
-# Static validation — Guardian Android 0.1.25
+# Static validation — ConfIA.vc Android 0.1.27
 
-Baseline: Actions #64 green on commit `1e196d5fd32d4e25e73ad1ffe85db8e90b623959`.
+Baseline: GitHub Actions #69 green on commit `658e60b82b4f2e64bafedd5495cb742f213f8c10`.
 
-## Changed contracts
+Static contract for this patch:
 
-- versionName 0.1.25 / versionCode 26;
-- stricter OCR-only host acceptance;
-- current Chromium private-tab pt-BR/en visual markers;
-- host OCR crop 16% + private visual crop 90%;
-- deterministic clean web-test reset;
-- FinancialAppCatalog + PrivacyClassifier v3;
-- protected financial launcher after confirmed Accessibility shutdown;
-- best-effort automatic financial foreground shutdown;
-- validation lineage now includes `privacy_classification_core`.
+- launcher is `ConfiaMainActivity`;
+- AndroidManifest contains no Accessibility service component;
+- ConfIA Web UI contains Firefox/Edge compatibility and no legacy activation/Modo Banco path;
+- INTERNET and ACCESS_NETWORK_STATE remain removed from final merge;
+- VpnService / MediaProjection remain forbidden;
+- root and Android asset validation-contract manifests are identical;
+- workflow artifact is `confia-android-0.1.27-fixed-signed-debug`;
+- launcher/adaptive icons use the clean ConfIA mark with safe padding.
 
-## Unchanged privacy/security contracts
-
-- no INTERNET permission in merged APK;
-- no ACCESS_NETWORK_STATE permission in merged APK;
-- no QUERY_ALL_PACKAGES;
-- no full URL/path/query/title/page-content persistence;
-- no screenshot or raw OCR persistence;
-- no bank/account/Pix/transaction content persistence;
-- database schema remains v8.
-
-## Local pre-package checks
-
-- BrowserDomainSanitizer + BrowserVisualTextParser + FinancialAppCatalog compile with Kotlin JVM compiler;
-- behavior harness passes for OCR junk rejection, URL spacing repair, Chromium pt-BR/en private markers and Inter/Pinterest/Internet-label classification separation;
-- modified Guardian Web Activity + financial catalog compile in Android structural harness;
-- modified service differs from the Actions-#64-compiled service only in localized financial-failsafe/reset code plus one pure-Kotlin catalog import; no new Kotlin parser errors were introduced;
-- root and Android asset validation contracts are byte-identical;
-- workflow artifact name matches 0.1.25;
-- Python CI guards compile syntactically.
-
-The authoritative Android SDK, unit-test, merged-manifest, signing and APK checks remain GitHub Actions.
-
-## Actions #66 real-CI evidence
-
-- privacy/project invariants: PASS;
-- validation lineage contracts: PASS;
-- fixed DEV signing preparation: PASS;
-- `compileDebugKotlin`: PASS;
-- `compileDebugUnitTestKotlin`: PASS;
-- 49 unit tests executed; one parser-boundary test failed before this patch;
-- reproduced locally: pre-fix e-mail OCR returned `example.com`;
-- patched pure-Kotlin harness: plain e-mail, plus-tag e-mail and prefixed e-mail all return null, while ordinary `example.com`, `https://example.com`, parenthesized domain and spaced `uol.com.br` still resolve correctly.
-
-The remaining APK assembly/merged-manifest/signing checks were skipped by Actions #66 only because Gradle stops after a failed unit test.
+Authoritative Android compile remains GitHub Actions.

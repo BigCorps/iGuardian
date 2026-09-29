@@ -1,50 +1,34 @@
-# Validation — Android 0.1.25
+# Validation — ConfIA.vc Android 0.1.27
 
-## CI/static gate
+## CI esperado
 
-Expected before installing:
-
-- versionName 0.1.25 / versionCode 26;
+- versionName `0.1.27` / versionCode `28`;
 - privacy/project guard PASS;
-- validation lineage PASS including `privacy_classification_core`;
+- validation lineage PASS;
 - unit tests PASS;
-- Kotlin/APK build PASS;
-- final APK contains neither INTERNET nor ACCESS_NETWORK_STATE;
-- fixed DEV certificate remains unchanged;
-- artifact: `guardian-android-0.1.25-fixed-signed-debug`.
+- assembleDebug PASS;
+- APK contract PASS;
+- assinatura DEV fixa PASS;
+- artifact `confia-android-0.1.27-fixed-signed-debug`.
 
-## Clean Guardian Web physical test — Redmi / Android 16
+## Contrato crítico desta rodada
 
-1. Install over 0.1.24 and re-enable Guardian Web if Bank Mode left it OFF.
-2. Open Guardian Web and tap **Iniciar teste limpo**.
-3. Confirm the site list is empty/reset.
-4. Chrome Dev normal: `uol.com.br` for ~20 seconds.
-5. Chrome Dev normal: `globo.com` for ~20 seconds.
-6. Open a new incognito tab and remain on its start page for ~8 seconds.
-7. Still incognito, visit `github.com` for ~20 seconds.
-8. Return to Guardian Web.
+No APK final devem estar AUSENTES:
 
-Acceptance:
+- `com.bigcorps.guardian.web.BrowserAccessibilityService` no Manifest;
+- `android.permission.BIND_ACCESSIBILITY_SERVICE`;
+- `android.accessibilityservice.AccessibilityService` como componente registrado;
+- INTERNET efetivo;
+- VPN/MediaProjection.
 
-- no legacy/junk rows such as `kit`, `fallback`, `https`, `app`, `quiser`;
-- new normal hosts appear after the clean reset;
-- `visual_private_probe_count > 0`;
-- `visual_private_detected_count > 0` OR another strong private signal is present;
-- anonymous browser milliseconds/rows > 0;
-- screenshot/OCR pipeline has no persistent/raw content;
-- if the tree remains 0 hits on this Xiaomi, the report must state that clearly rather than blocking visual fallback.
+Deve estar presente `com.bigcorps.guardian.ConfiaMainActivity` como launcher.
 
-## Financial protection test
+## Teste físico
 
-1. With Guardian Web ON, confirm **Inter Empresas** appears under Modo Banco.
-2. Tap **Abrir Inter Empresas com proteção**.
-3. Confirm Guardian waits until AccessibilityManager=false and secure-setting=false.
-4. Confirm Inter opens only after that state.
-5. Return to Guardian: normal Usage Access tracking should still exist; Guardian Web should remain OFF.
-6. Re-enable Guardian Web manually only after banking is finished.
-7. Optional single failsafe test: open Inter directly after re-enabling Guardian Web and confirm the service disables itself shortly afterwards.
-
-## Export
-
-After the web test and bank test, export one validation JSON. The JSON should
-contain only data generated after the clean web reset for Guardian Web evidence.
+1. instalar 0.1.27 por cima da 0.1.26;
+2. confirmar novo ícone limpo;
+3. abrir ConfIA.vc e confirmar textos “Sem Acessibilidade • sem screenshot • sem VPN”;
+4. abrir ConfIA Web e confirmar Firefox/Edge + navegadores “tempo do app”;
+5. abrir Inter diretamente pelo ícone original;
+6. confirmar que não há necessidade de Modo Banco/religar Acessibilidade;
+7. exportar pacote de validação.

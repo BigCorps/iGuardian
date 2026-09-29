@@ -1,8 +1,8 @@
 {
   "schema": 1,
-  "build_version": "0.1.26",
+  "build_version": "0.1.27",
   "base_physically_validated_version": "0.1.18",
-  "strategy": "Inherit unchanged usage/scheduler/intelligence by pinned hash; runtime-test current privacy/browser/UI/build wiring. Branding changes preserve internal package/signing/database lineage. Backend confia POC is not used by this APK.",
+  "strategy": "Retire AccessibilityService registration from the installed APK; launch the ConfIA.vc post-Accessibility UI; keep UsageStats/local intelligence inherited; show browser-extension compatibility for Firefox/Edge; physically validate banking compatibility and the next extension/Supabase POC.",
   "contracts": [
     {
       "id": "usage_collection_core",
@@ -51,7 +51,7 @@
     {
       "id": "database_report_browser_overlay",
       "validation_mode": "runtime_autotest",
-      "validated_in": "0.1.26",
+      "validated_in": "0.1.27",
       "manual_retest_required": false,
       "continuous_autotest": true,
       "files": [
@@ -64,7 +64,7 @@
     {
       "id": "privacy_classification_core",
       "validation_mode": "runtime_autotest",
-      "validated_in": "0.1.26",
+      "validated_in": "0.1.27",
       "manual_retest_required": false,
       "continuous_autotest": true,
       "files": [
@@ -78,37 +78,31 @@
     {
       "id": "guardian_web_core",
       "validation_mode": "runtime_plus_physical",
-      "validated_in": "0.1.26",
+      "validated_in": "0.1.27",
       "manual_retest_required": true,
       "continuous_autotest": true,
       "files": [
         "app/src/main/AndroidManifest.xml",
-        "app/src/main/res/xml/guardian_web_accessibility.xml",
         "app/src/main/res/values/strings.xml",
-        "app/src/main/java/com/bigcorps/guardian/web/BrowserCatalog.kt",
-        "app/src/main/java/com/bigcorps/guardian/web/BrowserDomainSanitizer.kt",
-        "app/src/main/java/com/bigcorps/guardian/web/BrowserPrivateModeHeuristics.kt",
-        "app/src/main/java/com/bigcorps/guardian/web/BrowserWebPreferences.kt",
-        "app/src/main/java/com/bigcorps/guardian/web/BrowserWebAccess.kt",
-        "app/src/main/java/com/bigcorps/guardian/web/BrowserAccessibilityExtractor.kt",
-        "app/src/main/java/com/bigcorps/guardian/web/BrowserAccessibilityService.kt",
-        "app/src/main/java/com/bigcorps/guardian/web/BrowserWebActivity.kt",
-        "app/src/test/java/com/bigcorps/guardian/web/BrowserDomainSanitizerTest.kt",
-        "app/src/test/java/com/bigcorps/guardian/web/BrowserPrivateModeHeuristicsTest.kt",
-        "app/src/test/java/com/bigcorps/guardian/web/BrowserCatalogTest.kt",
-        "app/src/main/java/com/bigcorps/guardian/web/BrowserVisualTextParser.kt",
-        "app/src/main/java/com/bigcorps/guardian/web/BrowserVisualOcr.kt",
-        "app/src/test/java/com/bigcorps/guardian/web/BrowserVisualTextParserTest.kt"
+        "app/src/main/res/values/colors.xml",
+        "app/src/main/res/values/themes.xml",
+        "app/src/main/res/values-v31/themes.xml",
+        "app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml",
+        "app/src/main/res/mipmap-anydpi-v26/ic_launcher_round.xml",
+        "app/src/main/res/drawable-nodpi/confia_mark.png",
+        "app/src/main/java/com/bigcorps/guardian/ConfiaMainActivity.kt",
+        "app/src/main/java/com/bigcorps/guardian/web/BrowserWebActivity.kt"
       ],
       "sha256": "__CURRENT_BUILD__"
     },
     {
       "id": "validation_export_ui",
       "validation_mode": "runtime_autotest",
-      "validated_in": "0.1.26",
+      "validated_in": "0.1.27",
       "manual_retest_required": false,
       "continuous_autotest": true,
       "files": [
+        "app/src/main/java/com/bigcorps/guardian/ConfiaMainActivity.kt",
         "app/src/main/java/com/bigcorps/guardian/MainActivity.kt",
         "app/src/main/java/com/bigcorps/guardian/core/DiagnosticsGenerator.kt",
         "app/src/main/java/com/bigcorps/guardian/core/ValidationPackGenerator.kt",
@@ -120,7 +114,7 @@
     {
       "id": "build_pipeline",
       "validation_mode": "ci_only",
-      "validated_in": "0.1.26",
+      "validated_in": "0.1.27",
       "manual_retest_required": false,
       "continuous_autotest": false,
       "files": [

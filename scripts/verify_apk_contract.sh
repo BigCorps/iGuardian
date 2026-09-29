@@ -17,7 +17,6 @@ AAPT="$(
     | sort -V \
     | tail -n 1
 )"
-
 [[ -n "$AAPT" && -x "$AAPT" ]] || fail "aapt não encontrado"
 
 EXPECTED_NAME="$(
@@ -33,18 +32,17 @@ EXPECTED_CODE="$(
 [[ -n "$EXPECTED_CODE" ]] || fail "versionCode não encontrado"
 
 BADGING="$("$AAPT" dump badging "$APK")"
+PERMISSIONS="$("$AAPT" dump permissions "$APK")"
+XMLTREE="$("$AAPT" dump xmltree "$APK" AndroidManifest.xml)"
 
 grep -Fq "package: name='com.bigcorps.guardian.dev'" <<<"$BADGING" \
   || fail "applicationId inesperado no APK"
-
 grep -Fq "versionCode='$EXPECTED_CODE'" <<<"$BADGING" \
   || fail "versionCode do APK diverge do Gradle"
-
 grep -Fq "versionName='$EXPECTED_NAME'" <<<"$BADGING" \
   || fail "versionName do APK diverge do Gradle"
-
-PERMISSIONS="$("$AAPT" dump permissions "$APK")"
-XMLTREE="$("$AAPT" dump xmltree "$APK" AndroidManifest.xml)"
+grep -Fq "application-label:'ConfIA.vc'" <<<"$BADGING" \
+  || fail "label ConfIA.vc ausente no APK"
 
 for forbidden in \
   "android.permission.INTERNET" \
@@ -57,16 +55,23 @@ for forbidden in \
   fi
 done
 
+for forbidden_accessibility in \
+  "com.bigcorps.guardian.web.BrowserAccessibilityService" \
+  "android.permission.BIND_ACCESSIBILITY_SERVICE" \
+  "android.accessibilityservice.AccessibilityService"; do
+  if grep -Fq "$forbidden_accessibility" <<<"$XMLTREE"; then
+    fail "APK final ainda registra arquitetura de Acessibilidade: $forbidden_accessibility"
+  fi
+done
 
-grep -Fq "com.bigcorps.guardian.web.BrowserAccessibilityService" <<<"$XMLTREE" \
-  || fail "Guardian Web AccessibilityService ausente no APK final"
-
-grep -Fq "android.permission.BIND_ACCESSIBILITY_SERVICE" <<<"$XMLTREE" \
-  || fail "Guardian Web service não está protegido por BIND_ACCESSIBILITY_SERVICE"
+grep -Fq "com.bigcorps.guardian.ConfiaMainActivity" <<<"$XMLTREE" \
+  || fail "ConfiaMainActivity ausente no APK final"
 
 echo "Final APK contract OK"
 echo "- package: com.bigcorps.guardian.dev"
+echo "- label: ConfIA.vc"
 echo "- versionName: $EXPECTED_NAME"
 echo "- versionCode: $EXPECTED_CODE"
-echo "- forbidden permissions/services: absent"
-echo "- Guardian Web AccessibilityService: present and signature-permission protected"
+echo "- forbidden network/high-risk permissions: absent"
+echo "- AccessibilityService registration: absent"
+echo "- ConfIA launcher: present"

@@ -1,25 +1,15 @@
-# Store Compliance — Guardian 0.1.25
+# Store Compliance — ConfIA.vc 0.1.27
 
-Guardian Web remains optional, browser-package scoped, local-only and gated by
-explicit disclosure/consent. `android:isAccessibilityTool` remains false.
+A arquitetura ativa desta build não registra AccessibilityService e não usa VpnService, MediaProjection ou NotificationListenerService.
 
-Accessibility is used only for the disclosed web-monitoring function: address-bar
-host extraction, browser private-mode signals and transient local screenshot/OCR
-fallback. Screenshot/raw OCR/tree text are not persisted. The final APK remains
-CI-guarded against INTERNET, ACCESS_NETWORK_STATE and QUERY_ALL_PACKAGES.
+Permissões/recursos Android relevantes:
 
-## Financial-app compatibility
+- `PACKAGE_USAGE_STATS` — acesso concedido explicitamente pelo usuário para tempo por aplicativo;
+- `RECEIVE_BOOT_COMPLETED` — restaura o agendamento local de coleta;
+- sem `INTERNET` efetivo nesta build Android;
+- sem `ACCESS_NETWORK_STATE` efetivo;
+- sem `QUERY_ALL_PACKAGES`.
 
-0.1.25 does not inspect financial-app UI. The protected launcher:
+A integração de domínio será feita por extensão do navegador compatível, com disclosure próprio e coleta minimizada para host-only.
 
-1. classifies launcher-visible apps locally from package/label;
-2. disables Guardian Web with Android `disableSelf()`;
-3. waits until Android reports the Accessibility service OFF;
-4. launches the selected financial app.
-
-The broader installed-app list was already required by Guardian's existing
-privacy/app-selection experience through launcher visibility; no QUERY_ALL_PACKAGES
-permission is added. The direct-open UsageStats failsafe is only a supplemental
-shutdown mechanism and is disclosed as best-effort.
-
-Guardian never spoofs the Accessibility state and never silently re-enables it.
+O CI final falha se um AccessibilityService voltar a aparecer no Manifest empacotado.

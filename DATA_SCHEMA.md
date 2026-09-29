@@ -1,28 +1,22 @@
-# Data Schema — Guardian Android 0.1.25
+# Data Schema — ConfIA.vc 0.1.27
 
-## Persistent database
+## SQLite Android
 
-- database version: **8** — unchanged;
-- daily/report schema: **5** — unchanged;
-- no SQL migration required from 0.1.24;
-- browser history remains only sanitized host + supported browser package + interval + private-mode boolean.
+Sem migration nesta rodada. O database local permanece versão 8 para preservar histórico já coletado.
 
-No full URL, path, query, fragment, title, page content, screenshot, raw OCR,
-accessibility node text, bank screen, credentials, account data or transaction
-content is added to persistence.
+As antigas sessões web podem ser apagadas manualmente pela nova tela ConfIA Web; elas são tratadas como legado do método OCR/Acessibilidade.
 
-## Diagnostic / validation schemas
+## Supabase minhAi
 
-- diagnostic schema: **21** — unchanged;
-- validation pack schema: **11** — unchanged;
-- ValidationSuite version: **11** — unchanged.
+Schema remoto: `confia`.
 
-0.1.25 changes acceptance/flow rather than database shape:
+Tabelas:
 
-- visual OCR uses a stricter public-host plausibility gate;
-- clean-test reset clears only existing Guardian Web rows/telemetry;
-- FinancialAppCatalog uses package/launcher label classification only;
-- PrivacyClassifier version becomes **3**, triggering the existing privacy repair
-  so previously stored financial APP rows can be reclassified PRIVATE;
-- `WEB_TEST_RESET` and `WEB_BANK_MODE_DISABLE` are technical events without web
-  page text or banking content.
+- `accounts`
+- `installations`
+- `browser_sources`
+- `browser_events`
+- `foreground_intervals`
+- `domain_sessions`
+
+As tabelas foram aplicadas e verificadas antes desta build. Não há colunas para conteúdo de página ou URL completa.

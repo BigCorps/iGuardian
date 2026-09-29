@@ -1,28 +1,54 @@
 {
   "project_codename": "ConfIA.vc",
   "internal_package_lineage": "Guardian",
-  "version": "0.1.26",
-  "version_code": 27,
+  "version": "0.1.27",
+  "version_code": 28,
   "platform": "android",
-  "phase": 3,
-  "phase_name": "ConfIA.vc branding + server-assisted web-monitor POC foundation",
+  "phase": 4,
+  "phase_name": "ConfIA Web — Accessibility retired from installed APK + browser-extension POC UI",
   "schema_version": 5,
   "diagnostic_schema_version": 21,
   "database_version": 8,
   "validation_pack_schema": 11,
   "validation_suite_version": 11,
   "repository": "BigCorps/iGuardian",
-  "base_repository_head": "0ed697b66132603effe03b24038cc80ce339094f",
-  "base_green_actions_run": 67,
-  "backend": "Supabase minhAi / schema confia (POC foundation not yet used by APK)",
+  "base_repository_head": "658e60b82b4f2e64bafedd5495cb742f213f8c10",
+  "base_green_actions_run": 69,
+  "backend": "Supabase minhAi / schema confia foundation applied and read-only verified",
   "internet_permission": false,
   "dev_application_id": "com.bigcorps.guardian.dev",
   "branding": {
     "public_name": "ConfIA.vc",
     "domain": "confia.vc",
     "palette": ["#FF6A1A", "#7A16E8", "#FFF7F2"],
-    "launcher_icon": "symbol from supplied ConfIA.vc logo"
+    "launcher_icon": "clean symbol crop from supplied ConfIA.vc logo"
   },
-  "architecture_note": "Keep package/namespace/signing/database lineage unchanged during branding transition. The extension/Supabase POC is a separate next step; current APK remains offline.",
-  "next_task": "Build 0.1.26 from Actions #67 green baseline, verify ConfIA.vc launcher branding, then apply backend/confia-supabase-foundation-poc.sql manually and build the Firefox/Edge extension ingest POC."
+  "supabase_foundation_verified": {
+    "schema": "confia",
+    "tables": [
+      "accounts",
+      "installations",
+      "browser_sources",
+      "browser_events",
+      "foreground_intervals",
+      "domain_sessions"
+    ],
+    "rls_all_tables": true,
+    "anon_authenticated_table_grants": 0,
+    "service_role_only_functions": true,
+    "forbidden_content_columns": 0,
+    "initial_rows": 0
+  },
+  "architecture": {
+    "android_usage_source": "UsageStats",
+    "domain_source": "browser extension on supported browsers",
+    "poc_primary_browser": "Firefox Android",
+    "next_browser": "Edge Android",
+    "chrome_android": "app-time only; no domain source under current constraints",
+    "accessibility_service_registered": false,
+    "screenshot_ocr_active": false,
+    "vpn": false
+  },
+  "migration_note": "Legacy Accessibility/OCR source files remain temporarily in source lineage so the patch can be uploaded without GitHub file deletions, but no Accessibility service is registered in AndroidManifest and the new launcher never calls the legacy path.",
+  "next_task": "Build 0.1.27 from Actions #69 green baseline, verify clean ConfIA icon and absence of Accessibility service in the final APK, then build/deploy the server-only ingest endpoint and Firefox extension POC against schema confia."
 }

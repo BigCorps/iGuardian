@@ -1,63 +1,10 @@
-# Guardian Android 0.1.25 — physical-evidence correction
+# ConfIA.vc 0.1.27 — correção visual + arquitetura web
 
-Base: repository commit `1e196d5fd32d4e25e73ad1ffe85db8e90b623959`.
-GitHub Actions #64 is green and is the build baseline for this round.
+Os prints físicos da 0.1.26 mostraram dois problemas:
 
-## What the 0.1.24 JSON proved
+1. o ícone tinha ruído/recorte inadequado no launcher Xiaomi;
+2. a UI continuava descrevendo e oferecendo a arquitetura abandonada de Accessibility + screenshot/OCR + Modo Banco.
 
-The validation exported at 2026-09-27 16:26:19 -03 showed:
+A 0.1.27 corrige ambos e torna a ausência do AccessibilityService um contrato de CI/APK.
 
-- tree probes: 618;
-- tree host hits: 0;
-- event source available: 0;
-- screenshots: 78 successful / 82 requested;
-- OCR runs: 78;
-- host-shaped OCR results: 53;
-- private probes: 4;
-- private detections: 0;
-- anonymous browser rows/time: 0;
-- last persisted web detection: 14:06:20, well before the 16:26 export;
-- Bank Mode disable event observed at 16:23:17;
-- real Inter Empresas package observed as `br.com.Inter.CDPro`.
-
-The visible list contained older rows from previous versions, including low-quality
-OCR artifacts. Therefore the next test must begin from a web-only clean baseline.
-
-## 0.1.25 corrections
-
-1. **OCR host gate**
-   - tree URLs continue through the general sanitizer;
-   - visual OCR goes through `hostFromVisualOcr()`;
-   - single words and implausible long-TLD OCR noise are rejected.
-
-2. **Incognito visual detection**
-   - recognizes current Chromium pt-BR text such as `Agora você pode navegar com privacidade`;
-   - recognizes the current English redesign context;
-   - keeps `Nova guia anônima` / `New incognito tab` as action-only, not proof of current private mode;
-   - host crop reduced from 22% to 16% to avoid page-body false positives; deep visual probe increased from 62% to 90% of the display.
-
-3. **Clean physical test**
-   - Guardian Web UI adds `Iniciar teste limpo`;
-   - current browser interval is banked/stopped first;
-   - in-memory host/private state is reset;
-   - queued final browser write completes before the browser table is cleared;
-   - only web history/telemetry is reset; normal app history remains intact.
-
-4. **Financial protection**
-   - new `FinancialAppCatalog`;
-   - Inter Empresas `br.com.Inter.CDPro` and Inter `br.com.intermedium` are recognized;
-   - PrivacyClassifier v3 makes financial apps PRIVATE;
-   - installed financial launcher apps appear as `Abrir <app> com proteção`;
-   - Guardian calls `disableSelf()`, confirms AccessibilityManager=false and secure setting=false, then launches the bank;
-   - direct opening of a recognized financial app also triggers a best-effort UsageStats failsafe, but this cannot guarantee pre-launch ordering.
-
-No database schema migration and no network expansion.
-
-## Actions #66 follow-up
-
-Actions #66 reached the real Android/Kotlin unit-test stage. Main app compilation succeeded.
-49 tests ran and exactly one failed: `BrowserVisualTextParserTest.emailLikeTextIsNotStoredAsHost`.
-
-Cause: the visual parser has two candidate paths. The token path correctly discarded strings containing `@`, but `DOMAIN_LIKE_REGEX` could begin matching immediately after `@` and return `example.com` from `usuario@example.com`.
-
-Correction: the regex now uses a left boundary that forbids e-mail/domain-token characters immediately before the candidate. This rejects `usuario@example.com`, `usuario+tag@example.com` and `contato:usuario@example.com` while preserving ordinary domains and OCR spacing repair. No runtime architecture, financial protection, privacy contract or database schema changed in this follow-up.
+O backend `confia.*` aplicado no Supabase foi verificado em modo leitura e está isolado dos demais apps.

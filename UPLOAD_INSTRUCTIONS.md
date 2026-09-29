@@ -1,37 +1,18 @@
-# Upload — ConfIA.vc Android 0.1.26
+# Upload — ConfIA.vc Android 0.1.27
 
-Base expected in GitHub before upload:
+Base esperada no GitHub: commit `658e60b82b4f2e64bafedd5495cb742f213f8c10` / Actions #69 verde.
 
-- Actions #67 green;
-- commit `0ed697b66132603effe03b24038cc80ce339094f`;
-- version 0.1.25 / code 26.
+Suba TODO o conteúdo deste ZIP preservando os caminhos.
 
-Upload **all files from this ZIP preserving their paths**.
+Pontos principais para conferir no GitHub antes de esperar o Actions:
 
-This patch intentionally keeps:
+- `app/build.gradle.kts`: 0.1.27 / versionCode 28;
+- `app/src/main/AndroidManifest.xml`: launcher `.ConfiaMainActivity` e NENHUM `BrowserAccessibilityService`;
+- `app/src/main/java/com/bigcorps/guardian/ConfiaMainActivity.kt` existe;
+- `app/src/main/java/com/bigcorps/guardian/web/BrowserWebActivity.kt` cita Firefox/Edge e não possui Modo Banco/Acessibilidade;
+- workflow artifact: `confia-android-0.1.27-fixed-signed-debug`;
+- os arquivos `ic_launcher*` foram substituídos.
 
-- namespace `com.bigcorps.guardian`;
-- applicationId `com.bigcorps.guardian.dev`;
-- existing signing certificate;
-- current local SQLite/database continuity.
+Não rode novamente o SQL de fundação apenas por causa deste ZIP. O schema `confia` já foi aplicado e verificado.
 
-Visible branding changes:
-
-- launcher/system app name becomes `ConfIA.vc`;
-- launcher/round icon uses the symbol from the supplied ConfIA.vc logo;
-- Android 12+ splash shows the ConfIA symbol;
-- base system surfaces use the orange/purple brand palette.
-
-Expected build:
-
-- versionName `0.1.26`;
-- versionCode `27`;
-- Actions artifact `guardian-android-0.1.26-fixed-signed-debug`.
-
-Backend:
-
-- `backend/confia-supabase-foundation-poc.sql` is for the existing minhAi
-  Supabase project and is **not executed by GitHub Actions**.
-- Apply it manually only after the Android upload/build is confirmed.
-- The current APK remains offline; the future extension/backend POC will be a
-  separate next step.
+Depois do Actions verde, instale a 0.1.27 por cima da 0.1.26.

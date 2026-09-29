@@ -1,14 +1,26 @@
 {
-  "version": "0.1.26",
-  "version_code": 27,
-  "base_green_actions_run": 67,
-  "base_green_commit": "0ed697b66132603effe03b24038cc80ce339094f",
-  "current_work": "ConfIA.vc branding + Supabase confia POC foundation",
+  "version": "0.1.27",
+  "version_code": 28,
+  "base_green_actions_run": 69,
+  "base_green_commit": "658e60b82b4f2e64bafedd5495cb742f213f8c10",
+  "current_work": "ConfIA branding correction + retirement of installed Accessibility architecture",
+  "problems_addressed": [
+    "0.1.26 launcher icon used a noisy background-removal mask and looked textured/cropped on Xiaomi",
+    "0.1.26 main UI still described Guardian Web screenshot/OCR/Accessibility architecture",
+    "0.1.26 BrowserWebActivity still exposed Modo Banco and Accessibility activation despite product decision to abandon that architecture",
+    "Bank compatibility required Accessibility to remain fully absent rather than disabled on demand"
+  ],
+  "fixes": [
+    "clean launcher mark rebuilt from the supplied ConfIA.vc symbol with large Android-safe padding",
+    "new ConfiaMainActivity becomes the launcher and shows the browser-extension architecture",
+    "BrowserWebActivity rewritten as Firefox/Edge compatibility and POC screen",
+    "BrowserAccessibilityService removed from AndroidManifest",
+    "final APK CI guard now fails if any Accessibility service registration remains",
+    "legacy web rows can be cleared from the new ConfIA Web screen",
+    "export folder renamed to Downloads/ConfIA"
+  ],
   "database_migration_required": false,
-  "supabase_manual_sql_available": true,
-  "android_backend_connected": false,
-  "internet_permission": false,
-  "package_renamed": false,
-  "signing_changed": false,
-  "expected_actions_artifact": "guardian-android-0.1.26-fixed-signed-debug"
+  "supabase_foundation_already_applied": true,
+  "physical_retest_required": true,
+  "expected_actions_artifact": "confia-android-0.1.27-fixed-signed-debug"
 }

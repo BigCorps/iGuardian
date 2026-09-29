@@ -1,46 +1,37 @@
-# Guardian Roadmap
+# ConfIA.vc Roadmap
 
-## Android — current: 0.1.25
+## Android — atual: 0.1.27
 
-Actions #64 established a green 0.1.24 baseline. The latest physical JSON showed
-that the Redmi/Android 16 accessibility tree still returns no usable browser root,
-while screenshot/OCR works. 0.1.25 therefore hardens the proven visual path and
-turns Bank Mode into a protected financial launcher.
+### Gate A — retirar a arquitetura de Acessibilidade do APK
 
-### Gate A — clean Guardian Web proof
+- `BrowserAccessibilityService` não pode estar registrado no Manifest final;
+- `BIND_ACCESSIBILITY_SERVICE` não pode aparecer no APK;
+- nenhum fluxo de UI deve pedir Acessibilidade;
+- Modo Banco deixa de ser necessário;
+- Inter e outros bancos devem abrir normalmente pelo ícone original.
 
-Must prove after **Iniciar teste limpo**:
+### Gate B — POC Firefox + Supabase
 
-- `uol.com.br` and `globo.com` are newly stored as normal;
-- no single-word/implausible-TLD OCR junk reaches storage;
-- the current Chromium incognito start page is detected;
-- a host visited while incognito receives anonymous time;
-- tree telemetry may remain zero on this OEM, but must not block OCR fallback;
-- UI remains responsive and final APK stays offline.
+1. criar endpoint server-only de ingestão;
+2. gerar pairing/token por `confia.bootstrap_test_pair`;
+3. extensão Firefox observa aba/navegação;
+4. URL é reduzida localmente para host;
+5. somente host + timestamps chegam a `confia.browser_events`;
+6. validar navegação normal e privativa;
+7. cruzar com UsageStats do Android.
 
-### Gate B — banking compatibility
+### Gate C — Edge Android
 
-- Inter Empresas must be discovered as `br.com.Inter.CDPro`;
-- protected launch must establish Guardian Web OFF before starting the bank;
-- direct-open UsageStats failsafe is supplemental only;
-- PrivacyClassifier v3 must keep financial-app identity out of normal APP history;
-- later repeat on a Play-distributed build to distinguish sideload risk from Accessibility risk.
+Portar o mesmo protocolo para Edge, validar instalação/distribuição móvel e comparar eventos de `tabs`/`webNavigation`.
 
-### Gate C — browser calibration only from evidence
+### Gate D — navegadores sem extensão comprovada
 
-If a future device exposes tree/resource IDs, pin them only from exported physical
-evidence. Do not invent Mi Browser or Chromium variant IDs.
+Manter somente tempo por app. Não inferir domínio por DNS, OCR ou heurística como se fosse página ativa.
 
-### Gate D — Android release cleanup
+## Depois do POC
 
-After A/B: final UX copy, Play Accessibility declaration/disclosure, data-safety
-review, long-run OEM/battery tests and release signing.
-
-## Managed / Family / Enterprise later
-
-Device Owner / managed-browser policy remains a separate future path and is not
-required for the consumer Guardian.
-
-## Windows
-
-After Android web/bank gates pass, reuse the host-only/local-first product contract.
+- restaurar/modernizar os painéis avançados dentro da nova UI ConfIA;
+- landing `confia.vc`;
+- login/pagamentos como app filho da minhAi;
+- múltiplos dispositivos por conta master;
+- Windows.
