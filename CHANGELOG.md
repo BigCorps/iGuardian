@@ -1,3 +1,16 @@
+# CHANGELOG
+
+## 0.1.28 — POC sem USB: Firefox + Edge
+
+- Base: Actions #71 verde (`320cdb8…`).
+- Incorpora `confia-web-firefox-poc-0.1.1.xpi` e `confia-web-edge-poc-0.1.1.crx` dentro do APK.
+- ConfIA Web salva os dois arquivos em `Downloads/ConfIA` sem computador, cabo ou ADB.
+- Firefox: teste local em Firefox Nightly com menu de desenvolvimento/instalação por arquivo.
+- Edge: teste local em Edge Canary/Beta via `Extension install by crx`.
+- Extensões desta rodada já vêm pareadas com tokens temporários separados e apontando para `confia-web-ingest`.
+- APK Android continua sem INTERNET, AccessibilityService, screenshot/OCR ativo ou VPN.
+- Depois do teste, os tokens POC devem ser revogados no Supabase.
+
 # Changelog
 
 ## 0.1.27 — 2026-09-29

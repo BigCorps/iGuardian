@@ -14,3 +14,8 @@ Static contract for this patch:
 - launcher/adaptive icons use the clean ConfIA mark with safe padding.
 
 Authoritative Android compile remains GitHub Actions.
+
+## 0.1.28
+
+Validações adicionais: XPI e CRX devem existir e ter bytes; CRX deve usar cabeçalho Cr24 v3; APK final deve conter ambos em `assets/`; INTERNET/ACCESS_NETWORK_STATE continuam ausentes do APK; AccessibilityService continua ausente.
+

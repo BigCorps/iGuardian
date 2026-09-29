@@ -13,3 +13,8 @@ Permissões/recursos Android relevantes:
 A integração de domínio será feita por extensão do navegador compatível, com disclosure próprio e coleta minimizada para host-only.
 
 O CI final falha se um AccessibilityService voltar a aparecer no Manifest empacotado.
+
+## Nota de teste 0.1.28
+
+A instalação local de XPI/CRX é somente um mecanismo de desenvolvimento. Produção dependerá dos canais oficiais de distribuição/assinatura de cada navegador. O APK continua sem AccessibilityService e VPN.
+

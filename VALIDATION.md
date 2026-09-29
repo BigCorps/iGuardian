@@ -32,3 +32,8 @@ Deve estar presente `com.bigcorps.guardian.ConfiaMainActivity` como launcher.
 5. abrir Inter diretamente pelo ícone original;
 6. confirmar que não há necessidade de Modo Banco/religar Acessibilidade;
 7. exportar pacote de validação.
+
+## Teste físico 0.1.28
+
+Firefox Nightly: `uol.com.br` e `github.com`, ~15 s cada. Edge Canary/Beta: `google.com` e `wikipedia.org`, ~15 s cada. Depois exportar o pacote de validação. O backend é verificado separadamente por `confia.browser_events`.
+

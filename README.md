@@ -46,3 +46,8 @@ A build Android 0.1.27 ainda não envia dados ao backend. O próximo passo é o 
 O ícone foi refeito a partir do símbolo original fornecido pelo usuário. A extração anterior deixava ruído do fundo branco; a nova versão usa máscara baseada em cor/saturação e padding seguro para launcher/adaptive icon.
 
 O package interno permanece `com.bigcorps.guardian.dev` para preservar atualização, assinatura e histórico local.
+
+## ConfIA Web POC 0.1.28 — teste sem USB
+
+A build 0.1.28 incorpora dois pacotes de extensão: Firefox Nightly (XPI) e Edge Canary/Beta (CRX). O APK apenas exporta esses arquivos para `Downloads/ConfIA`; ele permanece sem permissão INTERNET. O domínio é reduzido dentro da extensão antes do envio ao endpoint `confia-web-ingest`.
+

@@ -21,3 +21,8 @@ O backend não possui colunas para URL completa, path, query, fragment, título,
 ## Supabase
 
 O schema `confia` é server-only no POC. `anon` e `authenticated` não possuem grants diretos nas tabelas. Tokens de ingestão são armazenados somente como SHA-256.
+
+## POC 0.1.28
+
+O APK não recebe URL nem domínio pela rede. Os tokens temporários ficam somente dentro dos pacotes binários XPI/CRX desta rodada e serão revogados após o teste. A extensão reduz URL para host antes de transmitir; path, query, título, HTML e texto digitado não fazem parte do payload.
+

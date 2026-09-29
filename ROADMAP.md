@@ -35,3 +35,13 @@ Manter somente tempo por app. Não inferir domínio por DNS, OCR ou heurística 
 - login/pagamentos como app filho da minhAi;
 - múltiplos dispositivos por conta master;
 - Windows.
+
+## Rodada 0.1.28
+
+1. Instalar XPI no Firefox Nightly sem USB.
+2. Instalar CRX no Edge Canary/Beta sem USB.
+3. Navegar em hosts distintos por navegador.
+4. Exportar o pacote de validação Android.
+5. Cruzar UsageStats com `confia.browser_events` por MCP.
+6. Se aprovado, substituir tokens temporários por pareamento real associado à conta ConfIA.
+

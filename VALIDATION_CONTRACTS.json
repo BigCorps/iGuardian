@@ -1,8 +1,8 @@
 {
   "schema": 1,
-  "build_version": "0.1.27",
+  "build_version": "0.1.28",
   "base_physically_validated_version": "0.1.18",
-  "strategy": "Retire AccessibilityService registration from the installed APK; launch the ConfIA.vc post-Accessibility UI; keep UsageStats/local intelligence inherited; show browser-extension compatibility for Firefox/Edge; physically validate banking compatibility and the next extension/Supabase POC.",
+  "strategy": "No-USB browser-extension POC: keep Accessibility/VPN retired, bundle pre-paired Firefox Nightly XPI and Edge Canary CRX inside the offline APK, export them to Downloads/ConfIA, and correlate resulting backend host events with local UsageStats.",
   "contracts": [
     {
       "id": "usage_collection_core",
@@ -51,7 +51,7 @@
     {
       "id": "database_report_browser_overlay",
       "validation_mode": "runtime_autotest",
-      "validated_in": "0.1.27",
+      "validated_in": "0.1.28",
       "manual_retest_required": false,
       "continuous_autotest": true,
       "files": [
@@ -64,7 +64,7 @@
     {
       "id": "privacy_classification_core",
       "validation_mode": "runtime_autotest",
-      "validated_in": "0.1.27",
+      "validated_in": "0.1.28",
       "manual_retest_required": false,
       "continuous_autotest": true,
       "files": [
@@ -78,7 +78,7 @@
     {
       "id": "guardian_web_core",
       "validation_mode": "runtime_plus_physical",
-      "validated_in": "0.1.27",
+      "validated_in": "0.1.28",
       "manual_retest_required": true,
       "continuous_autotest": true,
       "files": [
@@ -91,14 +91,16 @@
         "app/src/main/res/mipmap-anydpi-v26/ic_launcher_round.xml",
         "app/src/main/res/drawable-nodpi/confia_mark.png",
         "app/src/main/java/com/bigcorps/guardian/ConfiaMainActivity.kt",
-        "app/src/main/java/com/bigcorps/guardian/web/BrowserWebActivity.kt"
+        "app/src/main/java/com/bigcorps/guardian/web/BrowserWebActivity.kt",
+        "app/src/main/assets/confia-web-firefox-poc-0.1.1.xpi",
+        "app/src/main/assets/confia-web-edge-poc-0.1.1.crx"
       ],
       "sha256": "__CURRENT_BUILD__"
     },
     {
       "id": "validation_export_ui",
       "validation_mode": "runtime_autotest",
-      "validated_in": "0.1.27",
+      "validated_in": "0.1.28",
       "manual_retest_required": false,
       "continuous_autotest": true,
       "files": [
@@ -114,7 +116,7 @@
     {
       "id": "build_pipeline",
       "validation_mode": "ci_only",
-      "validated_in": "0.1.27",
+      "validated_in": "0.1.28",
       "manual_retest_required": false,
       "continuous_autotest": false,
       "files": [

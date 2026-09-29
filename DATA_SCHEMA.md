@@ -20,3 +20,8 @@ Tabelas:
 - `domain_sessions`
 
 As tabelas foram aplicadas e verificadas antes desta build. Não há colunas para conteúdo de página ou URL completa.
+
+## POC de navegador 0.1.28
+
+Firefox e Edge usam `browser_sources` distintos ligados à mesma `installation`. `browser_events` recebe somente host/timestamps/estado privado quando disponível.
+

@@ -2,12 +2,16 @@ package com.bigcorps.guardian.web
 
 import android.app.Activity
 import android.app.AlertDialog
+import android.content.ContentValues
 import android.content.Intent
 import android.graphics.Color
 import android.graphics.Typeface
 import android.graphics.drawable.GradientDrawable
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
+import android.os.Environment
+import android.provider.MediaStore
 import android.view.Gravity
 import android.view.View
 import android.view.ViewGroup
@@ -19,14 +23,16 @@ import android.widget.TextView
 import android.widget.Toast
 import com.bigcorps.guardian.R
 import com.bigcorps.guardian.core.GuardianDatabase
+import java.io.IOException
 
 /**
- * ConfIA Web compatibility/onboarding screen for the post-Accessibility design.
+ * ConfIA Web 0.1.28 — no-USB POC helper.
  *
- * Domain acquisition is delegated to a browser extension on browsers that expose
- * the required WebExtension APIs. Android UsageStats remains responsible only for
- * the foreground interval. This Activity intentionally contains no Accessibility,
- * screenshot, OCR or bank-mode control path.
+ * The installed APK remains offline and does not use Accessibility, screenshots,
+ * OCR, VPN or browser content. It only ships two extension packages as assets and
+ * exports them to Downloads/ConfIA so the user can install them directly on the
+ * phone in Firefox Nightly and Edge Canary/Beta. The extensions themselves reduce
+ * the active URL to a host before any network transmission.
  */
 class BrowserWebActivity : Activity() {
     private lateinit var root: LinearLayout
@@ -78,15 +84,15 @@ class BrowserWebActivity : Activity() {
         brand.addView(
             LinearLayout(this).apply {
                 orientation = LinearLayout.VERTICAL
-                addView(text("CONFIA WEB • NOVA ARQUITETURA", 11f, true, PURPLE))
-                addView(text("Domínio sem ler a tela", 25f, true, TEXT_PRIMARY))
+                addView(text("CONFIA WEB • POC 0.1.28", 11f, true, PURPLE))
+                addView(text("Teste sem USB", 25f, true, TEXT_PRIMARY))
             },
             LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f)
         )
         root.addView(brand)
 
         root.addView(text(
-            "O ConfIA Web agora busca o domínio onde essa informação realmente existe: dentro do próprio navegador. A extensão reduz a URL imediatamente para o host (ex.: github.com) e só esse host pode seguir para o backend. O app Android mede apenas quando o navegador está em primeiro plano.",
+            "Esta build já traz os dois pacotes de extensão dentro do APK. Você salva cada arquivo em Downloads/ConfIA, instala diretamente no navegador de teste e navega normalmente. Não precisa de computador, ADB ou cabo USB.",
             14f,
             false,
             TEXT_MUTED
@@ -96,86 +102,137 @@ class BrowserWebActivity : Activity() {
             addView(text("✓ Sem Acessibilidade", 14f, true, PURPLE))
             addView(text("✓ Sem screenshot ou OCR", 14f, true, PURPLE).apply { setPadding(0, dp(4), 0, 0) })
             addView(text("✓ Sem VPN", 14f, true, PURPLE).apply { setPadding(0, dp(4), 0, 0) })
-            addView(text("✓ Bancos continuam fora do fluxo de captura web", 14f, true, PURPLE).apply { setPadding(0, dp(4), 0, 0) })
+            addView(text("✓ APK continua sem INTERNET", 14f, true, PURPLE).apply { setPadding(0, dp(4), 0, 0) })
+            addView(text("✓ Extensões já pareadas com tokens temporários desta rodada", 14f, true, PURPLE).apply { setPadding(0, dp(4), 0, 0) })
         }.apply { topMargin(14) })
 
-        root.addView(sectionTitle("Navegadores compatíveis"))
-
-        val firefoxPackages = listOf("org.mozilla.firefox", "org.mozilla.firefox_beta", "org.mozilla.fenix")
-        val firefoxInstalled = firstInstalled(firefoxPackages)
-        root.addView(browserCard(
-            title = "Firefox Android",
-            badge = "POC PRINCIPAL",
-            supported = true,
-            body = "Integração completa por WebExtension: mudança de aba/navegação → host principal. O modo privado pode ser suportado quando o usuário permite o complemento em navegação privativa.",
-            actionLabel = if (firefoxInstalled != null) "Abrir Firefox" else "Instalar Firefox",
-            action = {
-                if (firefoxInstalled != null) openPackage(firefoxInstalled)
-                else openStore("org.mozilla.firefox")
-            }
-        ))
-
-        val edgePackages = listOf("com.microsoft.emmx", "com.microsoft.emmx.beta", "com.microsoft.emmx.dev", "com.microsoft.emmx.canary")
-        val edgeInstalled = firstInstalled(edgePackages)
-        root.addView(browserCard(
-            title = "Edge Android",
-            badge = "COMPATÍVEL / PRÓXIMA VALIDAÇÃO",
-            supported = true,
-            body = "A Microsoft documenta APIs móveis de extensão como tabs e webNavigation. Vamos validar o fluxo de distribuição/instalação Android depois do POC Firefox.",
-            actionLabel = if (edgeInstalled != null) "Abrir Edge" else "Instalar Edge",
-            action = {
-                if (edgeInstalled != null) openPackage(edgeInstalled)
-                else openStore("com.microsoft.emmx")
-            }
-        ))
-
-        root.addView(browserCard(
-            title = "Chrome / Chrome Dev",
-            badge = "TEMPO DO APP",
-            supported = false,
-            body = "O Chrome Android oficial não oferece a mesma instalação normal de extensões. Nesta fase o ConfIA mede o tempo do navegador via UsageStats, mas não atribui um domínio sem uma fonte confiável.",
-            actionLabel = null,
-            action = null
-        ))
-
-        root.addView(browserCard(
-            title = "Brave • Opera • Samsung Internet • Mi Browser",
-            badge = "TEMPO DO APP",
-            supported = false,
-            body = "Continuam monitoráveis como aplicativos. O domínio só será ativado quando houver uma integração de navegador tecnicamente comprovada para cada família.",
-            actionLabel = null,
-            action = null
-        ))
-
-        root.addView(sectionTitle("Como o teste vai funcionar"))
+        root.addView(sectionTitle("1. Firefox Nightly"))
+        val nightlyInstalled = isInstalled(FIREFOX_NIGHTLY)
         root.addView(card().apply {
-            addView(text("1. Extensão", 14f, true, TEXT_PRIMARY))
-            addView(text("Vê a aba ativa dentro do navegador e transforma a URL em host antes de transmitir.", 12f, false, TEXT_MUTED).apply { setPadding(0, dp(4), 0, 0) })
-
-            addView(text("2. Supabase minhAi", 14f, true, TEXT_PRIMARY).apply { setPadding(0, dp(12), 0, 0) })
-            addView(text("O schema confia recebe somente host + horário + fonte. A fundação já está preparada para o POC.", 12f, false, TEXT_MUTED).apply { setPadding(0, dp(4), 0, 0) })
-
-            addView(text("3. Android", 14f, true, TEXT_PRIMARY).apply { setPadding(0, dp(12), 0, 0) })
-            addView(text("UsageStats informa quando Firefox/Edge estavam em primeiro plano. Depois correlacionamos o host da extensão com esse intervalo.", 12f, false, TEXT_MUTED).apply { setPadding(0, dp(4), 0, 0) })
-        })
-
-        root.addView(card().apply {
-            addView(text("Estado do POC", 14f, true, TEXT_PRIMARY))
             addView(text(
-                "Backend confia.*: estrutura criada no Supabase.\n" +
-                    "APK Android: sem AccessibilityService registrado.\n" +
-                    "Extensão Firefox/Edge: próxima peça do teste.\n\n" +
-                    "Esta build Android continua sem permissão INTERNET; quem transmitirá o host no POC será a extensão do navegador.",
+                if (nightlyInstalled) "✓ Firefox Nightly encontrado" else "Firefox Nightly necessário para o XPI local não assinado",
+                15f,
+                true,
+                if (nightlyInstalled) PURPLE else ORANGE
+            ))
+            addView(text(
+                "O Firefox Stable exige extensão assinada. Para este POC sem computador usamos Firefox Nightly, que permite instalar o arquivo local após habilitar o menu de desenvolvimento.",
                 12f,
                 false,
                 TEXT_MUTED
             ).apply { setPadding(0, dp(8), 0, 0) })
-        }.apply { topMargin(10) })
+
+            addView(primaryButton(
+                if (nightlyInstalled) "Abrir Firefox Nightly" else "Instalar Firefox Nightly"
+            ) {
+                if (nightlyInstalled) openPackage(FIREFOX_NIGHTLY) else openStore(FIREFOX_NIGHTLY)
+            }.apply { topMargin(10) })
+
+            addView(outlineButton("Salvar extensão Firefox em Downloads") {
+                exportExtension(
+                    FIREFOX_ASSET,
+                    FIREFOX_FILE,
+                    "application/x-xpinstall",
+                    firefoxInstructions()
+                )
+            }.apply { topMargin(10) })
+
+            addView(text(
+                "Depois de salvar:\n" +
+                    "1. Firefox Nightly → Configurações → Sobre o Firefox Nightly.\n" +
+                    "2. Toque 5× no logo para liberar o menu de desenvolvimento.\n" +
+                    "3. Abra about:config e defina xpinstall.signatures.required = false.\n" +
+                    "4. Configurações → Instalar extensão do arquivo.\n" +
+                    "5. Escolha Downloads/ConfIA/$FIREFOX_FILE.\n" +
+                    "6. Abra ConfIA Web POC e toque “Ativar e testar”.",
+                12f,
+                false,
+                TEXT_MUTED
+            ).apply { setPadding(0, dp(12), 0, 0) })
+        })
+
+        root.addView(sectionTitle("2. Edge Canary / Beta"))
+        val edgeCanaryInstalled = isInstalled(EDGE_CANARY)
+        val edgeBetaInstalled = isInstalled(EDGE_BETA)
+        val edgeTestPackage = when {
+            edgeCanaryInstalled -> EDGE_CANARY
+            edgeBetaInstalled -> EDGE_BETA
+            else -> null
+        }
+        root.addView(card().apply {
+            addView(text(
+                if (edgeTestPackage != null) "✓ Edge de teste encontrado" else "Use Edge Canary ou Beta para sideload do CRX",
+                15f,
+                true,
+                if (edgeTestPackage != null) PURPLE else ORANGE
+            ))
+            addView(text(
+                "O Edge Stable não expõe um fluxo público confiável para instalar nosso CRX local. O POC usa Canary/Beta pelo menu oculto de Developer Options.",
+                12f,
+                false,
+                TEXT_MUTED
+            ).apply { setPadding(0, dp(8), 0, 0) })
+
+            addView(primaryButton(
+                if (edgeTestPackage != null) "Abrir Edge de teste" else "Instalar Edge Canary"
+            ) {
+                if (edgeTestPackage != null) openPackage(edgeTestPackage) else openStore(EDGE_CANARY)
+            }.apply { topMargin(10) })
+
+            addView(outlineButton("Salvar extensão Edge em Downloads") {
+                exportExtension(
+                    EDGE_ASSET,
+                    EDGE_FILE,
+                    "application/x-chrome-extension",
+                    edgeInstructions()
+                )
+            }.apply { topMargin(10) })
+
+            addView(text(
+                "Depois de salvar:\n" +
+                    "1. Edge Canary/Beta → Configurações → Sobre o Microsoft Edge.\n" +
+                    "2. Toque 5× no número da versão/build para liberar Developer Options.\n" +
+                    "3. Developer Options → Extension install by crx.\n" +
+                    "4. Escolha Downloads/ConfIA/$EDGE_FILE.\n" +
+                    "5. Abra ConfIA Web POC e toque “Ativar e testar”.",
+                12f,
+                false,
+                TEXT_MUTED
+            ).apply { setPadding(0, dp(12), 0, 0) })
+        })
+
+        root.addView(sectionTitle("3. Navegação de teste"))
+        root.addView(card().apply {
+            addView(text("Firefox Nightly", 14f, true, TEXT_PRIMARY))
+            addView(text("• uol.com.br — ~15 s\n• github.com — ~15 s\n• troque de aba e volte", 12f, false, TEXT_MUTED).apply { setPadding(0, dp(5), 0, 0) })
+
+            addView(text("Edge Canary/Beta", 14f, true, TEXT_PRIMARY).apply { setPadding(0, dp(14), 0, 0) })
+            addView(text("• google.com — ~15 s\n• wikipedia.org — ~15 s\n• troque de aba e volte", 12f, false, TEXT_MUTED).apply { setPadding(0, dp(5), 0, 0) })
+
+            addView(text(
+                "Ao terminar, volte ao ConfIA.vc e exporte o pacote de validação da tela principal. Eu cruzarei os intervalos UsageStats desse JSON com os eventos confia.browser_events no Supabase.",
+                12f,
+                true,
+                PURPLE
+            ).apply { setPadding(0, dp(14), 0, 0) })
+        })
+
+        root.addView(sectionTitle("Outros navegadores"))
+        root.addView(browserInfoCard(
+            "Chrome / Chrome Dev",
+            "TEMPO DO APP",
+            "O Chrome Android oficial continua sem instalação comum de WebExtensions; o ConfIA mede apenas o tempo do navegador via UsageStats nesta fase."
+        ))
+        root.addView(browserInfoCard(
+            "Brave • Opera • Samsung Internet • Mi Browser",
+            "TEMPO DO APP",
+            "Continuam monitoráveis como aplicativos. O domínio só será ativado quando existir uma integração de navegador tecnicamente comprovada."
+        ))
 
         root.addView(card().apply {
             addView(text("Histórico do método antigo", 14f, true, TEXT_PRIMARY))
             addView(text(
-                "Se ainda houver domínios antigos salvos pelos testes de OCR/Acessibilidade, eles são apenas legado local e não fazem parte da nova arquitetura.",
+                "Domínios antigos de OCR/Acessibilidade são apenas legado local e não fazem parte deste teste.",
                 12f,
                 false,
                 TEXT_MUTED
@@ -186,31 +243,70 @@ class BrowserWebActivity : Activity() {
         }.apply { topMargin(10) })
     }
 
-    private fun browserCard(
-        title: String,
-        badge: String,
-        supported: Boolean,
-        body: String,
-        actionLabel: String?,
-        action: (() -> Unit)?
-    ): LinearLayout = card().apply {
-        addView(text(title, 16f, true, TEXT_PRIMARY))
-        addView(text(
-            badge,
-            11f,
-            true,
-            if (supported) PURPLE else TEXT_MUTED
-        ).apply { setPadding(0, dp(4), 0, 0) })
-        addView(text(body, 12f, false, TEXT_MUTED).apply { setPadding(0, dp(8), 0, 0) })
-        if (actionLabel != null && action != null) {
-            addView(primaryButton(actionLabel) { action() }.apply { topMargin(10) })
+    private fun exportExtension(
+        assetName: String,
+        fileName: String,
+        mimeType: String,
+        instructions: String
+    ) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
+            Toast.makeText(this, "O exportador direto deste POC requer Android 10+.", Toast.LENGTH_LONG).show()
+            return
+        }
+
+        try {
+            val resolver = contentResolver
+            val values = ContentValues().apply {
+                put(MediaStore.Downloads.DISPLAY_NAME, fileName)
+                put(MediaStore.Downloads.MIME_TYPE, mimeType)
+                put(MediaStore.Downloads.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS + "/ConfIA")
+                put(MediaStore.Downloads.IS_PENDING, 1)
+            }
+            val uri = resolver.insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, values)
+                ?: throw IOException("downloads_insert_failed")
+
+            try {
+                assets.open(assetName).use { input ->
+                    resolver.openOutputStream(uri, "w")?.use { output ->
+                        input.copyTo(output)
+                        output.flush()
+                    } ?: throw IOException("downloads_output_stream_unavailable")
+                }
+                val publish = ContentValues().apply { put(MediaStore.Downloads.IS_PENDING, 0) }
+                resolver.update(uri, publish, null, null)
+            } catch (t: Throwable) {
+                runCatching { resolver.delete(uri, null, null) }
+                throw t
+            }
+
+            AlertDialog.Builder(this)
+                .setTitle("Extensão salva")
+                .setMessage("Downloads/ConfIA/$fileName\n\n$instructions")
+                .setPositiveButton("OK", null)
+                .show()
+        } catch (t: Throwable) {
+            Toast.makeText(
+                this,
+                "Não foi possível salvar a extensão: ${t.message ?: t::class.java.simpleName}",
+                Toast.LENGTH_LONG
+            ).show()
         }
     }
 
-    private fun firstInstalled(packages: List<String>): String? =
-        packages.firstOrNull { packageName ->
-            packageManager.getLaunchIntentForPackage(packageName) != null
-        }
+    private fun firefoxInstructions(): String =
+        "Use Firefox Nightly. Libere o menu de desenvolvimento, desative temporariamente a exigência de assinatura em about:config e escolha ‘Instalar extensão do arquivo’. O token POC já está pré-configurado dentro deste XPI."
+
+    private fun edgeInstructions(): String =
+        "Use Edge Canary/Beta. Libere Developer Options tocando 5× na versão e use ‘Extension install by crx’. O token POC já está pré-configurado dentro deste CRX."
+
+    private fun browserInfoCard(title: String, badge: String, body: String): LinearLayout = card().apply {
+        addView(text(title, 16f, true, TEXT_PRIMARY))
+        addView(text(badge, 11f, true, TEXT_MUTED).apply { setPadding(0, dp(4), 0, 0) })
+        addView(text(body, 12f, false, TEXT_MUTED).apply { setPadding(0, dp(8), 0, 0) })
+    }
+
+    private fun isInstalled(packageName: String): Boolean =
+        packageManager.getLaunchIntentForPackage(packageName) != null
 
     private fun openPackage(packageName: String) {
         val intent = packageManager.getLaunchIntentForPackage(packageName)
@@ -233,12 +329,11 @@ class BrowserWebActivity : Activity() {
     private fun confirmLegacyClear() {
         AlertDialog.Builder(this)
             .setTitle("Limpar histórico web legado?")
-            .setMessage("Apaga somente as sessões de sites produzidas pelos testes antigos. O histórico normal de aplicativos permanece intacto.")
+            .setMessage("Apaga somente sessões de sites produzidas pelos testes antigos. O histórico normal de aplicativos permanece intacto.")
             .setNegativeButton("Cancelar", null)
             .setPositiveButton("Limpar") { _, _ ->
                 GuardianDatabase(applicationContext).clearBrowserSessions()
                 Toast.makeText(this, "Histórico web legado limpo.", Toast.LENGTH_SHORT).show()
-                render()
             }
             .show()
     }
@@ -310,11 +405,20 @@ class BrowserWebActivity : Activity() {
     private fun dp(value: Int) = (value * resources.displayMetrics.density).toInt()
 
     companion object {
+        private const val FIREFOX_NIGHTLY = "org.mozilla.fenix"
+        private const val EDGE_CANARY = "com.microsoft.emmx.canary"
+        private const val EDGE_BETA = "com.microsoft.emmx.beta"
+        private const val FIREFOX_ASSET = "confia-web-firefox-poc-0.1.1.xpi"
+        private const val EDGE_ASSET = "confia-web-edge-poc-0.1.1.crx"
+        private const val FIREFOX_FILE = "confia-web-firefox-poc-0.1.1.xpi"
+        private const val EDGE_FILE = "confia-web-edge-poc-0.1.1.crx"
+
         private val BACKGROUND = Color.rgb(255, 249, 246)
         private val CARD = Color.WHITE
         private val BRAND_SOFT = Color.rgb(255, 247, 242)
         private val TEXT_PRIMARY = Color.rgb(30, 31, 38)
         private val TEXT_MUTED = Color.rgb(88, 91, 103)
         private val PURPLE = Color.rgb(122, 22, 232)
+        private val ORANGE = Color.rgb(255, 106, 26)
     }
 }

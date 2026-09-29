@@ -8,7 +8,8 @@
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
 
     <!-- A dependência OCR antiga ainda existe no código legado desta transição,
-         mas a arquitetura ativa ConfIA Web não usa OCR nem rede no APK. -->
+         mas o APK ConfIA 0.1.28 continua sem INTERNET. Os pacotes de extensão
+         incorporados fazem a comunicação diretamente no navegador. -->
     <uses-permission
         android:name="android.permission.INTERNET"
         tools:node="remove" />

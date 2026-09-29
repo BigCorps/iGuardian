@@ -54,7 +54,7 @@ for tag in network_state_tags:
 if "android.permission.QUERY_ALL_PACKAGES" in manifest:
     errors.append("POC must not declare QUERY_ALL_PACKAGES")
 
-# 0.1.27 retires the old Accessibility/OCR architecture from the installed app.
+# 0.1.28 keeps the old Accessibility/OCR architecture retired from the installed app.
 for forbidden_manifest_fragment in [
     ".web.BrowserAccessibilityService",
     "android.permission.BIND_ACCESSIBILITY_SERVICE",
@@ -63,7 +63,7 @@ for forbidden_manifest_fragment in [
 ]:
     if forbidden_manifest_fragment in manifest:
         errors.append(
-            "ConfIA Web 0.1.27 must not register legacy Accessibility component: "
+            "ConfIA Web 0.1.28 must not register legacy Accessibility component: "
             + forbidden_manifest_fragment
         )
 
@@ -107,8 +107,8 @@ else:
         "Sem Acessibilidade",
         "sem screenshot",
         "sem VPN",
-        "Firefox Android",
-        "Edge Android",
+        "Firefox Nightly",
+        "Edge Canary/Beta",
     ]:
         if marker not in confia_main:
             errors.append(f"ConfIA launcher copy missing required marker: {marker}")
@@ -118,13 +118,13 @@ if not web_activity_path.exists():
 else:
     web_activity = web_activity_path.read_text(encoding="utf-8", errors="ignore")
     for marker in [
-        "Firefox Android",
-        "Edge Android",
+        "Firefox Nightly",
+        "Edge Canary/Beta",
         "Chrome / Chrome Dev",
         "Sem Acessibilidade",
         "Sem screenshot ou OCR",
         "Sem VPN",
-        "schema confia",
+        "Downloads/ConfIA",
     ]:
         if marker not in web_activity:
             errors.append(f"ConfIA Web compatibility UI missing required marker: {marker}")
@@ -181,6 +181,15 @@ for required_script in [
     if not (root / required_script).exists():
         errors.append(f"Missing required CI validation script: {required_script}")
 
+
+for bundled_extension in [
+    "app/src/main/assets/confia-web-firefox-poc-0.1.1.xpi",
+    "app/src/main/assets/confia-web-edge-poc-0.1.1.crx",
+]:
+    path = root / bundled_extension
+    if not path.exists() or path.stat().st_size <= 0:
+        errors.append(f"Missing bundled no-USB extension asset: {bundled_extension}")
+
 asset_contract = root / "app/src/main/assets/validation-contracts.json"
 if not asset_contract.exists():
     errors.append("Missing runtime validation lineage asset")
@@ -219,6 +228,7 @@ print("- no QUERY_ALL_PACKAGES")
 print("- legacy AccessibilityService is NOT registered in AndroidManifest")
 print("- ConfIA launcher replaces legacy Guardian MainActivity")
 print("- ConfIA Web UI is extension/UsageStats based")
+print("- Firefox XPI + Edge CRX bundled for no-USB testing")
 print("- no VPN / MediaProjection / notification listener path")
 print("- WorkManager local collection remains present")
 print("- validation lineage + final APK guards remain present")

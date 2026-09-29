@@ -67,6 +67,14 @@ done
 grep -Fq "com.bigcorps.guardian.ConfiaMainActivity" <<<"$XMLTREE" \
   || fail "ConfiaMainActivity ausente no APK final"
 
+APK_LIST="$(unzip -l "$APK")"
+for required_asset in \
+  "assets/confia-web-firefox-poc-0.1.1.xpi" \
+  "assets/confia-web-edge-poc-0.1.1.crx"; do
+  grep -Fq "$required_asset" <<<"$APK_LIST" \
+    || fail "Extensão POC ausente do APK final: $required_asset"
+done
+
 echo "Final APK contract OK"
 echo "- package: com.bigcorps.guardian.dev"
 echo "- label: ConfIA.vc"
@@ -75,3 +83,4 @@ echo "- versionCode: $EXPECTED_CODE"
 echo "- forbidden network/high-risk permissions: absent"
 echo "- AccessibilityService registration: absent"
 echo "- ConfIA launcher: present"
+echo "- bundled Firefox XPI + Edge CRX: present"

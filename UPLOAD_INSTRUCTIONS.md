@@ -16,3 +16,8 @@ Pontos principais para conferir no GitHub antes de esperar o Actions:
 Não rode novamente o SQL de fundação apenas por causa deste ZIP. O schema `confia` já foi aplicado e verificado.
 
 Depois do Actions verde, instale a 0.1.27 por cima da 0.1.26.
+
+## Upload 0.1.28
+
+Suba todos os arquivos deste ZIP preservando caminhos. Os dois arquivos em `app/src/main/assets/` são obrigatórios para o APK conseguir exportar as extensões no celular. Artefato esperado: `confia-android-0.1.28-fixed-signed-debug`.
+

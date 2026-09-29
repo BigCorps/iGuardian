@@ -180,7 +180,7 @@ class ConfiaMainActivity : Activity() {
                 TEXT_MUTED
             ).apply { setPadding(0, dp(8), 0, 0) })
             addView(textView(
-                "Firefox Android: POC principal • Edge Android: próxima validação • Chrome/Brave/Opera/Samsung/Mi: tempo do navegador apenas nesta fase.",
+                "Firefox Nightly + Edge Canary/Beta: POC sem USB pronto nesta build • Chrome/Brave/Opera/Samsung/Mi: tempo do navegador apenas nesta fase.",
                 12f,
                 true,
                 ORANGE
@@ -228,7 +228,7 @@ class ConfiaMainActivity : Activity() {
                     "✓ Nenhum screenshot/OCR usado pelo fluxo novo\n" +
                     "✓ Nenhuma VPN\n" +
                     "✓ Backend confia.* preparado no Supabase minhAi\n" +
-                    "• A extensão Firefox/Edge será a fonte do domínio no POC",
+                    "✓ XPI Firefox e CRX Edge incorporados para teste sem USB",
                 12f,
                 false,
                 TEXT_MUTED

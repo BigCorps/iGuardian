@@ -1,26 +1,25 @@
 {
-  "version": "0.1.27",
-  "version_code": 28,
-  "base_green_actions_run": 69,
-  "base_green_commit": "658e60b82b4f2e64bafedd5495cb742f213f8c10",
-  "current_work": "ConfIA branding correction + retirement of installed Accessibility architecture",
+  "version": "0.1.28",
+  "version_code": 29,
+  "base_green_actions_run": 71,
+  "base_green_commit": "320cdb84819ed4313874b9f67449402492ca189d",
+  "current_work": "No-USB Firefox Nightly + Edge Canary/Beta extension POC bundled in APK",
   "problems_addressed": [
-    "0.1.26 launcher icon used a noisy background-removal mask and looked textured/cropped on Xiaomi",
-    "0.1.26 main UI still described Guardian Web screenshot/OCR/Accessibility architecture",
-    "0.1.26 BrowserWebActivity still exposed Modo Banco and Accessibility activation despite product decision to abandon that architecture",
-    "Bank compatibility required Accessibility to remain fully absent rather than disabled on demand"
+    "User cannot connect the phone to a computer/ADB for temporary Firefox extension loading",
+    "0.1.27 did not include the actual browser-extension packages inside the APK",
+    "Need to validate Firefox and Edge in the same physical round without restoring Accessibility or VPN"
   ],
   "fixes": [
-    "clean launcher mark rebuilt from the supplied ConfIA.vc symbol with large Android-safe padding",
-    "new ConfiaMainActivity becomes the launcher and shows the browser-extension architecture",
-    "BrowserWebActivity rewritten as Firefox/Edge compatibility and POC screen",
-    "BrowserAccessibilityService removed from AndroidManifest",
-    "final APK CI guard now fails if any Accessibility service registration remains",
-    "legacy web rows can be cleared from the new ConfIA Web screen",
-    "export folder renamed to Downloads/ConfIA"
+    "Firefox XPI and Edge CRX bundled as APK assets",
+    "ConfIA Web exports both packages to Downloads/ConfIA using MediaStore",
+    "Firefox Nightly no-USB instructions embedded in the app",
+    "Edge Canary/Beta no-USB CRX sideload instructions embedded in the app",
+    "each extension has a temporary pre-paired POC token; no token typing required",
+    "APK remains offline: no effective INTERNET permission, no AccessibilityService, no VPN",
+    "backend confia-web-ingest already ACTIVE and both browser sources share one installation"
   ],
   "database_migration_required": false,
   "supabase_foundation_already_applied": true,
   "physical_retest_required": true,
-  "expected_actions_artifact": "confia-android-0.1.27-fixed-signed-debug"
+  "expected_actions_artifact": "confia-android-0.1.28-fixed-signed-debug"
 }
