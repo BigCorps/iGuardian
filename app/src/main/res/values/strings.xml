@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">Guardian DEV</string>
-    <string name="guardian_web_service_label">Guardian Web</string>
+    <string name="app_name">ConfIA.vc</string>
+    <string name="guardian_web_service_label">ConfIA Web</string>
     <string name="guardian_web_accessibility_description">Opcional: lê localmente a barra de endereço de navegadores compatíveis e, quando necessário, usa screenshot temporário com OCR local para registrar apenas o host e detectar sinais de navegação anônima. Imagens, OCR bruto, caminho, parâmetros, pesquisa, título, conteúdo e texto digitado não são armazenados.</string>
 </resources>

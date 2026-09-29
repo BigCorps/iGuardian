@@ -1,8 +1,8 @@
 {
   "schema": 1,
-  "build_version": "0.1.25",
+  "build_version": "0.1.26",
   "base_physically_validated_version": "0.1.18",
-  "strategy": "Inherit unchanged usage/scheduler/intelligence by pinned hash; runtime-test privacy/financial classification, browser web OCR hardening, protected bank launch and validation wiring; physically retest clean normal/incognito web capture plus Bank Mode on-device.",
+  "strategy": "Inherit unchanged usage/scheduler/intelligence by pinned hash; runtime-test current privacy/browser/UI/build wiring. Branding changes preserve internal package/signing/database lineage. Backend confia POC is not used by this APK.",
   "contracts": [
     {
       "id": "usage_collection_core",
@@ -51,7 +51,7 @@
     {
       "id": "database_report_browser_overlay",
       "validation_mode": "runtime_autotest",
-      "validated_in": "0.1.25",
+      "validated_in": "0.1.26",
       "manual_retest_required": false,
       "continuous_autotest": true,
       "files": [
@@ -64,7 +64,7 @@
     {
       "id": "privacy_classification_core",
       "validation_mode": "runtime_autotest",
-      "validated_in": "0.1.25",
+      "validated_in": "0.1.26",
       "manual_retest_required": false,
       "continuous_autotest": true,
       "files": [
@@ -78,7 +78,7 @@
     {
       "id": "guardian_web_core",
       "validation_mode": "runtime_plus_physical",
-      "validated_in": "0.1.25",
+      "validated_in": "0.1.26",
       "manual_retest_required": true,
       "continuous_autotest": true,
       "files": [
@@ -105,7 +105,7 @@
     {
       "id": "validation_export_ui",
       "validation_mode": "runtime_autotest",
-      "validated_in": "0.1.25",
+      "validated_in": "0.1.26",
       "manual_retest_required": false,
       "continuous_autotest": true,
       "files": [
@@ -120,7 +120,7 @@
     {
       "id": "build_pipeline",
       "validation_mode": "ci_only",
-      "validated_in": "0.1.25",
+      "validated_in": "0.1.26",
       "manual_retest_required": false,
       "continuous_autotest": false,
       "files": [

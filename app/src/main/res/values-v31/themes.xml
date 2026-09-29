@@ -8,5 +8,8 @@
         <item name="android:navigationBarColor">@color/confia_surface</item>
         <item name="android:navigationBarDividerColor">@color/confia_divider</item>
         <item name="android:colorAccent">@color/confia_purple</item>
+        <item name="android:windowSplashScreenBackground">@color/confia_icon_background</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@mipmap/ic_launcher_foreground</item>
+        <item name="android:windowSplashScreenIconBackgroundColor">@color/confia_icon_background</item>
     </style>
 </resources>

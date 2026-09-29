@@ -1,30 +1,37 @@
-# Upload — Guardian Android 0.1.25
+# Upload — ConfIA.vc Android 0.1.26
 
 Base expected in GitHub before upload:
 
-- commit `1e196d5fd32d4e25e73ad1ffe85db8e90b623959` or descendant without conflicting changes;
-- Actions #64 green.
+- Actions #67 green;
+- commit `0ed697b66132603effe03b24038cc80ce339094f`;
+- version 0.1.25 / code 26.
 
-Upload every file in this ZIP to the repository root while preserving its path.
-New files such as `FinancialAppCatalog.kt` and `FinancialAppCatalogTest.kt` must
-be created; existing files must be replaced.
+Upload **all files from this ZIP preserving their paths**.
 
-After upload, confirm in GitHub before waiting for Actions:
+This patch intentionally keeps:
 
-- `app/build.gradle.kts` says 0.1.25 / versionCode 26;
-- workflow artifact says `guardian-android-0.1.25-fixed-signed-debug`;
-- `FinancialAppCatalog.kt` exists;
-- `BrowserWebActivity.kt` contains `Abrir ${app.label} com proteção` and `Iniciar teste limpo`;
-- `BrowserAccessibilityService.kt` contains `AUTO_FINANCIAL_FOREGROUND` and `requestValidationReset()`;
-- root `VALIDATION_CONTRACTS.json` and Android asset are identical.
+- namespace `com.bigcorps.guardian`;
+- applicationId `com.bigcorps.guardian.dev`;
+- existing signing certificate;
+- current local SQLite/database continuity.
 
-Do not install unless the new Actions run is green.
+Visible branding changes:
 
-## Actions #66 corrective patch
+- launcher/system app name becomes `ConfIA.vc`;
+- launcher/round icon uses the symbol from the supplied ConfIA.vc logo;
+- Android 12+ splash shows the ConfIA symbol;
+- base system surfaces use the orange/purple brand palette.
 
-This follow-up remains version 0.1.25 / code 26. Upload every file from the corrective ZIP preserving paths. In particular replace both:
+Expected build:
 
-- `app/src/main/java/com/bigcorps/guardian/web/BrowserVisualTextParser.kt`
-- `app/src/test/java/com/bigcorps/guardian/web/BrowserVisualTextParserTest.kt`
+- versionName `0.1.26`;
+- versionCode `27`;
+- Actions artifact `guardian-android-0.1.26-fixed-signed-debug`.
 
-Actions #66 already proved the main Android/Kotlin source compiles; this patch fixes the single failing unit-test boundary case.
+Backend:
+
+- `backend/confia-supabase-foundation-poc.sql` is for the existing minhAi
+  Supabase project and is **not executed by GitHub Actions**.
+- Apply it manually only after the Android upload/build is confirmed.
+- The current APK remains offline; the future extension/backend POC will be a
+  separate next step.
