@@ -124,6 +124,6 @@ jobs:
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: confia-android-0.1.27-fixed-signed-debug
+          name: confia-android-0.1.28-fixed-signed-debug
           path: app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
